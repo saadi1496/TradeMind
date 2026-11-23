@@ -1,2 +1,0 @@
-# TradeMind
-TradeMind Trading Application
