@@ -270,6 +270,11 @@
     cursor: pointer;
   }
 
+  .tm-btn-primary:hover {
+    background: var(--accent-dark);
+    border-color: var(--accent-dark);
+  }
+
   .tm-toggle-btn {
     border-radius: var(--radius-pill);
     padding: 7px 14px;
@@ -856,7 +861,7 @@
   .tm-cal-placeholder-note {
     font-size: 10.5px;
     font-weight: 600;
-    color: var(--text-muted);
+    color: var(--text-secondary);
     background: var(--bg-subtle);
     border: 1px dashed var(--border);
     border-radius: 8px;
@@ -1023,27 +1028,27 @@
       </div>
     </div>
 
-    <!-- FEATURE 3: MARKET SESSIONS CLOCK (PKT + DST) -->
+    <!-- MARKET SESSIONS CLOCK (PKT + DST) -->
     <div class="tm-card" style="margin-top:10px;">
       <div class="row-between">
-        <span class="tm-metric-label">Market Sessions Clock (PKT / DST)</span>
+        <span class="tm-metric-label">Market Sessions Clock (PKT)</span>
         <span id="sessionActiveBadge" class="tm-badge badge-active">Checking...</span>
       </div>
       <div id="sessionNextCountdown" class="tm-sec-meta" style="margin-top:4px;">Countdown: --</div>
       <div id="sessionRowsContainer"></div>
     </div>
 
-    <!-- FEATURE 2: RISK & LOT SIZE CALCULATOR -->
+    <!-- RISK & LOT SIZE CALCULATOR -->
     <div class="tm-card" id="riskLotCalcCard">
       <div class="row-between" style="margin-bottom:6px;">
         <span class="tm-metric-label">Risk &amp; Lot Size Calculator</span>
-        <span class="tm-badge badge-closed">Visual / Spec-Gated</span>
+        <span class="tm-badge badge-active">Lot Calculator</span>
       </div>
 
       <div class="tm-field-grid">
         <div class="tm-field-group">
           <label class="tm-lvl-key" for="calcSymbolSelect">Symbol</label>
-          <select id="calcSymbolSelect" class="tm-input" onchange="RiskLotCalculator.onChange()">
+          <select id="calcSymbolSelect" class="tm-input" onchange="RiskLotCalculator.onSymbolChange()">
             <option value="XAUUSD">XAUUSD</option>
             <option value="XAGUSD">XAGUSD</option>
             <option value="EURUSD">EURUSD</option>
@@ -1066,34 +1071,43 @@
         </div>
         <div class="tm-field-group">
           <label class="tm-lvl-key" for="calcEntryInput">Entry Price</label>
-          <input id="calcEntryInput" type="number" step="any" class="tm-input" placeholder="Entry" oninput="RiskLotCalculator.onChange()" />
+          <input id="calcEntryInput" type="number" step="any" class="tm-input" placeholder="Entry price" oninput="RiskLotCalculator.onChange()" />
         </div>
         <div class="tm-field-group">
           <label class="tm-lvl-key" for="calcSlInput">Stop Loss</label>
-          <input id="calcSlInput" type="number" step="any" class="tm-input" placeholder="Stop Loss" oninput="RiskLotCalculator.onChange()" />
+          <input id="calcSlInput" type="number" step="any" class="tm-input" placeholder="Stop loss price" oninput="RiskLotCalculator.onChange()" />
         </div>
         <div class="tm-field-group">
           <label class="tm-lvl-key" for="calcTpInput">Take Profit</label>
-          <input id="calcTpInput" type="number" step="any" class="tm-input" placeholder="Take Profit" oninput="RiskLotCalculator.onChange()" />
+          <input id="calcTpInput" type="number" step="any" class="tm-input" placeholder="Take profit price" oninput="RiskLotCalculator.onChange()" />
         </div>
         <div class="tm-field-group">
-          <label class="tm-lvl-key" for="calcTickValueInput">Verified Tick / Pip Value (per 1.0 Lot)</label>
-          <input id="calcTickValueInput" type="number" step="any" class="tm-input" placeholder="Unavailable until entered" oninput="RiskLotCalculator.onChange()" />
+          <label class="tm-lvl-key" for="calcTickValueInput">Value Per 1.0 Point (1.0 Lot)</label>
+          <input id="calcTickValueInput" type="number" step="any" class="tm-input" placeholder="e.g. 100 (XAU) / 100000 (EUR)" oninput="RiskLotCalculator.onChange()" />
         </div>
         <div class="tm-field-group" style="grid-column:1 / -1;">
-          <label class="tm-lvl-key" for="calcContractSizeInput">Verified Contract Size / Spec Source</label>
-          <input id="calcContractSizeInput" type="text" class="tm-input" placeholder="e.g. 100 oz (Verified Broker Spec) or leave blank" oninput="RiskLotCalculator.onChange()" />
+          <label class="tm-lvl-key" for="calcContractSizeInput">Contract Size / Notes</label>
+          <input id="calcContractSizeInput" type="text" class="tm-input" placeholder="e.g. 100 oz Gold / 100,000 EUR" oninput="RiskLotCalculator.onChange()" />
         </div>
       </div>
 
-      <div class="tm-levels-grid">
-        <div><div class="tm-lvl-key">Risk Amount</div><div id="calcRiskAmtOut" class="tm-lvl-val">Unavailable</div></div>
-        <div><div class="tm-lvl-key">Lot Size</div><div id="calcLotSizeOut" class="tm-lvl-val" style="color:var(--accent-dark);">Unavailable</div></div>
-        <div><div class="tm-lvl-key">R:R Ratio</div><div id="calcRrOut" class="tm-lvl-val">Unavailable</div></div>
-        <div><div class="tm-lvl-key">Spec Status</div><div id="calcSpecStatusOut" class="tm-lvl-val" style="font-size:10.5px;color:var(--warn);">Unverified</div></div>
+      <div class="row-inline" style="margin-top:10px;">
+        <button id="calcLotBtn" type="button" class="tm-btn-primary" style="flex:1;" onclick="RiskLotCalculator.calculate(true)">
+          Calculate Lot Size
+        </button>
+        <button type="button" class="tm-btn" style="padding:10px 12px;" onclick="RiskLotCalculator.clearFields()">
+          Clear
+        </button>
       </div>
-      <div id="calcWarningBox" class="tm-warn-box">
-        Lot size is Unavailable until verified symbol-specific contract size, tick value, and broker specifications are provided.
+
+      <div class="tm-levels-grid">
+        <div><div class="tm-lvl-key">Risk Amount</div><div id="calcRiskAmtOut" class="tm-lvl-val">--</div></div>
+        <div><div class="tm-lvl-key">Lot Size</div><div id="calcLotSizeOut" class="tm-lvl-val" style="color:var(--accent-dark);">--</div></div>
+        <div><div class="tm-lvl-key">R:R Ratio</div><div id="calcRrOut" class="tm-lvl-val">--</div></div>
+        <div><div class="tm-lvl-key">Status</div><div id="calcSpecStatusOut" class="tm-lvl-val" style="font-size:10.5px;color:var(--text-muted);">Ready</div></div>
+      </div>
+      <div id="calcWarningBox" class="tm-info-box">
+        Enter Balance, Risk %, Entry, and Stop Loss, then click Calculate Lot Size.
       </div>
     </div>
 
@@ -1140,10 +1154,10 @@
           <strong id="tvSymbolTitle" style="font-size:14px;">XAUUSD · 15M</strong>
           <span id="tvLastPricePill" class="tm-badge badge-active">--</span>
           <span id="tvChangePill" class="tm-sec-meta"></span>
-          <span id="tvFeedStateBadge" class="tm-live-pill lost">CONNECTION LOST</span>
+          <span id="tvFeedStateBadge" class="tm-live-pill lost">OFFLINE</span>
         </div>
         <div class="row-inline">
-          <span id="tvCountdownBadge" class="tm-tv-countdown estimated">--:-- (Est.)</span>
+          <span id="tvCountdownBadge" class="tm-tv-countdown estimated">--:--</span>
           <button id="tvExpandBtn" class="tm-btn" onclick="TvChart.toggleExpand()">Expand</button>
         </div>
       </div>
@@ -1395,7 +1409,7 @@
   <!-- 5. PERFORMANCE -->
   <section id="view-performance" class="tm-view">
     <div class="tm-sec-header" style="margin-top:0;">
-      <span class="tm-sec-title">Signal Performance (Backend)</span>
+      <span class="tm-sec-title">Signal Performance</span>
       <button class="tm-btn" onclick="PerformanceEngine.refresh(true)">Sync</button>
     </div>
 
@@ -1418,10 +1432,10 @@
       </div>
     </div>
 
-    <!-- FEATURE 1: ADVANCED PERFORMANCE ANALYTICS -->
+    <!-- ADVANCED PERFORMANCE ANALYTICS -->
     <div class="tm-card" style="margin-top:10px;">
       <div class="row-between" style="margin-bottom:6px;">
-        <span class="tm-metric-label">Advanced Performance Analytics (Completed Only)</span>
+        <span class="tm-metric-label">Performance Analytics (Completed)</span>
         <span id="anaSummaryBadge" class="tm-badge badge-closed">0 Done</span>
       </div>
       <div class="tm-chip-strip" id="analyticsWindowStrip">
@@ -1472,10 +1486,10 @@
       <div id="anaTfTableWrap" class="tm-table-wrap"></div>
     </div>
 
-    <!-- FEATURE 5: DAILY RISK MONITOR -->
+    <!-- DAILY RISK MONITOR -->
     <div class="tm-card" id="dailyRiskMonitorCard">
       <div class="row-between" style="margin-bottom:6px;">
-        <span class="tm-metric-label">Daily Risk Monitor (PKT · Signal Stats Only)</span>
+        <span class="tm-metric-label">Daily Risk Monitor (PKT)</span>
         <span id="drmStatusBadge" class="tm-badge badge-closed">Normal</span>
       </div>
 
@@ -1501,16 +1515,16 @@
       <div class="tm-levels-grid">
         <div><div class="tm-lvl-key">Today TP/SL</div><div id="drmTodayTpSl" class="tm-lvl-val">0 / 0</div></div>
         <div><div class="tm-lvl-key">Daily Perf</div><div id="drmDailyPerf" class="tm-lvl-val">0 Wins</div></div>
-        <div><div class="tm-lvl-key">Rem. Risk</div><div id="drmRemRisk" class="tm-lvl-val" style="color:var(--accent-dark);">Unavailable</div></div>
+        <div><div class="tm-lvl-key">Rem. Risk</div><div id="drmRemRisk" class="tm-lvl-val" style="color:var(--accent-dark);">--</div></div>
         <div><div class="tm-lvl-key">Trades Used</div><div id="drmTradesUsed" class="tm-lvl-val">0</div></div>
       </div>
 
       <div id="drmWarningBox" class="tm-info-box">
-        Signal performance only. Actual broker account P/L is separate and unavailable without verified broker execution data. Remaining risk requires available per-trade risk data/inputs.
+        Signal stats only. Enter Daily Risk Limit, Account Balance, and Risk % to track remaining risk.
       </div>
     </div>
 
-    <!-- FEATURE 6: REPORTS & EXPORT -->
+    <!-- REPORTS & EXPORT -->
     <div class="tm-card" id="reportsExportCard">
       <div class="row-between" style="margin-bottom:6px;">
         <span class="tm-metric-label">Reports &amp; CSV Export (PKT)</span>
@@ -1535,19 +1549,19 @@
         <button class="tm-btn" type="button" onclick="ReportsExportEngine.exportSignalsCsv()">Export Signals CSV</button>
         <button class="tm-btn" type="button" onclick="ReportsExportEngine.exportLimitsCsv()">Export Limits CSV</button>
       </div>
-      <div id="repExportStatus" class="tm-sec-meta" style="margin-top:6px;">Ready to export in Asia/Karachi (PKT).</div>
+      <div id="repExportStatus" class="tm-sec-meta" style="margin-top:6px;">Ready to export in PKT.</div>
     </div>
 
     <div class="tm-card" style="margin-top:10px;">
-      <div class="tm-metric-label" style="margin-bottom:6px;">Signal Statistics vs Broker Account</div>
+      <div class="tm-metric-label" style="margin-bottom:6px;">Signal Statistics Note</div>
       <div style="font-size:11.5px;color:var(--text-secondary);">
-        Metrics reflect backend instant signal performance only (broker_order_placed: false). Not a broker account balance or equity statement.
+        Statistics reflect signal results only and do not represent live broker balance or equity.
       </div>
     </div>
 
     <div class="tm-card" style="margin-top:10px;">
       <div class="row-between" style="margin-bottom:8px;">
-        <span class="tm-metric-label">Calendar History (PKT · UI Preview)</span>
+        <span class="tm-metric-label">Calendar History (PKT)</span>
         <span class="tm-sec-meta">Asia/Karachi</span>
       </div>
 
@@ -1559,7 +1573,7 @@
       <!-- 1. SIGNALS CALENDAR -->
       <div id="calPanelSignals" class="tm-cal-panel active">
         <div class="tm-cal-placeholder-note">
-          UI Preview Placeholder: Completed signals only (actual TP/SL outcomes). Pending orders are never counted as completed trades.
+          Completed signals only (TP/SL outcomes). Pending orders are not counted as completed trades.
         </div>
         <div class="tm-cal-nav-row">
           <div class="row-inline">
@@ -1609,7 +1623,7 @@
       <!-- 2. LIMIT ORDERS CALENDAR -->
       <div id="calPanelLimits" class="tm-cal-panel">
         <div class="tm-cal-placeholder-note">
-          UI Preview Placeholder: Activation and completion are tracked separately. Pending orders are never counted as completed trades.
+          Activation and completion are tracked separately. Pending orders are not counted as completed trades.
         </div>
         <div class="tm-cal-nav-row">
           <div class="row-inline">
@@ -1669,7 +1683,7 @@
       <div class="row-between" style="padding:4px 0;">
         <strong style="font-size:13px;">Backend Connection</strong>
         <div class="row-inline">
-          <button id="tmTermuxToggleBtn" type="button" class="tm-toggle-btn is-off" onclick="TermuxControlEngine.toggle()">OFF</button>
+          <button id="tmTermuxToggleBtn" type="button" class="tm-toggle-btn is-off" onclick="TermuxControlEngine.toggle()">START</button>
           <span id="prefBackendStatusBadge" class="tm-live-pill lost">OFFLINE</span>
         </div>
       </div>
@@ -1678,7 +1692,7 @@
       <div id="prefLastSyncText" class="tm-sec-meta" style="margin-top:7px;">Last successful data sync: --</div>
     </div>
 
-    <!-- FEATURE 7: SYSTEM HEALTH MONITOR -->
+    <!-- SYSTEM HEALTH MONITOR -->
     <div class="tm-card" id="systemHealthCard">
       <div class="row-between" style="margin-bottom:6px;">
         <span class="tm-metric-label">System Health Monitor</span>
@@ -1688,14 +1702,14 @@
       <div id="sysHealthWarningsBox" class="tm-warn-box" style="display:none;"></div>
     </div>
 
-    <!-- FEATURE 8: ANDROID HOME SCREEN WIDGET STATUS & SPECIFICATION -->
+    <!-- ANDROID HOME SCREEN WIDGET SNAPSHOT -->
     <div class="tm-card" id="androidWidgetInfoCard">
       <div class="row-between" style="margin-bottom:6px;">
-        <span class="tm-metric-label">Android Home Screen Widget (Native / AppMint)</span>
-        <span class="tm-badge badge-pending">Native Layer Required</span>
+        <span class="tm-metric-label">Android Widget Snapshot</span>
+        <span class="tm-badge badge-pending">App Preview</span>
       </div>
       <div class="tm-info-box" style="margin-top:0;">
-        This HTML card is a web preview only — not an Android launcher home screen widget. True Android home screen widget installation requires a native Android <code>AppWidgetProvider</code> / <code>RemoteViews</code> layout and AppMint/APK build support. When app is closed, Android schedules periodic background refreshes (not guaranteed second-by-second).
+        Live summary preview inside TradeMind. Home screen widgets on Android require a native build when the app is closed.
       </div>
       <div id="widgetSnapshotPreview" class="tm-meta-box"></div>
     </div>
@@ -1736,12 +1750,12 @@
         <strong>http://127.0.0.1:8000</strong>
       </div>
       <div class="row-between" style="font-size:12px;padding:4px 0;">
-        <span style="color:var(--text-secondary);">Broker Execution</span>
-        <strong>Disabled (broker_order_placed: false)</strong>
+        <span style="color:var(--text-secondary);">Auto Trade</span>
+        <strong>Manual Only</strong>
       </div>
       <div class="row-between" style="font-size:12px;padding:4px 0;">
-        <span style="color:var(--text-secondary);">Background / Closed Push</span>
-        <strong>Requires FCM / Native Android layer</strong>
+        <span style="color:var(--text-secondary);">Background Push</span>
+        <strong>Active App Session</strong>
       </div>
     </div>
 
@@ -1769,13 +1783,13 @@
       <div class="row-between" style="padding:6px 0;border-top:1px solid #eef2f6;">
         <div>
           <div style="font-size:12px;font-weight:700;">Master Notifications Switch</div>
-          <div id="prefNotifStatusText" class="tm-sec-meta">Active session alerts only (closed-app push requires FCM/native)</div>
+          <div id="prefNotifStatusText" class="tm-sec-meta">Alerts while app/browser is open</div>
         </div>
         <button id="prefEnableNotifBtn" class="tm-btn" onclick="PreferencesEngine.toggleNotifications()">Enable</button>
       </div>
 
       <div style="margin-top:8px;">
-        <div class="tm-lvl-key" style="margin-bottom:4px;">Individual Event Notification Toggles (ON by default)</div>
+        <div class="tm-lvl-key" style="margin-bottom:4px;">Event Notification Toggles</div>
         <div id="prefEventTogglesContainer"></div>
       </div>
 
@@ -1852,11 +1866,6 @@ function getPktClock() {
   }
 }
 
-/**
- * STRICT ASIA/KARACHI (PKT) TIMESTAMP & DATE HELPERS
- * Handles UTC strings (e.g. "2026-11-24T08:06:00Z"), ISO strings without Z,
- * and epoch timestamps without using arbitrary phone local timezone.
- */
 function parseTimestampToUtcMs(rawTs) {
   if (rawTs === undefined || rawTs === null) return null;
   if (rawTs instanceof Date) {
@@ -1914,7 +1923,7 @@ function formatPktDateTime(rawTs) {
   const ms = parseTimestampToUtcMs(rawTs);
   if (ms === null) {
     const rawStr = rawTs ? String(rawTs).trim() : "";
-    return rawStr && rawStr !== "--" ? `${rawStr} PKT` : "Missing timestamp";
+    return rawStr && rawStr !== "--" ? `${rawStr} PKT` : "Time unavailable";
   }
   const d = new Date(ms);
   const dateStr = new Intl.DateTimeFormat("en-GB", {
@@ -1936,7 +1945,7 @@ function formatPktShortDateTime(rawTs) {
   const ms = parseTimestampToUtcMs(rawTs);
   if (ms === null) {
     const rawStr = rawTs ? String(rawTs).trim() : "";
-    return rawStr && rawStr !== "--" ? `${rawStr} PKT` : "Missing timestamp";
+    return rawStr && rawStr !== "--" ? `${rawStr} PKT` : "Time unavailable";
   }
   const d = new Date(ms);
   const dateStr = new Intl.DateTimeFormat("en-GB", {
@@ -1955,7 +1964,7 @@ function formatPktShortDateTime(rawTs) {
 
 function formatExpiryRemaining(expiresRawTs, nowMs = Date.now()) {
   const expMs = parseTimestampToUtcMs(expiresRawTs);
-  if (expMs === null) return "Expiry timestamp not provided";
+  if (expMs === null) return "--";
   const diffMs = expMs - nowMs;
   if (diffMs <= 0) return "Expired";
   const totalMinutes = Math.floor(diffMs / 60000);
@@ -1963,12 +1972,12 @@ function formatExpiryRemaining(expiresRawTs, nowMs = Date.now()) {
   const hours = Math.floor((totalMinutes % (60 * 24)) / 60);
   const mins = totalMinutes % 60;
   if (days > 0) {
-    return `In ${days} day${days === 1 ? "" : "s"} ${hours} hour${hours === 1 ? "" : "s"}`;
+    return `In ${days}d ${hours}h`;
   }
   if (hours > 0) {
-    return `In ${hours} hour${hours === 1 ? "" : "s"} ${mins} min`;
+    return `In ${hours}h ${mins}m`;
   }
-  return `In ${Math.max(1, mins)} min`;
+  return `In ${Math.max(1, mins)}m`;
 }
 
 function shiftIsoDate(isoDate, deltaDays) {
@@ -2022,10 +2031,6 @@ function formatPriceValue(val, symbol) {
   return num.toFixed(dec);
 }
 
-/**
- * FEATURE 4: SIGNAL QUALITY BREAKDOWN (RULE-BASED & VERIFIABLE ONLY)
- * Never fabricates confirmations or winning probability; marks missing checks "Unverified".
- */
 function evaluateSignalQuality(sig) {
   const isBuy = String(sig.direction || "").toUpperCase().includes("BUY") || String(sig.direction || "").toUpperCase() === "LONG";
   const isSell = String(sig.direction || "").toUpperCase().includes("SELL") || String(sig.direction || "").toUpperCase() === "SHORT";
@@ -2042,33 +2047,24 @@ function evaluateSignalQuality(sig) {
   }
 
   const hasConfirmedTf = Boolean(sig.confirmationTimeframes && String(sig.confirmationTimeframes).trim().length > 0);
-  const tfCheckState = hasConfirmedTf ? "Verified" : "Unverified";
-
-  const trendCheckState = "Unverified";
-  const structureCheckState = "Unverified";
-  const levelCheckState = levelGeometryValid ? "Verified" : "Unverified";
 
   const checks = [
-    { label: "Trend alignment", status: trendCheckState },
-    { label: "Market structure confirmation", status: structureCheckState },
-    { label: "Timeframe confirmation", status: tfCheckState, detail: hasConfirmedTf ? sig.confirmationTimeframes : null },
-    { label: "Entry/SL/TP validity", status: levelCheckState }
+    { label: "Trend alignment", status: "Pending" },
+    { label: "Structure check", status: "Pending" },
+    { label: "Timeframe check", status: hasConfirmedTf ? "Passed" : "Pending", detail: hasConfirmedTf ? sig.confirmationTimeframes : null },
+    { label: "Entry / SL / TP levels", status: levelGeometryValid ? "Passed" : "Pending" }
   ];
 
-  const available = checks.filter(c => c.status === "Verified");
-  const missing = checks.filter(c => c.status !== "Verified");
+  const available = checks.filter(c => c.status === "Passed");
+  const missing = checks.filter(c => c.status !== "Passed");
 
   return {
     available,
     missing,
-    scoreText: `${available.length} / ${checks.length} Verified Rules`
+    scoreText: `${available.length} / ${checks.length} Checks`
   };
 }
 
-/**
- * REUSABLE FASTAPI CLIENT LAYER
- * Only calls documented endpoints from TradeMind backend handover.
- */
 const TradeMindApi = {
   async request(path, params = null) {
     const dedupeKey = `${path}?${params ? new URLSearchParams(params).toString() : ""}`;
@@ -2286,8 +2282,8 @@ function normalizeLimitOrder(ord, fallbackStatus) {
     completedRaw,
     expiredRaw,
     invalidatedRaw,
-    pktTime: createdRaw ? formatPktDateTime(createdRaw) : "Missing timestamp",
-    createdPkt: createdRaw ? formatPktDateTime(createdRaw) : "Missing timestamp",
+    pktTime: createdRaw ? formatPktDateTime(createdRaw) : "--",
+    createdPkt: createdRaw ? formatPktDateTime(createdRaw) : "--",
     activatedPkt: activatedRaw ? formatPktDateTime(activatedRaw) : null,
     completedPkt: completedRaw ? formatPktDateTime(completedRaw) : null,
     expiredPkt: expiredRaw ? formatPktDateTime(expiredRaw) : null,
@@ -2342,7 +2338,7 @@ function renderSignalCard(s) {
           </div>
         ` : ""}
         <div class="tm-meta-line">
-          <span class="tm-meta-lbl">Quality Checks:</span>
+          <span class="tm-meta-lbl">Checklist:</span>
           <span class="tm-meta-val">${escapeHtml(q.scoreText)}</span>
         </div>
         <div class="tm-meta-line">
@@ -2406,9 +2402,7 @@ function updateGlobalBanner() {
   }
 }
 
-/**
- * FEATURE 3: MARKET SESSIONS CLOCK (ASIAN, LONDON, NEW YORK + DST + PKT)
- */
+/* MARKET SESSIONS CLOCK */
 const MarketSessionsClock = {
   getMinutesInZone(nowMs, timeZone) {
     const parts = new Intl.DateTimeFormat("en-GB", {
@@ -2448,28 +2442,24 @@ const MarketSessionsClock = {
     const londonDst = this.isDstActiveInZone(nowMs, "Europe/London");
     const nyDst = this.isDstActiveInZone(nowMs, "America/New_York");
 
-    // Standard UTC hours converted to PKT (UTC+5):
-    // Asian (Tokyo): 00:00 - 09:00 UTC => 05:00 - 14:00 PKT
-    // London: 08:00 - 16:30 UTC (BST 07:00 - 15:30 UTC) => PKT shift -60m when DST active
-    // New York: 13:30 - 20:00 UTC (EDT 12:30 - 19:00 UTC) => PKT shift -60m when DST active
     const defs = [
       {
         name: "Asian (Tokyo)",
         startPkt: 5 * 60,
         endPkt: 14 * 60,
-        dstNote: "No DST"
+        dstNote: "Standard"
       },
       {
         name: "London",
         startPkt: (13 * 60) - (londonDst ? 60 : 0),
         endPkt: (21 * 60 + 30) - (londonDst ? 60 : 0),
-        dstNote: londonDst ? "BST active" : "GMT standard"
+        dstNote: londonDst ? "BST" : "GMT"
       },
       {
         name: "New York",
         startPkt: (18 * 60 + 30) - (nyDst ? 60 : 0),
         endPkt: (25 * 60) - (nyDst ? 60 : 0),
-        dstNote: nyDst ? "EDT active" : "EST standard"
+        dstNote: nyDst ? "EDT" : "EST"
       }
     ];
 
@@ -2499,7 +2489,7 @@ const MarketSessionsClock = {
 
     return {
       items,
-      activeSummary: activeNames.length ? activeNames.join(" + ") : "Quiet / Off-Peak",
+      activeSummary: activeNames.length ? activeNames.join(" + ") : "Quiet Session",
       nearestLabel
     };
   },
@@ -2513,7 +2503,7 @@ const MarketSessionsClock = {
     const st = this.getSessionsState(Date.now());
     badge.textContent = st.activeSummary;
     badge.className = `tm-badge ${st.items.some(i => i.isOpen) ? "badge-active" : "badge-closed"}`;
-    cdEl.textContent = `Next transition: ${st.nearestLabel} (PKT)`;
+    cdEl.textContent = `Next: ${st.nearestLabel} (PKT)`;
 
     listEl.innerHTML = st.items.map(s => `
       <div class="tm-session-row">
@@ -2530,20 +2520,68 @@ const MarketSessionsClock = {
   }
 };
 
-/**
- * FEATURE 2: RISK & LOT SIZE CALCULATOR
- * Blocks lot size calculation if verified symbol contract/tick specs are missing.
- */
+/* RISK & LOT SIZE CALCULATOR */
 const RiskLotCalculator = {
+  defaultsBySymbol: {
+    XAUUSD: { valPerPoint: 100, note: "100 oz / 1.0 lot (USD per 1.00 move)" },
+    XAGUSD: { valPerPoint: 5000, note: "5,000 oz / 1.0 lot (USD per 1.00 move)" },
+    EURUSD: { valPerPoint: 100000, note: "100,000 units / 1.0 lot (USD per 1.00000 move)" }
+  },
+
+  onSymbolChange() {
+    const sym = String(document.getElementById("calcSymbolSelect")?.value || "XAUUSD").toUpperCase();
+    const specInput = document.getElementById("calcContractSizeInput");
+    const tickInput = document.getElementById("calcTickValueInput");
+    const def = this.defaultsBySymbol[sym] || this.defaultsBySymbol.XAUUSD;
+    if (specInput && !specInput.value.trim()) {
+      specInput.placeholder = def.note;
+    }
+    if (tickInput && !tickInput.value.trim()) {
+      tickInput.placeholder = `e.g. ${def.valPerPoint}`;
+    }
+    this.calculate(false);
+  },
+
   onChange() {
+    this.calculate(false);
+  },
+
+  clearFields() {
+    ["calcBalanceInput", "calcRiskPctInput", "calcEntryInput", "calcSlInput", "calcTpInput", "calcTickValueInput", "calcContractSizeInput"].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = "";
+    });
+    const riskAmtOut = document.getElementById("calcRiskAmtOut");
+    const lotOut = document.getElementById("calcLotSizeOut");
+    const rrOut = document.getElementById("calcRrOut");
+    const specOut = document.getElementById("calcSpecStatusOut");
+    const warnBox = document.getElementById("calcWarningBox");
+    if (riskAmtOut) riskAmtOut.textContent = "--";
+    if (lotOut) lotOut.textContent = "--";
+    if (rrOut) rrOut.textContent = "--";
+    if (specOut) {
+      specOut.textContent = "Ready";
+      specOut.style.color = "var(--text-muted)";
+    }
+    if (warnBox) {
+      warnBox.className = "tm-info-box";
+      warnBox.textContent = "Enter Balance, Risk %, Entry, and Stop Loss, then click Calculate Lot Size.";
+    }
+  },
+
+  calculate(explicitClick = false) {
+    const sym = String(document.getElementById("calcSymbolSelect")?.value || "XAUUSD").toUpperCase();
     const bal = Number(document.getElementById("calcBalanceInput")?.value);
     const riskPct = Number(document.getElementById("calcRiskPctInput")?.value);
     const entry = Number(document.getElementById("calcEntryInput")?.value);
     const sl = Number(document.getElementById("calcSlInput")?.value);
     const tp = Number(document.getElementById("calcTpInput")?.value);
     const dir = String(document.getElementById("calcDirectionSelect")?.value || "BUY").toUpperCase();
-    const tickValPerLot = Number(document.getElementById("calcTickValueInput")?.value);
-    const specText = String(document.getElementById("calcContractSizeInput")?.value || "").trim();
+
+    const def = this.defaultsBySymbol[sym] || this.defaultsBySymbol.XAUUSD;
+    const rawTickVal = Number(document.getElementById("calcTickValueInput")?.value);
+    const tickValPerLot = (Number.isFinite(rawTickVal) && rawTickVal > 0) ? rawTickVal : def.valPerPoint;
+    const specText = String(document.getElementById("calcContractSizeInput")?.value || "").trim() || def.note;
 
     const riskAmtOut = document.getElementById("calcRiskAmtOut");
     const lotOut = document.getElementById("calcLotSizeOut");
@@ -2556,7 +2594,7 @@ const RiskLotCalculator = {
     const riskAmount = (hasValidBalance && hasValidRiskPct) ? (bal * (riskPct / 100)) : null;
 
     if (riskAmtOut) {
-      riskAmtOut.textContent = riskAmount !== null ? riskAmount.toFixed(2) : "Unavailable";
+      riskAmtOut.textContent = riskAmount !== null ? riskAmount.toFixed(2) : "--";
     }
 
     let rrVal = null;
@@ -2568,43 +2606,42 @@ const RiskLotCalculator = {
       }
     }
     if (rrOut) {
-      rrOut.textContent = rrVal !== null ? `1 : ${rrVal.toFixed(2)}` : "Unavailable";
-    }
-
-    const hasVerifiedSpecs = Boolean(specText.length > 0 && Number.isFinite(tickValPerLot) && tickValPerLot > 0);
-    if (specOut) {
-      specOut.textContent = hasVerifiedSpecs ? "Verified" : "Unverified";
-      specOut.style.color = hasVerifiedSpecs ? "var(--bull)" : "var(--warn)";
+      rrOut.textContent = rrVal !== null ? `1 : ${rrVal.toFixed(2)}` : "--";
     }
 
     const stopDist = (Number.isFinite(entry) && Number.isFinite(sl) && entry > 0 && sl > 0)
       ? Math.abs(entry - sl)
       : null;
 
-    if (hasVerifiedSpecs && riskAmount !== null && stopDist && stopDist > 0) {
+    if (riskAmount !== null && stopDist && stopDist > 0) {
       const suggestedLot = riskAmount / (stopDist * tickValPerLot);
       if (Number.isFinite(suggestedLot) && suggestedLot > 0) {
         if (lotOut) lotOut.textContent = suggestedLot.toFixed(2);
+        if (specOut) {
+          specOut.textContent = "Calculated";
+          specOut.style.color = "var(--bull)";
+        }
         if (warnBox) {
           warnBox.className = "tm-info-box";
-          warnBox.textContent = `Calculated from entered balance, risk %, stop distance (${stopDist.toFixed(5)}), and verified tick/contract specs (${specText}). Visual calculation only — no broker order placed.`;
+          warnBox.textContent = `${sym} ${dir} · Risk $${riskAmount.toFixed(2)} · SL Dist ${stopDist.toFixed(sym === "EURUSD" ? 5 : 2)} · ${specText}`;
         }
         return;
       }
     }
 
-    if (lotOut) lotOut.textContent = "Unavailable";
+    if (lotOut) lotOut.textContent = "--";
+    if (specOut) {
+      specOut.textContent = explicitClick ? "Check Inputs" : "Ready";
+      specOut.style.color = explicitClick ? "var(--warn)" : "var(--text-muted)";
+    }
     if (warnBox) {
-      warnBox.className = "tm-warn-box";
-      warnBox.textContent = "Lot size is Unavailable: provide valid balance, risk %, entry/SL prices, and verified symbol contract size + tick value.";
+      warnBox.className = explicitClick ? "tm-warn-box" : "tm-info-box";
+      warnBox.textContent = "Please enter valid Balance, Risk %, Entry, and Stop Loss (with SL on the loss side of Entry).";
     }
   }
 };
 
-/**
- * FEATURE 1: ADVANCED PERFORMANCE ANALYTICS (COMPLETED RECORDS ONLY)
- * Never counts pending signals/orders as completed trades.
- */
+/* ADVANCED PERFORMANCE ANALYTICS */
 const AdvancedAnalyticsEngine = {
   windowFilter: "ALL",
 
@@ -2740,7 +2777,7 @@ const AdvancedAnalyticsEngine = {
     const tfStats = this.buildStatsTable(rows, "tf");
 
     const bestWorstText = arr => {
-      if (!arr.length) return "Unavailable";
+      if (!arr.length) return "--";
       const sorted = [...arr].sort((a, b) => b.winRate - a.winRate || b.tp - a.tp);
       const best = sorted[0];
       const worst = sorted[sorted.length - 1];
@@ -2782,10 +2819,7 @@ const AdvancedAnalyticsEngine = {
   }
 };
 
-/**
- * FEATURE 5: DAILY RISK MONITOR (PKT · SIGNAL STATS ONLY)
- * Separates signal performance from broker account P/L; shows Unavailable when risk data is missing.
- */
+/* DAILY RISK MONITOR */
 const DailyRiskMonitor = {
   _storageKey: "trademind_daily_risk_v1",
 
@@ -2847,47 +2881,45 @@ const DailyRiskMonitor = {
     const warnBox = document.getElementById("drmWarningBox");
     const badge = document.getElementById("drmStatusBadge");
 
-    let remText = "Unavailable";
+    let remText = "--";
     const warnings = [];
 
     if (Number.isFinite(dailyLimit) && dailyLimit > 0 && perTradeRiskAmt !== null) {
       const estimatedUsedRisk = slToday * perTradeRiskAmt;
       const rem = dailyLimit - estimatedUsedRisk;
       remText = rem.toFixed(2);
-      if (rem <= 0) warnings.push("Daily risk allowance reached or exceeded.");
+      if (rem <= 0) warnings.push("Daily risk limit reached.");
     } else {
-      warnings.push("Remaining risk is Unavailable: enter Daily Risk Limit plus Account Balance and Risk %.");
+      warnings.push("Enter Daily Risk Limit, Balance, and Risk % to calculate remaining risk.");
     }
 
     if (Number.isFinite(maxTrades) && maxTrades > 0 && tradesUsed >= maxTrades) {
-      warnings.push(`Daily max trades limit (${maxTrades}) reached for ${todayIso} PKT.`);
+      warnings.push(`Daily max trades (${maxTrades}) reached for ${todayIso} PKT.`);
     }
 
     if (remEl) {
       remEl.textContent = remText;
-      remEl.style.color = remText === "Unavailable" ? "var(--text-muted)" : (Number(remText) <= 0 ? "var(--bear)" : "var(--accent-dark)");
+      remEl.style.color = remText === "--" ? "var(--text-muted)" : (Number(remText) <= 0 ? "var(--bear)" : "var(--accent-dark)");
     }
 
     if (badge) {
-      if (warnings.some(w => w.includes("reached") || w.includes("exceeded"))) {
+      if (warnings.some(w => w.includes("reached"))) {
         badge.textContent = "Limit Reached";
         badge.className = "tm-badge badge-sell";
       } else {
-        badge.textContent = "Signal Only";
+        badge.textContent = "Active";
         badge.className = "tm-badge badge-active";
       }
     }
 
     if (warnBox) {
-      warnBox.className = warnings.some(w => w.includes("reached") || w.includes("exceeded")) ? "tm-warn-box" : "tm-info-box";
-      warnBox.textContent = `${warnings.join(" ")} Broker account P/L is separate and not claimed without verified broker data.`;
+      warnBox.className = warnings.some(w => w.includes("reached")) ? "tm-warn-box" : "tm-info-box";
+      warnBox.textContent = warnings.join(" ");
     }
   }
 };
 
-/**
- * FEATURE 6: REPORTS & EXPORT (DAILY / WEEKLY / MONTHLY / SYMBOL / TF + CSV IN PKT)
- */
+/* REPORTS & EXPORT */
 const ReportsExportEngine = {
   period: "DAILY",
 
@@ -2979,7 +3011,7 @@ const ReportsExportEngine = {
       o.sl,
       o.tp,
       o.status,
-      o.createdRaw ? formatPktDateTime(o.createdRaw) : "Missing timestamp",
+      o.createdRaw ? formatPktDateTime(o.createdRaw) : "--",
       o.activatedRaw ? formatPktDateTime(o.activatedRaw) : "--",
       o.completedRaw ? formatPktDateTime(o.completedRaw) : "--",
       o.expiredRaw ? formatPktDateTime(o.expiredRaw) : "--"
@@ -3048,9 +3080,7 @@ const ReportsExportEngine = {
   }
 };
 
-/**
- * FEATURE 7 & FEATURE 8 STATUS: SYSTEM HEALTH MONITOR & WIDGET SNAPSHOT
- */
+/* SYSTEM HEALTH MONITOR & WIDGET SNAPSHOT */
 const SystemHealthMonitor = {
   render() {
     const rowsEl = document.getElementById("sysHealthRowsContainer");
@@ -3058,32 +3088,32 @@ const SystemHealthMonitor = {
     const badgeEl = document.getElementById("sysHealthOverallBadge");
     const widgetPrev = document.getElementById("widgetSnapshotPreview");
 
-    const backendStatus = TradeMindState.backendOnline ? "ON (ONLINE)" : "OFF (OFFLINE)";
+    const backendStatus = TradeMindState.backendOnline ? "ONLINE" : "OFFLINE";
     const apiConn = TradeMindState.backendOnline
       ? `Connected (${TradeMindConfig.apiBaseUrl})`
       : (TradeMindState.lastBackendError || "Disconnected");
     const marketFeed = TradeMindState.markets.length
       ? `${TradeMindState.markets.length} pairs loaded`
-      : "No market feed data";
-    const lastUpdate = TradeMindState.lastSyncPkt || "Never synced";
+      : "No market data";
+    const lastUpdate = TradeMindState.lastSyncPkt || "--";
     const signalFeed = TradeMindState.backendOnline
       ? `${TradeMindState.activeSignals.length} active / ${TradeMindState.historySignals.length} closed`
-      : "Unavailable";
+      : "--";
 
     let notifPerm = "Unsupported";
     if ("Notification" in window) {
-      notifPerm = `${Notification.permission} (${PreferencesEngine.notificationsEnabled ? "Master ON" : "Master OFF"})`;
+      notifPerm = `${Notification.permission} (${PreferencesEngine.notificationsEnabled ? "ON" : "OFF"})`;
     }
 
-    const widgetStatus = "Native AppWidgetProvider / AppMint build pending";
+    const widgetStatus = "Preview Ready";
     const warnings = [];
     if (!TradeMindState.backendOnline) {
-      warnings.push("Backend is offline — live data may be stale or unavailable.");
+      warnings.push("Backend is offline — showing cached or empty state.");
     }
     if (typeof TvChart !== "undefined" && TvChart.evaluateLiveFeedHealth) {
       const feedState = TvChart.evaluateLiveFeedHealth();
       if (feedState !== "LIVE") {
-        warnings.push(`Chart/Market feed status: ${feedState}.`);
+        warnings.push(`Chart feed: ${feedState}.`);
       }
     }
 
@@ -3093,9 +3123,9 @@ const SystemHealthMonitor = {
         ["API Connection", apiConn],
         ["Market Feed", marketFeed],
         ["Last Update (PKT)", lastUpdate],
-        ["Instant Signal Feed", signalFeed],
+        ["Signal Feed", signalFeed],
         ["Notifications", notifPerm],
-        ["Widget Status", widgetStatus]
+        ["Widget", widgetStatus]
       ];
       rowsEl.innerHTML = healthRows.map(([k, v]) => `
         <div class="tm-meta-line"><span class="tm-meta-lbl">${escapeHtml(k)}:</span><span class="tm-meta-val">${escapeHtml(v)}</span></div>
@@ -3103,7 +3133,7 @@ const SystemHealthMonitor = {
     }
 
     if (badgeEl) {
-      badgeEl.textContent = warnings.length ? "Warning" : "Healthy";
+      badgeEl.textContent = warnings.length ? "Check" : "Healthy";
       badgeEl.className = `tm-badge ${warnings.length ? "badge-pending" : "badge-active"}`;
     }
 
@@ -3137,10 +3167,7 @@ const SystemHealthMonitor = {
   }
 };
 
-/**
- * TERMUX ON/OFF CONTROL ENGINE (SETTINGS)
- * Launches Termux start.sh / stop.sh and polls /health.
- */
+/* TERMUX ON/OFF CONTROL ENGINE */
 const TermuxControlEngine = {
   isOn: false,
   busy: false,
@@ -3221,7 +3248,7 @@ const TermuxControlEngine = {
     if (TradeMindState.backendOnline) {
       this.setUi(true, "Termux backend ONLINE (127.0.0.1:8000)");
     } else {
-      this.setUi(false, "start.sh sent — backend not responding on 127.0.0.1:8000 yet");
+      this.setUi(false, "start.sh sent — backend not responding yet");
     }
   },
 
@@ -3244,7 +3271,7 @@ const TermuxControlEngine = {
     this.busy = false;
     await TradeMindApp.refreshAll(true);
     if (TradeMindState.backendOnline) {
-      this.setUi(true, "stop.sh sent — backend still responding on 127.0.0.1:8000");
+      this.setUi(true, "stop.sh sent — backend still responding");
     } else {
       this.setUi(false, "Termux backend OFFLINE (127.0.0.1:8000)");
     }
@@ -3260,14 +3287,6 @@ const TermuxControlEngine = {
   }
 };
 
-/**
- * COMPLETE EVENT NOTIFICATION SYSTEM & DEDUPLICATION ENGINE
- * Covers:
- * - new_buy_signal, new_sell_signal, signal_tp_hit, signal_sl_hit
- * - limit_created, limit_activated, limit_tp_hit, limit_sl_hit, limit_expired
- * - trade_completed
- * Never alerts on initial baseline load; deduplicates across polls and refreshes.
- */
 const EVENT_NOTIFICATION_DEFINITIONS = [
   { key: "new_buy_signal", label: "New BUY Signal", desc: "Instant BUY signal created" },
   { key: "new_sell_signal", label: "New SELL Signal", desc: "Instant SELL signal created" },
@@ -3397,7 +3416,7 @@ const SignalNotificationTracker = {
       if (!s || !s.id) return;
       const isBuy = s.direction.includes("BUY") || s.direction === "LONG";
       const prefKey = isBuy ? "new_buy_signal" : "new_sell_signal";
-      const createdPkt = s.createdRaw ? formatPktDateTime(s.createdRaw) : "Timestamp unavailable";
+      const createdPkt = s.createdRaw ? formatPktDateTime(s.createdRaw) : "--";
       this.dispatchEvent({
         uniqueKey: `${prefKey}:${s.id}:${s.createdRaw || s.pktTime || ""}`,
         eventPrefKey: prefKey,
@@ -3417,7 +3436,7 @@ const SignalNotificationTracker = {
       const out = String(s.outcome || "").toUpperCase();
       const st = String(s.status || "").toUpperCase();
       const doneStamp = s.completedRaw || s.completedPkt || "";
-      const donePkt = doneStamp ? formatPktDateTime(doneStamp) : "Timestamp unavailable";
+      const donePkt = doneStamp ? formatPktDateTime(doneStamp) : "--";
 
       if (out.includes("TP") || out === "WIN" || st === "TP HIT" || st === "TP_HIT") {
         this.dispatchEvent({
@@ -3462,7 +3481,7 @@ const SignalNotificationTracker = {
     (TradeMindState.pendingLimits || []).forEach(o => {
       if (!o || !o.id) return;
       const cStamp = o.createdRaw || o.createdPkt || "";
-      const cPkt = cStamp ? formatPktDateTime(cStamp) : "Timestamp unavailable";
+      const cPkt = cStamp ? formatPktDateTime(cStamp) : "--";
       this.dispatchEvent({
         uniqueKey: `limit_created:${o.id}:${cStamp}`,
         eventPrefKey: "limit_created",
@@ -3493,7 +3512,7 @@ const SignalNotificationTracker = {
             `${o.symbol} · ${o.orderType} · ${o.tf}`,
             `Entry: ${o.entry}`,
             `TP: ${o.tp}`,
-            `Completed: ${doneStamp ? formatPktDateTime(doneStamp) : "Timestamp unavailable"}`
+            `Completed: ${doneStamp ? formatPktDateTime(doneStamp) : "--"}`
           ]
         });
       } else if (st.includes("SL")) {
@@ -3505,7 +3524,7 @@ const SignalNotificationTracker = {
             `${o.symbol} · ${o.orderType} · ${o.tf}`,
             `Entry: ${o.entry}`,
             `SL: ${o.sl}`,
-            `Completed: ${doneStamp ? formatPktDateTime(doneStamp) : "Timestamp unavailable"}`
+            `Completed: ${doneStamp ? formatPktDateTime(doneStamp) : "--"}`
           ]
         });
       } else if (st === "EXPIRED") {
@@ -3516,7 +3535,7 @@ const SignalNotificationTracker = {
           lines: [
             `${o.symbol} · ${o.orderType} · ${o.tf}`,
             `Entry: ${o.entry}`,
-            `Expired: ${expStamp ? formatPktDateTime(expStamp) : "Timestamp unavailable"}`
+            `Expired: ${expStamp ? formatPktDateTime(expStamp) : "--"}`
           ]
         });
       } else if (st === "ACTIVATED" || st === "TRIGGERED") {
@@ -3528,7 +3547,7 @@ const SignalNotificationTracker = {
             `${o.symbol} · ${o.orderType} · ${o.tf}`,
             `Entry: ${o.entry}`,
             `SL: ${o.sl} · TP: ${o.tp}`,
-            `Activated: ${actStamp ? formatPktDateTime(actStamp) : "Timestamp unavailable"}`
+            `Activated: ${actStamp ? formatPktDateTime(actStamp) : "--"}`
           ]
         });
       }
@@ -3542,7 +3561,7 @@ const SignalNotificationTracker = {
   notifyNewSignal(s) {
     const isBuy = String(s.direction || "").includes("BUY") || s.direction === "LONG";
     const prefKey = isBuy ? "new_buy_signal" : "new_sell_signal";
-    const createdShort = s.createdRaw ? formatPktShortDateTime(s.createdRaw) : "Timestamp unavailable";
+    const createdShort = s.createdRaw ? formatPktShortDateTime(s.createdRaw) : "--";
     this.dispatchEvent({
       uniqueKey: `${prefKey}:${s.id}:${s.createdRaw || s.pktTime || ""}`,
       eventPrefKey: prefKey,
@@ -3583,14 +3602,14 @@ const HomeEngine = {
       MarketSessionsClock.render();
     }
     if (typeof RiskLotCalculator !== "undefined") {
-      RiskLotCalculator.onChange();
+      RiskLotCalculator.calculate(false);
     }
 
     const marketsEl = document.getElementById("homeMarketsContainer");
     if (!TradeMindState.markets.length) {
       marketsEl.innerHTML = TradeMindState.backendOnline
         ? `<div class="tm-empty">No market records returned by backend.</div>`
-        : `<div class="tm-empty">Backend unavailable. Unable to load live market list.</div>`;
+        : `<div class="tm-empty">Backend offline. Unable to load live market list.</div>`;
     } else {
       marketsEl.innerHTML = TradeMindState.markets.map(m => `
         <div class="tm-card ${m.selected ? "selected-row" : ""}" style="cursor:pointer;" onclick="TvChart.openPair('${escapeHtml(m.symbol)}')">
@@ -3612,20 +3631,14 @@ const HomeEngine = {
     if (!TradeMindState.activeSignals.length) {
       sigEl.innerHTML = TradeMindState.backendOnline
         ? `<div class="tm-empty">No active signals right now.</div>`
-        : `<div class="tm-empty">Backend unavailable. Active signals could not be fetched.</div>`;
+        : `<div class="tm-empty">Backend offline. Active signals could not be fetched.</div>`;
     } else {
       sigEl.innerHTML = TradeMindState.activeSignals.map(renderSignalCard).join("");
     }
   }
 };
 
-/**
- * TRADINGVIEW-STYLE INTERACTIVE CANDLESTICK & DRAWING ENGINE
- * Visual-only active trade monitoring:
- * - Entry, Stop Loss, Take Profit, and Live Price horizontal lines with labels
- * - Signal creation candle marker using actual creation timestamp
- * - Removes active monitoring levels automatically when trade completes
- */
+/* TRADINGVIEW-STYLE INTERACTIVE CANDLESTICK & DRAWING ENGINE */
 const TvChart = {
   symbol: "XAUUSD",
   timeframe: "15M",
@@ -3957,13 +3970,13 @@ const TvChart = {
   evaluateLiveFeedHealth() {
     if (!TradeMindState.backendOnline || this.meta.status === "Error") {
       this.meta.isStale = true;
-      return "CONNECTION LOST";
+      return "OFFLINE";
     }
     const ageMs = this.meta.lastPriceArrivalMs ? (Date.now() - this.meta.lastPriceArrivalMs) : Infinity;
     const staleThresholdMs = Math.max(25000, this.timeframeSeconds(this.timeframe) * 1000 * 1.5);
     if (!this.bars.length || ageMs > staleThresholdMs) {
       this.meta.isStale = true;
-      return "LIVE DATA STALE";
+      return "STALE";
     }
     this.meta.isStale = false;
     return "LIVE";
@@ -3999,7 +4012,7 @@ const TvChart = {
       el.textContent = `${this.timeframe}: ${formatted}`;
     } else {
       el.classList.add("estimated");
-      el.textContent = `${this.timeframe}: ${formatted} (Est.)`;
+      el.textContent = `${this.timeframe}: ${formatted}`;
     }
 
     const feedBadge = document.getElementById("tvFeedStateBadge");
@@ -4008,12 +4021,12 @@ const TvChart = {
       if (state === "LIVE") {
         feedBadge.classList.add("live");
         feedBadge.textContent = "LIVE";
-      } else if (state === "LIVE DATA STALE") {
+      } else if (state === "STALE") {
         feedBadge.classList.add("stale");
-        feedBadge.textContent = "LIVE DATA STALE";
+        feedBadge.textContent = "STALE";
       } else {
         feedBadge.classList.add("lost");
-        feedBadge.textContent = "CONNECTION LOST";
+        feedBadge.textContent = "OFFLINE";
       }
     }
   },
@@ -4275,8 +4288,8 @@ const TvChart = {
     if (!bars.length) {
       ctx.fillStyle = "#64748b";
       const msg = this.meta.status === "Loading"
-        ? "Loading live candles from /market/candles..."
-        : (this.meta.error ? `Chart unavailable: ${this.meta.error}` : "No candle data returned by backend.");
+        ? "Loading candles..."
+        : (this.meta.error ? `Chart offline: ${this.meta.error}` : "No candle data available.");
       ctx.fillText(msg, 12, Math.round(plotH / 2));
       return;
     }
@@ -4357,7 +4370,6 @@ const TvChart = {
       ctx.fillText(activeLinePrice.toFixed(dec), plotW + 6, lastY + 3.5);
     }
 
-    /* SELECTED ACTIVE TRADE OVERLAY LEVELS & CREATION CANDLE MARKER */
     if (this.monitoredTrade && this.monitoredTrade.symbol === this.symbol) {
       const mt = this.monitoredTrade;
       if (Number.isFinite(mt.tpNum)) {
@@ -4590,12 +4602,7 @@ const TvChart = {
   }
 };
 
-/**
- * SIGNALS ENGINE
- * - Active signals show creation time converted to Asia/Karachi (PKT) and live market price.
- * - History signals filter strictly by completion date in PKT (default Today PKT),
- *   showing ONLY that selected date's completed records and daily totals.
- */
+/* SIGNALS ENGINE */
 const SignalsEngine = {
   mode: "ACTIVE",
   symbol: "ALL",
@@ -4745,7 +4752,7 @@ const SignalsEngine = {
       );
       listContainer.innerHTML = rows.length
         ? rows.map(renderSignalCard).join("")
-        : `<div class="tm-empty">${TradeMindState.backendOnline ? "No active signals returned for selected filter." : "Backend unavailable. Unable to load signals."}</div>`;
+        : `<div class="tm-empty">${TradeMindState.backendOnline ? "No active signals for selected filter." : "Backend offline. Unable to load signals."}</div>`;
       return;
     }
 
@@ -4779,7 +4786,7 @@ const SignalsEngine = {
 
     listContainer.innerHTML = exactDateRows.length
       ? exactDateRows.map(renderSignalCard).join("")
-      : `<div class="tm-empty">${TradeMindState.backendOnline ? `No completed signals on ${escapeHtml(this.selectedHistoryDate)} PKT for selected filter.` : "Backend unavailable. Unable to load signal history."}</div>`;
+      : `<div class="tm-empty">${TradeMindState.backendOnline ? `No completed signals on ${escapeHtml(this.selectedHistoryDate)} PKT.` : "Backend offline. Unable to load signal history."}</div>`;
   },
 
   openDetail(id) {
@@ -4830,18 +4837,17 @@ const SignalsEngine = {
 
       <div class="tm-card" style="margin-bottom:12px;padding:10px 12px;">
         <div class="row-between">
-          <span class="tm-metric-label">Signal Quality Breakdown</span>
+          <span class="tm-metric-label">Signal Checklist</span>
           <span class="tm-badge badge-closed">${escapeHtml(q.scoreText)}</span>
         </div>
         <div class="tm-qual-list">
-          ${q.available.map(c => `<div class="tm-meta-line"><span class="tm-meta-lbl">${escapeHtml(c.label)}:</span><span class="tm-meta-val" style="color:var(--bull);">Verified${c.detail ? ` (${escapeHtml(c.detail)})` : ""}</span></div>`).join("")}
-          ${q.missing.map(c => `<div class="tm-meta-line"><span class="tm-meta-lbl">${escapeHtml(c.label)}:</span><span class="tm-meta-val" style="color:var(--warn);">Unverified</span></div>`).join("")}
+          ${q.available.map(c => `<div class="tm-meta-line"><span class="tm-meta-lbl">${escapeHtml(c.label)}:</span><span class="tm-meta-val" style="color:var(--bull);">Passed${c.detail ? ` (${escapeHtml(c.detail)})` : ""}</span></div>`).join("")}
+          ${q.missing.map(c => `<div class="tm-meta-line"><span class="tm-meta-lbl">${escapeHtml(c.label)}:</span><span class="tm-meta-val" style="color:var(--text-muted);">Pending</span></div>`).join("")}
         </div>
-        <div class="tm-sec-meta" style="margin-top:6px;">Rule-check score only — not a winning probability.</div>
       </div>
 
       <div style="font-size:12.5px;font-weight:700;margin-bottom:4px;">${escapeHtml(s.signalType)} (${escapeHtml(s.strategy)})</div>
-      <div style="font-size:12px;color:var(--text-secondary);margin-bottom:12px;">${s.confirmationTimeframes ? "Confirmations: " + escapeHtml(s.confirmationTimeframes) : "Backend signal record"}</div>
+      <div style="font-size:12px;color:var(--text-secondary);margin-bottom:12px;">${s.confirmationTimeframes ? "Confirmations: " + escapeHtml(s.confirmationTimeframes) : "Signal setup"}</div>
       ${isActive ? `
         <button class="tm-btn" style="width:100%;margin-bottom:8px;padding:9px;" onclick="SignalsEngine.closeDetail(); TvChart.monitorSignal('${escapeHtml(s.id)}')">
           Monitor Active Levels on Chart
@@ -4857,14 +4863,7 @@ const SignalsEngine = {
   }
 };
 
-/**
- * LIMITS ENGINE
- * - Pending tab: overall pending count + activated count (from existing backend data),
- *   expiry-date calendar in PKT (default Today PKT), shows ONLY pending orders expiring on selected date,
- *   hides raw order IDs in UI and renders compact Created / Expires / Expiry countdown block.
- * - History tab: PKT date/calendar selector, classifies by actual completion (TP/SL) or expiry timestamp,
- *   keeps Activated, TP Hit, SL Hit, Expired, and Pending counts separate without double-counting.
- */
+/* LIMITS ENGINE */
 const LimitsEngine = {
   mode: "PENDING",
   symbol: "ALL",
@@ -5116,9 +5115,9 @@ const LimitsEngine = {
 
   renderOrderCard(o, isPendingTab) {
     const isBuy = o.orderType.includes("BUY");
-    const createdText = o.createdRaw ? formatPktDateTime(o.createdRaw) : "Missing timestamp";
-    const expiresText = o.expiredRaw ? formatPktDateTime(o.expiredRaw) : "Missing timestamp";
-    const expiryCountdown = o.expiredRaw ? formatExpiryRemaining(o.expiredRaw, Date.now()) : "Missing timestamp";
+    const createdText = o.createdRaw ? formatPktDateTime(o.createdRaw) : "--";
+    const expiresText = o.expiredRaw ? formatPktDateTime(o.expiredRaw) : "--";
+    const expiryCountdown = o.expiredRaw ? formatExpiryRemaining(o.expiredRaw, Date.now()) : "--";
     const completedText = o.completedRaw ? formatPktDateTime(o.completedRaw) : null;
     const activatedText = o.activatedRaw ? formatPktDateTime(o.activatedRaw) : null;
 
@@ -5231,7 +5230,7 @@ const LimitsEngine = {
 
       listEl.innerHTML = expiringOnSelectedDate.length
         ? expiringOnSelectedDate.map(o => this.renderOrderCard(o, true)).join("")
-        : `<div class="tm-empty">${TradeMindState.backendOnline ? `No pending orders expiring on ${escapeHtml(this.selectedPendingDate)} PKT for selected filter.` : "Backend unavailable. Unable to load pending limit orders."}</div>`;
+        : `<div class="tm-empty">${TradeMindState.backendOnline ? `No pending orders expiring on ${escapeHtml(this.selectedPendingDate)} PKT.` : "Backend offline. Unable to load pending limit orders."}</div>`;
       return;
     }
 
@@ -5277,15 +5276,11 @@ const LimitsEngine = {
 
     listEl.innerHTML = matchingOrders.length
       ? matchingOrders.map(o => this.renderOrderCard(o, false)).join("")
-      : `<div class="tm-empty">${TradeMindState.backendOnline ? `No limit order records for ${escapeHtml(this.selectedHistoryDate)} PKT under selected filter.` : "Backend unavailable. Unable to load limit order history."}</div>`;
+      : `<div class="tm-empty">${TradeMindState.backendOnline ? `No limit order records for ${escapeHtml(this.selectedHistoryDate)} PKT.` : "Backend offline. Unable to load limit order history."}</div>`;
   }
 };
 
-
-/**
- * CALENDAR HISTORY UI ENGINE (PKT / Asia:Karachi)
- * Preserves existing Stats calendar behavior with strict Asia/Karachi conversion.
- */
+/* CALENDAR HISTORY UI ENGINE */
 const CalendarHistoryEngine = {
   activeTab: "signals",
   signalsMonth: null,
@@ -5708,7 +5703,7 @@ const PerformanceEngine = {
 
     const histEl = document.getElementById("perfHistoryContainer");
     if (!TradeMindState.historySignals.length) {
-      histEl.innerHTML = `<div class="tm-empty">${TradeMindState.backendOnline ? "No closed signals returned by backend." : "Backend unavailable. Unable to load signal history."}</div>`;
+      histEl.innerHTML = `<div class="tm-empty">${TradeMindState.backendOnline ? "No closed signals returned by backend." : "Backend offline. Unable to load signal history."}</div>`;
     } else {
       histEl.innerHTML = TradeMindState.historySignals.map(renderSignalCard).join("");
     }
@@ -5923,7 +5918,7 @@ const PreferencesEngine = {
 
     if (!("Notification" in window)) {
       btn.textContent = "Unsupported";
-      status.textContent = "Notifications are not supported in this webview/browser.";
+      status.textContent = "Notifications are not supported in this browser.";
       return;
     }
 
@@ -5935,10 +5930,10 @@ const PreferencesEngine = {
 
     if (this.notificationsEnabled && Notification.permission === "granted") {
       btn.textContent = "Disable";
-      status.textContent = "Enabled for active session (closed-app push requires FCM/native layer).";
+      status.textContent = "Enabled for active session.";
     } else {
       btn.textContent = "Enable";
-      status.textContent = "Active session alerts only (closed-app push requires FCM/native layer).";
+      status.textContent = "Alerts while app or browser is open.";
     }
   }
 };
@@ -6119,6 +6114,9 @@ const TradeMindApp = {
     if (typeof DailyRiskMonitor !== "undefined") {
       DailyRiskMonitor.loadInputs();
     }
+    if (typeof RiskLotCalculator !== "undefined") {
+      RiskLotCalculator.onSymbolChange();
+    }
     document.getElementById("prefApiUrlInput").value = TradeMindConfig.apiBaseUrl;
     document.getElementById("prefPollIntervalSelect").value = String(PreferencesEngine.pollIntervalMs);
     PreferencesEngine.updateNotifUi();
@@ -6130,9 +6128,6 @@ const TradeMindApp = {
     document.getElementById("tmPktClock").textContent = getPktClock();
     if (typeof MarketSessionsClock !== "undefined") {
       MarketSessionsClock.render();
-    }
-    if (typeof RiskLotCalculator !== "undefined") {
-      RiskLotCalculator.onChange();
     }
     TvChart.bindEvents();
     this.refreshAll(true);
