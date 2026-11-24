@@ -354,6 +354,39 @@
     border-top: 1px solid #eef2f6;
     font-size: 11px;
     color: var(--text-secondary);
+    flex-wrap: wrap;
+  }
+
+  .tm-meta-box {
+    margin-top: 8px;
+    padding: 8px 10px;
+    border-radius: 9px;
+    background: var(--bg-subtle);
+    border: 1px solid #e6efe9;
+    font-size: 11px;
+    color: var(--text-secondary);
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .tm-meta-line {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .tm-meta-lbl {
+    font-weight: 700;
+    color: var(--text-muted);
+  }
+
+  .tm-meta-val {
+    font-weight: 700;
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
   }
 
   .tm-status-banner {
@@ -584,7 +617,7 @@
     font-size: 12px;
   }
 
-  /* PERFORMANCE CALENDAR HISTORY */
+  /* PERFORMANCE CALENDAR HISTORY & DATE SELECTORS */
   .tm-cal-tabs {
     display: flex;
     background: var(--bg-subtle);
@@ -662,7 +695,7 @@
     border: 1px solid var(--border);
     background: var(--surface);
     border-radius: 9px;
-    min-height: 46px;
+    min-height: 44px;
     padding: 4px 3px;
     display: flex;
     flex-direction: column;
@@ -736,6 +769,19 @@
     margin-top: 8px;
   }
 
+  .tm-cal-stats-grid-5 {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 5px;
+    margin-top: 8px;
+  }
+
+  @media (max-width: 420px) {
+    .tm-cal-stats-grid-5 {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
   .tm-cal-mini-box {
     background: var(--bg-subtle);
     border: 1px solid var(--border);
@@ -760,6 +806,17 @@
     border-radius: 8px;
     padding: 7px 9px;
     margin-bottom: 8px;
+  }
+
+  .tm-date-picker-input {
+    padding: 5px 8px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 11.5px;
+    font-weight: 700;
+    background: var(--surface);
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
   }
 
 </style>
@@ -892,6 +949,60 @@
       <button class="tm-chip" data-val="4H" onclick="SignalsEngine.setTimeframe('4H')">4H</button>
     </div>
 
+    <!-- DATE-WISE INSTANT SIGNAL HISTORY PANEL (PKT) -->
+    <div id="signalsHistoryDatePanel" class="tm-card" style="display:none;">
+      <div class="row-between" style="margin-bottom:8px;">
+        <span class="tm-metric-label">Signal History Date (PKT)</span>
+        <span id="sigHistSelectedDateBadge" class="tm-badge badge-active">--</span>
+      </div>
+
+      <div class="tm-cal-nav-row">
+        <div class="row-inline">
+          <button class="tm-btn" type="button" onclick="SignalsEngine.shiftHistoryDate(-1)">Prev Day</button>
+          <input id="sigHistDateInput" type="date" class="tm-date-picker-input" onchange="SignalsEngine.setHistoryDate(this.value)" />
+          <button class="tm-btn" type="button" onclick="SignalsEngine.shiftHistoryDate(1)">Next Day</button>
+        </div>
+        <div class="row-inline">
+          <button class="tm-btn" type="button" onclick="SignalsEngine.selectHistoryShortcut('today')">Today</button>
+          <button class="tm-btn" type="button" onclick="SignalsEngine.selectHistoryShortcut('yesterday')">Yesterday</button>
+          <button id="sigHistCalToggleBtn" class="tm-btn" type="button" onclick="SignalsEngine.toggleHistoryCalendar()">Calendar</button>
+        </div>
+      </div>
+
+      <div id="sigHistCalendarBox" style="display:none;margin-bottom:8px;">
+        <div class="tm-cal-nav-row" style="margin-top:4px;">
+          <button class="tm-btn" type="button" onclick="SignalsEngine.shiftHistoryMonth(-1)">Prev Month</button>
+          <span id="sigHistCalMonthLabel" class="tm-cal-month-label">--</span>
+          <button class="tm-btn" type="button" onclick="SignalsEngine.shiftHistoryMonth(1)">Next Month</button>
+        </div>
+        <div class="tm-cal-weekdays">
+          <div class="tm-cal-weekday">Sun</div>
+          <div class="tm-cal-weekday">Mon</div>
+          <div class="tm-cal-weekday">Tue</div>
+          <div class="tm-cal-weekday">Wed</div>
+          <div class="tm-cal-weekday">Thu</div>
+          <div class="tm-cal-weekday">Fri</div>
+          <div class="tm-cal-weekday">Sat</div>
+        </div>
+        <div id="sigHistCalGrid" class="tm-cal-grid"></div>
+      </div>
+
+      <div class="tm-cal-stats-grid">
+        <div class="tm-cal-mini-box">
+          <div class="tm-lvl-key">Completed</div>
+          <div id="sigHistDailyTotal" class="tm-cal-mini-val" style="color:var(--accent-dark);">0</div>
+        </div>
+        <div class="tm-cal-mini-box">
+          <div class="tm-lvl-key">TP Wins</div>
+          <div id="sigHistDailyWins" class="tm-cal-mini-val" style="color:var(--bull);">0</div>
+        </div>
+        <div class="tm-cal-mini-box">
+          <div class="tm-lvl-key">SL Losses</div>
+          <div id="sigHistDailyLosses" class="tm-cal-mini-val" style="color:var(--bear);">0</div>
+        </div>
+      </div>
+    </div>
+
     <div id="signalsListContainer"></div>
   </section>
 
@@ -916,6 +1027,123 @@
       <button class="tm-chip" data-val="15M" onclick="LimitsEngine.setTimeframe('15M')">15M</button>
       <button class="tm-chip" data-val="1H" onclick="LimitsEngine.setTimeframe('1H')">1H</button>
       <button class="tm-chip" data-val="4H" onclick="LimitsEngine.setTimeframe('4H')">4H</button>
+    </div>
+
+    <!-- PENDING LIMIT ORDERS SUMMARY & EXPIRY CALENDAR (PKT) -->
+    <div id="limitsPendingPanel" class="tm-card">
+      <div class="tm-grid-2" style="margin-bottom:10px;">
+        <div class="tm-cal-mini-box" style="text-align:left;padding:9px 10px;">
+          <div class="tm-lvl-key">Overall Pending Orders</div>
+          <div id="limOverallPendingCount" class="tm-cal-mini-val" style="color:var(--warn);">0</div>
+        </div>
+        <div class="tm-cal-mini-box" style="text-align:left;padding:9px 10px;">
+          <div class="tm-lvl-key">Activated / Triggered</div>
+          <div id="limOverallActivatedCount" class="tm-cal-mini-val" style="color:var(--accent-dark);">0</div>
+        </div>
+      </div>
+
+      <div class="row-between" style="margin-bottom:8px;">
+        <span class="tm-metric-label">Expiry Date Calendar (PKT)</span>
+        <span id="limPendSelectedDateBadge" class="tm-badge badge-pending">--</span>
+      </div>
+
+      <div class="tm-cal-nav-row">
+        <div class="row-inline">
+          <button class="tm-btn" type="button" onclick="LimitsEngine.shiftPendingDate(-1)">Prev Day</button>
+          <input id="limPendDateInput" type="date" class="tm-date-picker-input" onchange="LimitsEngine.setPendingDate(this.value)" />
+          <button class="tm-btn" type="button" onclick="LimitsEngine.shiftPendingDate(1)">Next Day</button>
+        </div>
+        <div class="row-inline">
+          <button class="tm-btn" type="button" onclick="LimitsEngine.selectPendingShortcut('today')">Today</button>
+          <button class="tm-btn" type="button" onclick="LimitsEngine.selectPendingShortcut('yesterday')">Yesterday</button>
+          <button id="limPendCalToggleBtn" class="tm-btn" type="button" onclick="LimitsEngine.togglePendingCalendar()">Calendar</button>
+        </div>
+      </div>
+
+      <div id="limPendCalendarBox" style="display:none;margin-bottom:8px;">
+        <div class="tm-cal-nav-row" style="margin-top:4px;">
+          <button class="tm-btn" type="button" onclick="LimitsEngine.shiftPendingMonth(-1)">Prev Month</button>
+          <span id="limPendCalMonthLabel" class="tm-cal-month-label">--</span>
+          <button class="tm-btn" type="button" onclick="LimitsEngine.shiftPendingMonth(1)">Next Month</button>
+        </div>
+        <div class="tm-cal-weekdays">
+          <div class="tm-cal-weekday">Sun</div>
+          <div class="tm-cal-weekday">Mon</div>
+          <div class="tm-cal-weekday">Tue</div>
+          <div class="tm-cal-weekday">Wed</div>
+          <div class="tm-cal-weekday">Thu</div>
+          <div class="tm-cal-weekday">Fri</div>
+          <div class="tm-cal-weekday">Sat</div>
+        </div>
+        <div id="limPendCalGrid" class="tm-cal-grid"></div>
+      </div>
+
+      <div class="row-between" style="padding:7px 9px;border-radius:9px;background:var(--bg-subtle);border:1px solid #e2e8f0;">
+        <span class="tm-sec-meta" id="limPendDateSummaryLabel">Pending Expiring on Selected Date:</span>
+        <strong id="limPendDateCountBadge" style="font-size:12.5px;color:var(--warn);">0</strong>
+      </div>
+    </div>
+
+    <!-- LIMIT ORDERS HISTORY CALENDAR & DAILY BREAKDOWN (PKT) -->
+    <div id="limitsHistoryPanel" class="tm-card" style="display:none;">
+      <div class="row-between" style="margin-bottom:8px;">
+        <span class="tm-metric-label">Limit History Date (PKT)</span>
+        <span id="limHistSelectedDateBadge" class="tm-badge badge-closed">--</span>
+      </div>
+
+      <div class="tm-cal-nav-row">
+        <div class="row-inline">
+          <button class="tm-btn" type="button" onclick="LimitsEngine.shiftHistoryDate(-1)">Prev Day</button>
+          <input id="limHistDateInput" type="date" class="tm-date-picker-input" onchange="LimitsEngine.setHistoryDate(this.value)" />
+          <button class="tm-btn" type="button" onclick="LimitsEngine.shiftHistoryDate(1)">Next Day</button>
+        </div>
+        <div class="row-inline">
+          <button class="tm-btn" type="button" onclick="LimitsEngine.selectHistoryShortcut('today')">Today</button>
+          <button class="tm-btn" type="button" onclick="LimitsEngine.selectHistoryShortcut('yesterday')">Yesterday</button>
+          <button id="limHistCalToggleBtn" class="tm-btn" type="button" onclick="LimitsEngine.toggleHistoryCalendar()">Calendar</button>
+        </div>
+      </div>
+
+      <div id="limHistCalendarBox" style="display:none;margin-bottom:8px;">
+        <div class="tm-cal-nav-row" style="margin-top:4px;">
+          <button class="tm-btn" type="button" onclick="LimitsEngine.shiftHistoryMonth(-1)">Prev Month</button>
+          <span id="limHistCalMonthLabel" class="tm-cal-month-label">--</span>
+          <button class="tm-btn" type="button" onclick="LimitsEngine.shiftHistoryMonth(1)">Next Month</button>
+        </div>
+        <div class="tm-cal-weekdays">
+          <div class="tm-cal-weekday">Sun</div>
+          <div class="tm-cal-weekday">Mon</div>
+          <div class="tm-cal-weekday">Tue</div>
+          <div class="tm-cal-weekday">Wed</div>
+          <div class="tm-cal-weekday">Thu</div>
+          <div class="tm-cal-weekday">Fri</div>
+          <div class="tm-cal-weekday">Sat</div>
+        </div>
+        <div id="limHistCalGrid" class="tm-cal-grid"></div>
+      </div>
+
+      <div class="tm-cal-stats-grid-5">
+        <div class="tm-cal-mini-box">
+          <div class="tm-lvl-key">Activated</div>
+          <div id="limHistCountActivated" class="tm-cal-mini-val" style="color:var(--accent-dark);">0</div>
+        </div>
+        <div class="tm-cal-mini-box">
+          <div class="tm-lvl-key">TP Hit</div>
+          <div id="limHistCountTp" class="tm-cal-mini-val" style="color:var(--bull);">0</div>
+        </div>
+        <div class="tm-cal-mini-box">
+          <div class="tm-lvl-key">SL Hit</div>
+          <div id="limHistCountSl" class="tm-cal-mini-val" style="color:var(--bear);">0</div>
+        </div>
+        <div class="tm-cal-mini-box">
+          <div class="tm-lvl-key">Expired</div>
+          <div id="limHistCountExpired" class="tm-cal-mini-val" style="color:var(--neutral);">0</div>
+        </div>
+        <div class="tm-cal-mini-box">
+          <div class="tm-lvl-key">Pending</div>
+          <div id="limHistCountPending" class="tm-cal-mini-val" style="color:var(--warn);">0</div>
+        </div>
+      </div>
     </div>
 
     <div id="limitsListContainer"></div>
@@ -1126,8 +1354,8 @@
         <strong>Disabled (broker_order_placed: false)</strong>
       </div>
       <div class="row-between" style="font-size:12px;padding:4px 0;">
-        <span style="color:var(--text-secondary);">Background Push</span>
-        <strong>Not implemented</strong>
+        <span style="color:var(--text-secondary);">Background / Closed Push</span>
+        <strong>Requires FCM / Native Android layer</strong>
       </div>
     </div>
 
@@ -1155,7 +1383,7 @@
       <div class="row-between" style="padding:6px 0;border-top:1px solid #eef2f6;">
         <div>
           <div style="font-size:12px;font-weight:700;">Enable Notifications</div>
-          <div id="prefNotifStatusText" class="tm-sec-meta">Browser permission only (no background push)</div>
+          <div id="prefNotifStatusText" class="tm-sec-meta">Active session browser alerts only (no closed-app push)</div>
         </div>
         <button id="prefEnableNotifBtn" class="tm-btn" onclick="PreferencesEngine.toggleNotifications()">Enable</button>
       </div>
@@ -1233,6 +1461,136 @@ function getPktClock() {
   }
 }
 
+/**
+ * STRICT ASIA/KARACHI (PKT) TIMESTAMP & DATE HELPERS
+ * Handles UTC strings (e.g. "2026-11-24T08:06:00Z"), ISO strings without Z,
+ * and epoch timestamps without using arbitrary phone local timezone.
+ */
+function parseTimestampToUtcMs(rawTs) {
+  if (rawTs === undefined || rawTs === null) return null;
+  if (rawTs instanceof Date) {
+    const ms = rawTs.getTime();
+    return Number.isFinite(ms) ? ms : null;
+  }
+  if (typeof rawTs === "number") {
+    if (!Number.isFinite(rawTs)) return null;
+    return rawTs < 1e12 ? rawTs * 1000 : rawTs;
+  }
+  const str = String(rawTs).trim();
+  if (!str || str === "--") return null;
+
+  const direct = Date.parse(str);
+  if (Number.isFinite(direct)) return direct;
+
+  const isoSpace = str.includes("T") ? str : str.replace(" ", "T");
+  const hasTz = /(?:Z|[+-]\d{2}:?\d{2})$/i.test(isoSpace);
+  if (!hasTz && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?$/.test(isoSpace)) {
+    const asUtc = Date.parse(`${isoSpace}Z`);
+    if (Number.isFinite(asUtc)) return asUtc;
+  }
+
+  const fallback = Date.parse(isoSpace);
+  return Number.isFinite(fallback) ? fallback : null;
+}
+
+function getPktDatePartsFromMs(ms) {
+  if (!Number.isFinite(ms)) return null;
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: TradeMindConfig.timezone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).formatToParts(new Date(ms));
+  const map = {};
+  parts.forEach(p => { if (p.type !== "literal") map[p.type] = p.value; });
+  if (!map.year || !map.month || !map.day) return null;
+  return {
+    year: Number(map.year),
+    month: Number(map.month),
+    day: Number(map.day),
+    iso: `${map.year}-${map.month}-${map.day}`
+  };
+}
+
+function toPktDateKey(rawTs) {
+  const ms = parseTimestampToUtcMs(rawTs);
+  if (ms === null) return null;
+  const parts = getPktDatePartsFromMs(ms);
+  return parts ? parts.iso : null;
+}
+
+function formatPktDateTime(rawTs) {
+  const ms = parseTimestampToUtcMs(rawTs);
+  if (ms === null) {
+    const rawStr = rawTs ? String(rawTs).trim() : "";
+    return rawStr && rawStr !== "--" ? `${rawStr} PKT` : "Missing timestamp";
+  }
+  const d = new Date(ms);
+  const dateStr = new Intl.DateTimeFormat("en-GB", {
+    timeZone: TradeMindConfig.timezone,
+    day: "2-digit",
+    month: "short",
+    year: "numeric"
+  }).format(d);
+  const timeStr = new Intl.DateTimeFormat("en-US", {
+    timeZone: TradeMindConfig.timezone,
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true
+  }).format(d);
+  return `${dateStr} · ${timeStr} PKT`;
+}
+
+function formatPktShortDateTime(rawTs) {
+  const ms = parseTimestampToUtcMs(rawTs);
+  if (ms === null) {
+    const rawStr = rawTs ? String(rawTs).trim() : "";
+    return rawStr && rawStr !== "--" ? `${rawStr} PKT` : "Missing timestamp";
+  }
+  const d = new Date(ms);
+  const dateStr = new Intl.DateTimeFormat("en-GB", {
+    timeZone: TradeMindConfig.timezone,
+    day: "2-digit",
+    month: "short"
+  }).format(d);
+  const timeStr = new Intl.DateTimeFormat("en-US", {
+    timeZone: TradeMindConfig.timezone,
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true
+  }).format(d);
+  return `${dateStr} · ${timeStr} PKT`;
+}
+
+function formatExpiryRemaining(expiresRawTs, nowMs = Date.now()) {
+  const expMs = parseTimestampToUtcMs(expiresRawTs);
+  if (expMs === null) return "Expiry timestamp not provided";
+  const diffMs = expMs - nowMs;
+  if (diffMs <= 0) return "Expired";
+  const totalMinutes = Math.floor(diffMs / 60000);
+  const days = Math.floor(totalMinutes / (60 * 24));
+  const hours = Math.floor((totalMinutes % (60 * 24)) / 60);
+  const mins = totalMinutes % 60;
+  if (days > 0) {
+    return `In ${days} day${days === 1 ? "" : "s"} ${hours} hour${hours === 1 ? "" : "s"}`;
+  }
+  if (hours > 0) {
+    return `In ${hours} hour${hours === 1 ? "" : "s"} ${mins} min`;
+  }
+  return `In ${Math.max(1, mins)} min`;
+}
+
+function shiftIsoDate(isoDate, deltaDays) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(isoDate || "").trim());
+  if (!match) return getPktDatePartsFromMs(Date.now()).iso;
+  const baseUtc = Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+  const nextUtc = new Date(baseUtc + deltaDays * 86400000);
+  const y = nextUtc.getUTCFullYear();
+  const m = String(nextUtc.getUTCMonth() + 1).padStart(2, "0");
+  const d = String(nextUtc.getUTCDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
 function escapeHtml(val) {
   return String(val ?? "")
     .replace(/&/g, "&amp;")
@@ -1243,8 +1601,8 @@ function escapeHtml(val) {
 
 function badgeClass(status) {
   const st = String(status || "").toUpperCase();
-  if (st === "ACTIVE" || st === "TRIGGERED" || st === "TP HIT" || st === "WIN") return "badge-active";
-  if (st === "SL HIT" || st === "LOSS") return "badge-sell";
+  if (st === "ACTIVE" || st === "TRIGGERED" || st === "ACTIVATED" || st === "TP HIT" || st === "TP COMPLETED" || st === "WIN") return "badge-active";
+  if (st === "SL HIT" || st === "SL COMPLETED" || st === "LOSS") return "badge-sell";
   if (st === "PENDING") return "badge-pending";
   return "badge-closed";
 }
@@ -1379,21 +1737,41 @@ function normalizeSignalRecord(rec, fallbackStatus) {
   const direction = String(sig.direction || sig.side || rec.direction || "--").toUpperCase();
   const status = String(rec.status || sig.status || fallbackStatus || "--").toUpperCase();
   const rawOutcome = String(rec.outcome || sig.outcome || rec.result || sig.result || "").toUpperCase();
-  const pktTime = rec.timestamp_pkt || sig.timestamp_pkt || rec.created_at_pkt || sig.created_at_pkt || rec.timestamp || sig.timestamp || "--";
-  const completedPkt = rec.closed_at_pkt || sig.closed_at_pkt || rec.completed_at_pkt || sig.completed_at_pkt || rec.updated_at_pkt || sig.updated_at_pkt || pktTime;
+
+  const createdRaw =
+    rec.created_at_pkt ?? sig.created_at_pkt ??
+    rec.created_at ?? sig.created_at ??
+    rec.timestamp_pkt ?? sig.timestamp_pkt ??
+    rec.timestamp ?? sig.timestamp ?? null;
+
+  const completedRaw =
+    rec.closed_at_pkt ?? sig.closed_at_pkt ??
+    rec.completed_at_pkt ?? sig.completed_at_pkt ??
+    rec.closed_at ?? sig.closed_at ??
+    rec.completed_at ?? sig.completed_at ??
+    rec.updated_at_pkt ?? sig.updated_at_pkt ??
+    rec.updated_at ?? sig.updated_at ?? null;
+
+  const pktTime = createdRaw ? formatPktDateTime(createdRaw) : "--";
+  const completedPkt = completedRaw ? formatPktDateTime(completedRaw) : null;
 
   return {
-    id: String(rec.id ?? rec.signal_id ?? `${symbol}-${tf}`),
+    id: String(rec.id ?? rec.signal_id ?? `${symbol}-${tf}-${createdRaw || ""}`),
     symbol,
     tf,
     direction,
     signalType: sig.signal_type || rec.signal_type || sig.strategy || rec.strategy || "Instant Signal",
     entry: sig.entry !== undefined ? formatPriceValue(sig.entry, symbol) : "--",
+    entryRaw: sig.entry,
     sl: sig.stop_loss !== undefined ? formatPriceValue(sig.stop_loss, symbol) : "--",
+    slRaw: sig.stop_loss,
     tp: sig.take_profit !== undefined ? formatPriceValue(sig.take_profit, symbol) : "--",
+    tpRaw: sig.take_profit,
     rr: sig.rr !== undefined && sig.rr !== null ? String(sig.rr) : "--",
     status,
     outcome: rawOutcome,
+    createdRaw,
+    completedRaw,
     pktTime,
     completedPkt,
     strategy: sig.strategy || rec.strategy || "--",
@@ -1409,14 +1787,41 @@ function normalizeLimitOrder(ord, fallbackStatus) {
   const tf = nest.timeframe || ord.timeframe || "--";
   const orderType = String(nest.order_type || nest.direction || ord.order_type || ord.direction || "LIMIT").toUpperCase();
   const status = String(ord.status || nest.status || fallbackStatus || "--").toUpperCase();
-  const createdPkt = nest.created_at_pkt || ord.created_at_pkt || nest.timestamp_pkt || ord.timestamp_pkt || "--";
-  const activatedPkt = nest.activated_at_pkt || ord.activated_at_pkt || nest.triggered_at_pkt || ord.triggered_at_pkt || null;
-  const completedPkt = nest.closed_at_pkt || ord.closed_at_pkt || nest.completed_at_pkt || ord.completed_at_pkt || null;
-  const expiredPkt = nest.expired_at_pkt || ord.expired_at_pkt || nest.expires_at_pkt || ord.expires_at_pkt || null;
-  const invalidatedPkt = nest.invalidated_at_pkt || ord.invalidated_at_pkt || null;
+
+  const createdRaw =
+    nest.created_at_pkt ?? ord.created_at_pkt ??
+    nest.created_at ?? ord.created_at ??
+    nest.timestamp_pkt ?? ord.timestamp_pkt ??
+    nest.timestamp ?? ord.timestamp ?? null;
+
+  const activatedRaw =
+    nest.activated_at_pkt ?? ord.activated_at_pkt ??
+    nest.triggered_at_pkt ?? ord.triggered_at_pkt ??
+    nest.activated_at ?? ord.activated_at ??
+    nest.triggered_at ?? ord.triggered_at ?? null;
+
+  const completedRaw =
+    nest.closed_at_pkt ?? ord.closed_at_pkt ??
+    nest.completed_at_pkt ?? ord.completed_at_pkt ??
+    nest.closed_at ?? ord.closed_at ??
+    nest.completed_at ?? ord.completed_at ?? null;
+
+  const expiredRaw =
+    nest.expired_at_pkt ?? ord.expired_at_pkt ??
+    nest.expires_at_pkt ?? ord.expires_at_pkt ??
+    nest.expiry_at_pkt ?? ord.expiry_at_pkt ??
+    nest.expired_at ?? ord.expired_at ??
+    nest.expires_at ?? ord.expires_at ??
+    nest.expiry_at ?? ord.expiry_at ?? null;
+
+  const invalidatedRaw =
+    nest.invalidated_at_pkt ?? ord.invalidated_at_pkt ??
+    nest.invalidated_at ?? ord.invalidated_at ??
+    nest.cancelled_at_pkt ?? ord.cancelled_at_pkt ??
+    nest.cancelled_at ?? ord.cancelled_at ?? null;
 
   return {
-    id: String(ord.id ?? ord.order_id ?? `${symbol}-${tf}`),
+    id: String(ord.id ?? ord.order_id ?? `${symbol}-${tf}-${createdRaw || ""}`),
     symbol,
     tf,
     orderType,
@@ -1425,13 +1830,18 @@ function normalizeLimitOrder(ord, fallbackStatus) {
     sl: nest.stop_loss !== undefined ? formatPriceValue(nest.stop_loss, symbol) : "--",
     tp: nest.take_profit !== undefined ? formatPriceValue(nest.take_profit, symbol) : "--",
     rr: nest.rr !== undefined && nest.rr !== null ? String(nest.rr) : "--",
-    pktTime: createdPkt,
-    createdPkt,
-    activatedPkt,
-    completedPkt,
-    expiredPkt,
-    invalidatedPkt,
-    expiresPkt: expiredPkt,
+    createdRaw,
+    activatedRaw,
+    completedRaw,
+    expiredRaw,
+    invalidatedRaw,
+    pktTime: createdRaw ? formatPktDateTime(createdRaw) : "Missing timestamp",
+    createdPkt: createdRaw ? formatPktDateTime(createdRaw) : "Missing timestamp",
+    activatedPkt: activatedRaw ? formatPktDateTime(activatedRaw) : null,
+    completedPkt: completedRaw ? formatPktDateTime(completedRaw) : null,
+    expiredPkt: expiredRaw ? formatPktDateTime(expiredRaw) : null,
+    invalidatedPkt: invalidatedRaw ? formatPktDateTime(invalidatedRaw) : null,
+    expiresPkt: expiredRaw ? formatPktDateTime(expiredRaw) : null,
     expiryBars: nest.expiry_bars ?? ord.expiry_bars ?? null,
     obHigh: nest.ob_high ?? ord.ob_high ?? null,
     obLow: nest.ob_low ?? ord.ob_low ?? null,
@@ -1443,6 +1853,7 @@ function normalizeLimitOrder(ord, fallbackStatus) {
 
 function renderSignalCard(s) {
   const isBuy = s.direction.includes("BUY") || s.direction === "LONG";
+  const createdDisplay = s.createdRaw ? formatPktDateTime(s.createdRaw) : s.pktTime;
   return `
     <div class="tm-card" style="cursor:pointer;" onclick="SignalsEngine.openDetail('${escapeHtml(s.id)}')">
       <div class="row-between">
@@ -1459,9 +1870,15 @@ function renderSignalCard(s) {
         <div><div class="tm-lvl-key">TP</div><div class="tm-lvl-val" style="color:var(--bull);">${escapeHtml(s.tp)}</div></div>
         <div><div class="tm-lvl-key">R:R</div><div class="tm-lvl-val" style="color:var(--accent-dark);">${escapeHtml(s.rr)}</div></div>
       </div>
+      <div class="tm-meta-box">
+        <div class="tm-meta-line">
+          <span class="tm-meta-lbl">Created:</span>
+          <span class="tm-meta-val">${escapeHtml(createdDisplay)}</span>
+        </div>
+      </div>
       <div class="tm-card-foot">
         <span>${escapeHtml(s.signalType)}</span>
-        <span>${escapeHtml(s.pktTime)}</span>
+        <span>${escapeHtml(s.status)}</span>
       </div>
     </div>
   `;
@@ -1509,7 +1926,7 @@ function updateGlobalBanner() {
 
 /**
  * TERMUX ON/OFF CONTROL ENGINE (SETTINGS)
- * Launches Termux start.sh / stop.sh via com.termux.RUN_COMMAND and polls /health.
+ * Launches Termux start.sh / stop.sh and polls /health.
  */
 const TermuxControlEngine = {
   isOn: false,
@@ -1519,8 +1936,8 @@ const TermuxControlEngine = {
 
   setUi(stateOn, noteText) {
     this.isOn = Boolean(stateOn);
-    const btn = document.getElementById("termuxToggleBtn");
-    const note = document.getElementById("termuxControlNote");
+    const btn = document.getElementById("tmTermuxToggleBtn");
+    const note = document.getElementById("tmTermuxControlNote");
     if (btn) {
       btn.disabled = this.busy;
       btn.textContent = this.busy ? "..." : (this.isOn ? "STOP" : "START");
@@ -1542,7 +1959,6 @@ const TermuxControlEngine = {
       window.location.href = "termux://";
     } catch (_) {}
   },
-
 
   async checkHealthOnce() {
     const healthUrl = `${TradeMindConfig.apiBaseUrl.replace(/\/+$/, "")}/health`;
@@ -1628,6 +2044,91 @@ const TermuxControlEngine = {
     } else {
       this.stopBackend();
     }
+  }
+};
+
+/**
+ * NEW INSTANT SIGNAL NOTIFICATION TRACKER
+ * - Baseline on initial load prevents notifying for pre-existing signals.
+ * - Deduplicates across repeated polling cycles and page refreshes via localStorage.
+ * - Uses browser Notification API only when session/page is active & permitted.
+ */
+const SignalNotificationTracker = {
+  _storageKey: "trademind_seen_signal_ids_v1",
+  initializedBaseline: false,
+  seenIds: new Set(),
+
+  loadSeen() {
+    try {
+      const raw = localStorage.getItem(this._storageKey);
+      if (!raw) return;
+      const arr = JSON.parse(raw);
+      if (Array.isArray(arr)) {
+        arr.slice(-500).forEach(id => this.seenIds.add(String(id)));
+      }
+    } catch (_) {}
+  },
+
+  saveSeen() {
+    try {
+      const list = Array.from(this.seenIds).slice(-500);
+      localStorage.setItem(this._storageKey, JSON.stringify(list));
+    } catch (_) {}
+  },
+
+  processActiveSignals(signalsList, hadInitialSyncCompleted) {
+    this.loadSeen();
+    const list = Array.isArray(signalsList) ? signalsList : [];
+
+    if (!this.initializedBaseline) {
+      list.forEach(s => {
+        if (s && s.id) this.seenIds.add(String(s.id));
+      });
+      this.saveSeen();
+      if (hadInitialSyncCompleted) {
+        this.initializedBaseline = true;
+      }
+      return;
+    }
+
+    const trulyNew = [];
+    list.forEach(s => {
+      if (!s || !s.id) return;
+      const sid = String(s.id);
+      if (!this.seenIds.has(sid)) {
+        this.seenIds.add(sid);
+        trulyNew.push(s);
+      }
+    });
+
+    if (trulyNew.length > 0) {
+      this.saveSeen();
+      trulyNew.forEach(sig => this.notifyNewSignal(sig));
+    }
+  },
+
+  notifyNewSignal(s) {
+    if (!PreferencesEngine.notificationsEnabled) return;
+    if (!("Notification" in window)) return;
+    if (Notification.permission !== "granted") return;
+
+    const createdShort = s.createdRaw ? formatPktShortDateTime(s.createdRaw) : "Timestamp unavailable";
+    const title = "TradeMind — New Signal";
+    const body = [
+      `${s.symbol} · ${s.direction} · ${s.tf}`,
+      `Entry: ${s.entry}`,
+      `SL: ${s.sl}`,
+      `TP: ${s.tp}`,
+      `RR: ${s.rr}`,
+      `Created: ${createdShort}`
+    ].join("\n");
+
+    try {
+      new Notification(title, {
+        body,
+        tag: `trademind-sig-${String(s.id)}`
+      });
+    } catch (_) {}
   }
 };
 
@@ -1766,14 +2267,7 @@ const TvChart = {
   },
 
   parseUtcMs(ts) {
-    if (!ts) return null;
-    const raw = String(ts).trim();
-    if (!raw) return null;
-    let ms = Date.parse(raw);
-    if (Number.isFinite(ms)) return ms;
-    const isoCandidate = raw.includes("T") ? raw : raw.replace(" ", "T");
-    ms = Date.parse(isoCandidate);
-    return Number.isFinite(ms) ? ms : null;
+    return parseTimestampToUtcMs(ts);
   },
 
   normalizeCandles(payload) {
@@ -2489,40 +2983,206 @@ const TvChart = {
   }
 };
 
+/**
+ * SIGNALS ENGINE
+ * - Active signals show creation time converted to Asia/Karachi (PKT).
+ * - History signals filter strictly by completion date in PKT (default Today PKT),
+ *   showing ONLY that selected date's completed records and daily totals.
+ */
 const SignalsEngine = {
   mode: "ACTIVE",
   symbol: "ALL",
   tf: "ALL",
+  selectedHistoryDate: null,
+  historyMonth: null,
+  calendarOpen: false,
+
+  ensureDateState() {
+    const todayIso = getPktDatePartsFromMs(Date.now()).iso;
+    if (!this.selectedHistoryDate) {
+      this.selectedHistoryDate = todayIso;
+    }
+    if (!this.historyMonth) {
+      const [yStr, mStr] = this.selectedHistoryDate.split("-");
+      this.historyMonth = { year: Number(yStr), month: Number(mStr) };
+    }
+  },
+
   setMode(m) {
     this.mode = m;
     document.querySelectorAll("#signalsModeTabs .tm-tab").forEach(b => b.classList.toggle("active", b.dataset.mode === m));
     this.render();
   },
+
   setSymbol(s) {
     this.symbol = s;
     document.querySelectorAll("#signalsSymbolStrip .tm-chip").forEach(c => c.classList.toggle("active", c.dataset.val === s));
     this.render();
   },
+
   setTimeframe(t) {
     this.tf = t;
     document.querySelectorAll("#signalsTfStrip .tm-chip").forEach(c => c.classList.toggle("active", c.dataset.val === t));
     this.render();
   },
-  render() {
-    const sourceList = this.mode === "ACTIVE" ? TradeMindState.activeSignals : TradeMindState.historySignals;
-    const rows = sourceList.filter(s =>
+
+  setHistoryDate(isoDate) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(isoDate || ""))) return;
+    this.selectedHistoryDate = isoDate;
+    const [yStr, mStr] = isoDate.split("-");
+    this.historyMonth = { year: Number(yStr), month: Number(mStr) };
+    this.render();
+  },
+
+  shiftHistoryDate(deltaDays) {
+    this.ensureDateState();
+    this.setHistoryDate(shiftIsoDate(this.selectedHistoryDate, deltaDays));
+  },
+
+  selectHistoryShortcut(which) {
+    const nowMs = Date.now();
+    const targetMs = which === "today" ? nowMs : (nowMs - 86400000);
+    const iso = getPktDatePartsFromMs(targetMs).iso;
+    this.setHistoryDate(iso);
+  },
+
+  toggleHistoryCalendar() {
+    this.calendarOpen = !this.calendarOpen;
+    this.render();
+  },
+
+  shiftHistoryMonth(delta) {
+    this.ensureDateState();
+    let m = this.historyMonth.month + delta;
+    let y = this.historyMonth.year;
+    while (m < 1) { m += 12; y -= 1; }
+    while (m > 12) { m -= 12; y += 1; }
+    this.historyMonth = { year: y, month: m };
+    this.renderHistoryCalendar();
+  },
+
+  getSignalCompletionDateKey(sig) {
+    const rawCompletion = sig.completedRaw || sig.completedPkt || null;
+    if (!rawCompletion) return null;
+    return toPktDateKey(rawCompletion);
+  },
+
+  classifyHistoryOutcome(sig) {
+    const o = String(sig.outcome || "").toUpperCase();
+    const st = String(sig.status || "").toUpperCase();
+    if (o.includes("TP") || o === "WIN" || st === "TP HIT" || st === "TP_HIT" || st === "WIN") return "WIN";
+    if (o.includes("SL") || o === "LOSS" || st === "SL HIT" || st === "SL_HIT" || st === "LOSS") return "LOSS";
+    return "OTHER";
+  },
+
+  renderHistoryCalendar() {
+    const calBox = document.getElementById("sigHistCalendarBox");
+    const toggleBtn = document.getElementById("sigHistCalToggleBtn");
+    if (calBox) calBox.style.display = this.calendarOpen ? "block" : "none";
+    if (toggleBtn) toggleBtn.classList.toggle("active", this.calendarOpen);
+    if (!this.calendarOpen) return;
+
+    const monthLabel = document.getElementById("sigHistCalMonthLabel");
+    const gridEl = document.getElementById("sigHistCalGrid");
+    if (!monthLabel || !gridEl) return;
+
+    const d = new Date(Date.UTC(this.historyMonth.year, this.historyMonth.month - 1, 15));
+    monthLabel.textContent = new Intl.DateTimeFormat("en-US", {
+      timeZone: TradeMindConfig.timezone,
+      month: "long",
+      year: "numeric"
+    }).format(d) + " (PKT)";
+
+    const cells = CalendarHistoryEngine.buildMonthCells(this.historyMonth.year, this.historyMonth.month);
+    const todayIso = getPktDatePartsFromMs(Date.now()).iso;
+
+    const pairTfFiltered = (TradeMindState.historySignals || []).filter(s =>
       (this.symbol === "ALL" || s.symbol === this.symbol) &&
       (this.tf === "ALL" || s.tf === this.tf)
     );
-    document.getElementById("signalsListContainer").innerHTML = rows.length
-      ? rows.map(renderSignalCard).join("")
-      : `<div class="tm-empty">${TradeMindState.backendOnline ? "No signals returned for selected filter." : "Backend unavailable. Unable to load signals."}</div>`;
+
+    gridEl.innerHTML = cells.map(c => {
+      const daySigs = pairTfFiltered.filter(s => this.getSignalCompletionDateKey(s) === c.iso);
+      const wins = daySigs.filter(s => this.classifyHistoryOutcome(s) === "WIN").length;
+      const losses = daySigs.filter(s => this.classifyHistoryOutcome(s) === "LOSS").length;
+      const cls = [
+        "tm-cal-day",
+        c.inMonth ? "" : "muted",
+        c.iso === todayIso ? "today" : "",
+        c.iso === this.selectedHistoryDate ? "selected" : ""
+      ].filter(Boolean).join(" ");
+
+      const pills = [];
+      if (wins > 0) pills.push(`<span class="tm-cal-pill win">W:${wins}</span>`);
+      if (losses > 0) pills.push(`<span class="tm-cal-pill loss">L:${losses}</span>`);
+
+      return `
+        <button type="button" class="${cls}" onclick="SignalsEngine.setHistoryDate('${escapeHtml(c.iso)}')">
+          <span>${c.day}</span>
+          <span class="tm-cal-dots">${pills.join("")}</span>
+        </button>
+      `;
+    }).join("");
   },
+
+  render() {
+    this.ensureDateState();
+    const panel = document.getElementById("signalsHistoryDatePanel");
+    const listContainer = document.getElementById("signalsListContainer");
+
+    if (this.mode === "ACTIVE") {
+      if (panel) panel.style.display = "none";
+      const rows = (TradeMindState.activeSignals || []).filter(s =>
+        (this.symbol === "ALL" || s.symbol === this.symbol) &&
+        (this.tf === "ALL" || s.tf === this.tf)
+      );
+      listContainer.innerHTML = rows.length
+        ? rows.map(renderSignalCard).join("")
+        : `<div class="tm-empty">${TradeMindState.backendOnline ? "No active signals returned for selected filter." : "Backend unavailable. Unable to load signals."}</div>`;
+      return;
+    }
+
+    if (panel) panel.style.display = "block";
+    const dateInput = document.getElementById("sigHistDateInput");
+    if (dateInput && dateInput.value !== this.selectedHistoryDate) {
+      dateInput.value = this.selectedHistoryDate;
+    }
+    const badgeEl = document.getElementById("sigHistSelectedDateBadge");
+    if (badgeEl) badgeEl.textContent = `${this.selectedHistoryDate} PKT`;
+
+    const pairTfFiltered = (TradeMindState.historySignals || []).filter(s =>
+      (this.symbol === "ALL" || s.symbol === this.symbol) &&
+      (this.tf === "ALL" || s.tf === this.tf)
+    );
+
+    const exactDateRows = pairTfFiltered.filter(s => {
+      const compDate = this.getSignalCompletionDateKey(s);
+      return compDate !== null && compDate === this.selectedHistoryDate;
+    });
+
+    const winsCount = exactDateRows.filter(s => this.classifyHistoryOutcome(s) === "WIN").length;
+    const lossesCount = exactDateRows.filter(s => this.classifyHistoryOutcome(s) === "LOSS").length;
+    const totalCompletedCount = exactDateRows.length;
+
+    document.getElementById("sigHistDailyTotal").textContent = String(totalCompletedCount);
+    document.getElementById("sigHistDailyWins").textContent = String(winsCount);
+    document.getElementById("sigHistDailyLosses").textContent = String(lossesCount);
+
+    this.renderHistoryCalendar();
+
+    listContainer.innerHTML = exactDateRows.length
+      ? exactDateRows.map(renderSignalCard).join("")
+      : `<div class="tm-empty">${TradeMindState.backendOnline ? `No completed signals on ${escapeHtml(this.selectedHistoryDate)} PKT for selected filter.` : "Backend unavailable. Unable to load signal history."}</div>`;
+  },
+
   openDetail(id) {
     const all = [...TradeMindState.activeSignals, ...TradeMindState.historySignals];
     const s = all.find(x => String(x.id) === String(id));
     if (!s) return;
     const isBuy = s.direction.includes("BUY") || s.direction === "LONG";
+    const createdDisplay = s.createdRaw ? formatPktDateTime(s.createdRaw) : s.pktTime;
+    const completedDisplay = s.completedRaw ? formatPktDateTime(s.completedRaw) : null;
+
     document.getElementById("tmDetailPanel").innerHTML = `
       <div class="row-between" style="margin-bottom:8px;">
         <div class="row-inline">
@@ -2532,7 +3192,18 @@ const SignalsEngine = {
         </div>
         <span class="tm-badge ${badgeClass(s.status)}">${escapeHtml(s.status)}</span>
       </div>
-      <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px;">ID: ${escapeHtml(s.id)} · ${escapeHtml(s.pktTime)}</div>
+      <div class="tm-meta-box" style="margin-bottom:10px;">
+        <div class="tm-meta-line">
+          <span class="tm-meta-lbl">Created:</span>
+          <span class="tm-meta-val">${escapeHtml(createdDisplay)}</span>
+        </div>
+        ${completedDisplay ? `
+          <div class="tm-meta-line">
+            <span class="tm-meta-lbl">Completed:</span>
+            <span class="tm-meta-val">${escapeHtml(completedDisplay)}</span>
+          </div>
+        ` : ""}
+      </div>
       <div class="tm-levels-grid" style="margin-bottom:12px;">
         <div><div class="tm-lvl-key">Entry</div><div class="tm-lvl-val">${escapeHtml(s.entry)}</div></div>
         <div><div class="tm-lvl-key">SL</div><div class="tm-lvl-val" style="color:var(--bear);">${escapeHtml(s.sl)}</div></div>
@@ -2545,72 +3216,440 @@ const SignalsEngine = {
     `;
     document.getElementById("tmDetailSheet").classList.add("open");
   },
+
   closeDetail() {
     document.getElementById("tmDetailSheet").classList.remove("open");
   }
 };
 
+/**
+ * LIMITS ENGINE
+ * - Pending tab: overall pending count + activated count (from existing backend data),
+ *   expiry-date calendar in PKT (default Today PKT), shows ONLY pending orders expiring on selected date,
+ *   hides raw order IDs in UI and renders compact Created / Expires / Expiry countdown block.
+ * - History tab: PKT calendar/date selector, classifies by actual completion (TP/SL) or expiry timestamp,
+ *   keeps Activated, TP Hit, SL Hit, Expired, and Pending counts separate without double-counting.
+ */
 const LimitsEngine = {
   mode: "PENDING",
   symbol: "ALL",
   tf: "ALL",
+  selectedPendingDate: null,
+  pendingMonth: null,
+  pendingCalendarOpen: false,
+  selectedHistoryDate: null,
+  historyMonth: null,
+  historyCalendarOpen: false,
+
+  ensureDates() {
+    const todayIso = getPktDatePartsFromMs(Date.now()).iso;
+    if (!this.selectedPendingDate) {
+      this.selectedPendingDate = todayIso;
+    }
+    if (!this.pendingMonth) {
+      const [yStr, mStr] = this.selectedPendingDate.split("-");
+      this.pendingMonth = { year: Number(yStr), month: Number(mStr) };
+    }
+    if (!this.selectedHistoryDate) {
+      this.selectedHistoryDate = todayIso;
+    }
+    if (!this.historyMonth) {
+      const [yStr, mStr] = this.selectedHistoryDate.split("-");
+      this.historyMonth = { year: Number(yStr), month: Number(mStr) };
+    }
+  },
+
   setMode(m) {
     this.mode = m;
     document.querySelectorAll("#limitsModeTabs .tm-tab").forEach(b => b.classList.toggle("active", b.dataset.mode === m));
     this.render();
   },
+
   setSymbol(s) {
     this.symbol = s;
     document.querySelectorAll("#limitsSymbolStrip .tm-chip").forEach(c => c.classList.toggle("active", c.dataset.val === s));
     this.render();
   },
+
   setTimeframe(t) {
     this.tf = t;
     document.querySelectorAll("#limitsTfStrip .tm-chip").forEach(c => c.classList.toggle("active", c.dataset.val === t));
     this.render();
   },
-  render() {
-    const sourceList = this.mode === "PENDING" ? TradeMindState.pendingLimits : TradeMindState.historyLimits;
-    const rows = sourceList.filter(o =>
+
+  setPendingDate(isoDate) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(isoDate || ""))) return;
+    this.selectedPendingDate = isoDate;
+    const [yStr, mStr] = isoDate.split("-");
+    this.pendingMonth = { year: Number(yStr), month: Number(mStr) };
+    this.render();
+  },
+
+  shiftPendingDate(deltaDays) {
+    this.ensureDates();
+    this.setPendingDate(shiftIsoDate(this.selectedPendingDate, deltaDays));
+  },
+
+  selectPendingShortcut(which) {
+    const nowMs = Date.now();
+    const iso = getPktDatePartsFromMs(which === "today" ? nowMs : (nowMs - 86400000)).iso;
+    this.setPendingDate(iso);
+  },
+
+  togglePendingCalendar() {
+    this.pendingCalendarOpen = !this.pendingCalendarOpen;
+    this.render();
+  },
+
+  shiftPendingMonth(delta) {
+    this.ensureDates();
+    let m = this.pendingMonth.month + delta;
+    let y = this.pendingMonth.year;
+    while (m < 1) { m += 12; y -= 1; }
+    while (m > 12) { m -= 12; y += 1; }
+    this.pendingMonth = { year: y, month: m };
+    this.renderPendingCalendar();
+  },
+
+  setHistoryDate(isoDate) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(isoDate || ""))) return;
+    this.selectedHistoryDate = isoDate;
+    const [yStr, mStr] = isoDate.split("-");
+    this.historyMonth = { year: Number(yStr), month: Number(mStr) };
+    this.render();
+  },
+
+  shiftHistoryDate(deltaDays) {
+    this.ensureDates();
+    this.setHistoryDate(shiftIsoDate(this.selectedHistoryDate, deltaDays));
+  },
+
+  selectHistoryShortcut(which) {
+    const nowMs = Date.now();
+    const iso = getPktDatePartsFromMs(which === "today" ? nowMs : (nowMs - 86400000)).iso;
+    this.setHistoryDate(iso);
+  },
+
+  toggleHistoryCalendar() {
+    this.historyCalendarOpen = !this.historyCalendarOpen;
+    this.render();
+  },
+
+  shiftHistoryMonth(delta) {
+    this.ensureDates();
+    let m = this.historyMonth.month + delta;
+    let y = this.historyMonth.year;
+    while (m < 1) { m += 12; y -= 1; }
+    while (m > 12) { m -= 12; y += 1; }
+    this.historyMonth = { year: y, month: m };
+    this.renderHistoryCalendar();
+  },
+
+  getPendingExpiryDateKey(ord) {
+    const rawExp = ord.expiredRaw || null;
+    if (!rawExp) return null;
+    return toPktDateKey(rawExp);
+  },
+
+  classifyOrderBucket(ord) {
+    const raw = String(ord.status || "").toUpperCase().trim();
+    if (raw === "TP HIT" || raw === "TP_HIT" || raw === "TP COMPLETED" || raw === "TP_COMPLETED" || raw === "WIN") return "TP_HIT";
+    if (raw === "SL HIT" || raw === "SL_HIT" || raw === "SL COMPLETED" || raw === "SL_COMPLETED" || raw === "LOSS") return "SL_HIT";
+    if (raw === "EXPIRED") return "EXPIRED";
+    if (raw === "ACTIVATED" || raw === "TRIGGERED" || raw === "ACTIVE") return "ACTIVATED";
+    if (raw === "PENDING" || raw === "NEW" || raw === "PLACED" || raw === "WAITING") return "PENDING";
+    return "OTHER";
+  },
+
+  getOrderPrimaryDateKey(ord) {
+    const bucket = this.classifyOrderBucket(ord);
+    if (bucket === "TP_HIT" || bucket === "SL_HIT") {
+      const compRaw = ord.completedRaw || null;
+      return compRaw ? toPktDateKey(compRaw) : null;
+    }
+    if (bucket === "EXPIRED") {
+      const expRaw = ord.expiredRaw || null;
+      return expRaw ? toPktDateKey(expRaw) : null;
+    }
+    if (bucket === "ACTIVATED") {
+      const actRaw = ord.activatedRaw || ord.completedRaw || null;
+      return actRaw ? toPktDateKey(actRaw) : null;
+    }
+    if (bucket === "PENDING") {
+      const expRaw = ord.expiredRaw || null;
+      return expRaw ? toPktDateKey(expRaw) : null;
+    }
+    const fallbackRaw = ord.completedRaw || ord.expiredRaw || ord.activatedRaw || null;
+    return fallbackRaw ? toPktDateKey(fallbackRaw) : null;
+  },
+
+  renderPendingCalendar() {
+    const calBox = document.getElementById("limPendCalendarBox");
+    const toggleBtn = document.getElementById("limPendCalToggleBtn");
+    if (calBox) calBox.style.display = this.pendingCalendarOpen ? "block" : "none";
+    if (toggleBtn) toggleBtn.classList.toggle("active", this.pendingCalendarOpen);
+    if (!this.pendingCalendarOpen) return;
+
+    const monthLabel = document.getElementById("limPendCalMonthLabel");
+    const gridEl = document.getElementById("limPendCalGrid");
+    if (!monthLabel || !gridEl) return;
+
+    const d = new Date(Date.UTC(this.pendingMonth.year, this.pendingMonth.month - 1, 15));
+    monthLabel.textContent = new Intl.DateTimeFormat("en-US", {
+      timeZone: TradeMindConfig.timezone,
+      month: "long",
+      year: "numeric"
+    }).format(d) + " (PKT)";
+
+    const cells = CalendarHistoryEngine.buildMonthCells(this.pendingMonth.year, this.pendingMonth.month);
+    const todayIso = getPktDatePartsFromMs(Date.now()).iso;
+
+    const filteredPending = (TradeMindState.pendingLimits || []).filter(o =>
       (this.symbol === "ALL" || o.symbol === this.symbol) &&
       (this.tf === "ALL" || o.tf === this.tf)
     );
-    document.getElementById("limitsListContainer").innerHTML = rows.length
-      ? rows.map(o => {
-          const isBuy = o.orderType.includes("BUY");
-          const expiryLabel = o.expiresPkt ? `Exp: ${o.expiresPkt}` : (o.expiryBars !== null ? `Expiry bars: ${o.expiryBars}` : o.pktTime);
-          return `
-            <div class="tm-card">
-              <div class="row-between">
-                <div class="row-inline">
-                  <strong style="font-size:13px;">${escapeHtml(o.symbol)}</strong>
-                  <span class="tm-badge ${isBuy ? "badge-buy" : "badge-sell"}">${escapeHtml(o.orderType)}</span>
-                  <span class="tm-badge badge-closed">${escapeHtml(o.tf)}</span>
-                </div>
-                <span class="tm-badge ${badgeClass(o.status)}">${escapeHtml(o.status)}</span>
-              </div>
-              <div class="tm-levels-grid">
-                <div><div class="tm-lvl-key">Entry</div><div class="tm-lvl-val">${escapeHtml(o.entry)}</div></div>
-                <div><div class="tm-lvl-key">SL</div><div class="tm-lvl-val" style="color:var(--bear);">${escapeHtml(o.sl)}</div></div>
-                <div><div class="tm-lvl-key">TP</div><div class="tm-lvl-val" style="color:var(--bull);">${escapeHtml(o.tp)}</div></div>
-                <div><div class="tm-lvl-key">R:R</div><div class="tm-lvl-val" style="color:var(--accent-dark);">${escapeHtml(o.rr)}</div></div>
-              </div>
-              <div class="tm-card-foot">
-                <span>${escapeHtml(o.strategy)} · Order #${escapeHtml(o.id)}</span>
-                <span>${escapeHtml(expiryLabel)}</span>
-              </div>
+
+    gridEl.innerHTML = cells.map(c => {
+      const expCount = filteredPending.filter(o => this.getPendingExpiryDateKey(o) === c.iso).length;
+      const cls = [
+        "tm-cal-day",
+        c.inMonth ? "" : "muted",
+        c.iso === todayIso ? "today" : "",
+        c.iso === this.selectedPendingDate ? "selected" : ""
+      ].filter(Boolean).join(" ");
+
+      return `
+        <button type="button" class="${cls}" onclick="LimitsEngine.setPendingDate('${escapeHtml(c.iso)}')">
+          <span>${c.day}</span>
+          <span class="tm-cal-dots">${expCount > 0 ? `<span class="tm-cal-pill pend">E:${expCount}</span>` : ""}</span>
+        </button>
+      `;
+    }).join("");
+  },
+
+  renderHistoryCalendar() {
+    const calBox = document.getElementById("limHistCalendarBox");
+    const toggleBtn = document.getElementById("limHistCalToggleBtn");
+    if (calBox) calBox.style.display = this.historyCalendarOpen ? "block" : "none";
+    if (toggleBtn) toggleBtn.classList.toggle("active", this.historyCalendarOpen);
+    if (!this.historyCalendarOpen) return;
+
+    const monthLabel = document.getElementById("limHistCalMonthLabel");
+    const gridEl = document.getElementById("limHistCalGrid");
+    if (!monthLabel || !gridEl) return;
+
+    const d = new Date(Date.UTC(this.historyMonth.year, this.historyMonth.month - 1, 15));
+    monthLabel.textContent = new Intl.DateTimeFormat("en-US", {
+      timeZone: TradeMindConfig.timezone,
+      month: "long",
+      year: "numeric"
+    }).format(d) + " (PKT)";
+
+    const cells = CalendarHistoryEngine.buildMonthCells(this.historyMonth.year, this.historyMonth.month);
+    const todayIso = getPktDatePartsFromMs(Date.now()).iso;
+
+    const filteredHist = (TradeMindState.historyLimits || []).filter(o =>
+      (this.symbol === "ALL" || o.symbol === this.symbol) &&
+      (this.tf === "ALL" || o.tf === this.tf)
+    );
+
+    gridEl.innerHTML = cells.map(c => {
+      const dayItems = filteredHist.filter(o => this.getOrderPrimaryDateKey(o) === c.iso);
+      const tp = dayItems.filter(o => this.classifyOrderBucket(o) === "TP_HIT").length;
+      const sl = dayItems.filter(o => this.classifyOrderBucket(o) === "SL_HIT").length;
+      const exp = dayItems.filter(o => this.classifyOrderBucket(o) === "EXPIRED").length;
+      const cls = [
+        "tm-cal-day",
+        c.inMonth ? "" : "muted",
+        c.iso === todayIso ? "today" : "",
+        c.iso === this.selectedHistoryDate ? "selected" : ""
+      ].filter(Boolean).join(" ");
+
+      const pills = [];
+      if (tp > 0) pills.push(`<span class="tm-cal-pill win">TP:${tp}</span>`);
+      if (sl > 0) pills.push(`<span class="tm-cal-pill loss">SL:${sl}</span>`);
+      if (exp > 0) pills.push(`<span class="tm-cal-pill pend">EX:${exp}</span>`);
+
+      return `
+        <button type="button" class="${cls}" onclick="LimitsEngine.setHistoryDate('${escapeHtml(c.iso)}')">
+          <span>${c.day}</span>
+          <span class="tm-cal-dots">${pills.join("")}</span>
+        </button>
+      `;
+    }).join("");
+  },
+
+  renderOrderCard(o, isPendingTab) {
+    const isBuy = o.orderType.includes("BUY");
+    const createdText = o.createdRaw ? formatPktDateTime(o.createdRaw) : "Missing timestamp";
+    const expiresText = o.expiredRaw ? formatPktDateTime(o.expiredRaw) : "Missing timestamp";
+    const expiryCountdown = o.expiredRaw ? formatExpiryRemaining(o.expiredRaw, Date.now()) : "Missing timestamp";
+    const completedText = o.completedRaw ? formatPktDateTime(o.completedRaw) : null;
+    const activatedText = o.activatedRaw ? formatPktDateTime(o.activatedRaw) : null;
+
+    return `
+      <div class="tm-card">
+        <div class="row-between">
+          <div class="row-inline">
+            <strong style="font-size:13px;">${escapeHtml(o.symbol)}</strong>
+            <span class="tm-badge ${isBuy ? "badge-buy" : "badge-sell"}">${escapeHtml(o.orderType)}</span>
+            <span class="tm-badge badge-closed">${escapeHtml(o.tf)}</span>
+          </div>
+          <span class="tm-badge ${badgeClass(o.status)}">${escapeHtml(o.status)}</span>
+        </div>
+        <div class="tm-levels-grid">
+          <div><div class="tm-lvl-key">Entry</div><div class="tm-lvl-val">${escapeHtml(o.entry)}</div></div>
+          <div><div class="tm-lvl-key">SL</div><div class="tm-lvl-val" style="color:var(--bear);">${escapeHtml(o.sl)}</div></div>
+          <div><div class="tm-lvl-key">TP</div><div class="tm-lvl-val" style="color:var(--bull);">${escapeHtml(o.tp)}</div></div>
+          <div><div class="tm-lvl-key">R:R</div><div class="tm-lvl-val" style="color:var(--accent-dark);">${escapeHtml(o.rr)}</div></div>
+        </div>
+        <div class="tm-meta-box">
+          <div class="tm-meta-line">
+            <span class="tm-meta-lbl">Created:</span>
+            <span class="tm-meta-val">${escapeHtml(createdText)}</span>
+          </div>
+          <div class="tm-meta-line">
+            <span class="tm-meta-lbl">Expires:</span>
+            <span class="tm-meta-val">${escapeHtml(expiresText)}</span>
+          </div>
+          ${isPendingTab ? `
+            <div class="tm-meta-line">
+              <span class="tm-meta-lbl">Expiry:</span>
+              <span class="tm-meta-val" style="color:var(--warn);">${escapeHtml(expiryCountdown)}</span>
             </div>
-          `;
-        }).join("")
-      : `<div class="tm-empty">${TradeMindState.backendOnline ? "No limit orders returned for selected filter." : "Backend unavailable. Unable to load limit orders."}</div>`;
+          ` : `
+            ${activatedText ? `
+              <div class="tm-meta-line">
+                <span class="tm-meta-lbl">Activated:</span>
+                <span class="tm-meta-val">${escapeHtml(activatedText)}</span>
+              </div>
+            ` : ""}
+            ${completedText ? `
+              <div class="tm-meta-line">
+                <span class="tm-meta-lbl">Completed:</span>
+                <span class="tm-meta-val">${escapeHtml(completedText)}</span>
+              </div>
+            ` : ""}
+          `}
+        </div>
+        <div class="tm-card-foot">
+          <span>${escapeHtml(o.strategy)}</span>
+          <span>${escapeHtml(o.status)}</span>
+        </div>
+      </div>
+    `;
+  },
+
+  render() {
+    this.ensureDates();
+    const pendingPanel = document.getElementById("limitsPendingPanel");
+    const historyPanel = document.getElementById("limitsHistoryPanel");
+    const listEl = document.getElementById("limitsListContainer");
+
+    const allKnownOrders = [...(TradeMindState.pendingLimits || []), ...(TradeMindState.historyLimits || [])];
+    const uniqueOrdersMap = new Map();
+    allKnownOrders.forEach(o => {
+      if (o && o.id && !uniqueOrdersMap.has(String(o.id))) {
+        uniqueOrdersMap.set(String(o.id), o);
+      }
+    });
+    const uniqueOrders = Array.from(uniqueOrdersMap.values());
+
+    const overallPendingTotal = (TradeMindState.pendingLimits || []).filter(o =>
+      (this.symbol === "ALL" || o.symbol === this.symbol) &&
+      (this.tf === "ALL" || o.tf === this.tf)
+    ).length;
+
+    const overallActivatedTotal = uniqueOrders.filter(o =>
+      (this.symbol === "ALL" || o.symbol === this.symbol) &&
+      (this.tf === "ALL" || o.tf === this.tf) &&
+      this.classifyOrderBucket(o) === "ACTIVATED"
+    ).length;
+
+    const pendCountEl = document.getElementById("limOverallPendingCount");
+    const actCountEl = document.getElementById("limOverallActivatedCount");
+    if (pendCountEl) pendCountEl.textContent = String(overallPendingTotal);
+    if (actCountEl) actCountEl.textContent = String(overallActivatedTotal);
+
+    if (this.mode === "PENDING") {
+      if (pendingPanel) pendingPanel.style.display = "block";
+      if (historyPanel) historyPanel.style.display = "none";
+
+      const pendInput = document.getElementById("limPendDateInput");
+      if (pendInput && pendInput.value !== this.selectedPendingDate) {
+        pendInput.value = this.selectedPendingDate;
+      }
+      const pendBadge = document.getElementById("limPendSelectedDateBadge");
+      if (pendBadge) pendBadge.textContent = `${this.selectedPendingDate} PKT`;
+
+      const expiringOnSelectedDate = (TradeMindState.pendingLimits || []).filter(o => {
+        if (this.symbol !== "ALL" && o.symbol !== this.symbol) return false;
+        if (this.tf !== "ALL" && o.tf !== this.tf) return false;
+        const expKey = this.getPendingExpiryDateKey(o);
+        return expKey !== null && expKey === this.selectedPendingDate;
+      });
+
+      const dateCountEl = document.getElementById("limPendDateCountBadge");
+      if (dateCountEl) dateCountEl.textContent = String(expiringOnSelectedDate.length);
+
+      this.renderPendingCalendar();
+
+      listEl.innerHTML = expiringOnSelectedDate.length
+        ? expiringOnSelectedDate.map(o => this.renderOrderCard(o, true)).join("")
+        : `<div class="tm-empty">${TradeMindState.backendOnline ? `No pending orders expiring on ${escapeHtml(this.selectedPendingDate)} PKT for selected filter.` : "Backend unavailable. Unable to load pending limit orders."}</div>`;
+      return;
+    }
+
+    if (pendingPanel) pendingPanel.style.display = "none";
+    if (historyPanel) historyPanel.style.display = "block";
+
+    const histInput = document.getElementById("limHistDateInput");
+    if (histInput && histInput.value !== this.selectedHistoryDate) {
+      histInput.value = this.selectedHistoryDate;
+    }
+    const histBadge = document.getElementById("limHistSelectedDateBadge");
+    if (histBadge) histBadge.textContent = `${this.selectedHistoryDate} PKT`;
+
+    const matchingOrders = uniqueOrders.filter(o => {
+      if (this.symbol !== "ALL" && o.symbol !== this.symbol) return false;
+      if (this.tf !== "ALL" && o.tf !== this.tf) return false;
+      const primaryDate = this.getOrderPrimaryDateKey(o);
+      return primaryDate !== null && primaryDate === this.selectedHistoryDate;
+    });
+
+    let countActivated = 0;
+    let countTp = 0;
+    let countSl = 0;
+    let countExpired = 0;
+    let countPending = 0;
+
+    matchingOrders.forEach(o => {
+      const bucket = this.classifyOrderBucket(o);
+      if (bucket === "ACTIVATED") countActivated += 1;
+      else if (bucket === "TP_HIT") countTp += 1;
+      else if (bucket === "SL_HIT") countSl += 1;
+      else if (bucket === "EXPIRED") countExpired += 1;
+      else if (bucket === "PENDING") countPending += 1;
+    });
+
+    document.getElementById("limHistCountActivated").textContent = String(countActivated);
+    document.getElementById("limHistCountTp").textContent = String(countTp);
+    document.getElementById("limHistCountSl").textContent = String(countSl);
+    document.getElementById("limHistCountExpired").textContent = String(countExpired);
+    document.getElementById("limHistCountPending").textContent = String(countPending);
+
+    this.renderHistoryCalendar();
+
+    listEl.innerHTML = matchingOrders.length
+      ? matchingOrders.map(o => this.renderOrderCard(o, false)).join("")
+      : `<div class="tm-empty">${TradeMindState.backendOnline ? `No limit order records for ${escapeHtml(this.selectedHistoryDate)} PKT under selected filter.` : "Backend unavailable. Unable to load limit order history."}</div>`;
   }
 };
 
 
 /**
  * CALENDAR HISTORY UI ENGINE (PKT / Asia:Karachi)
- * Frontend UI preview with empty states and clearly labelled placeholders.
- * No fake/simulated prices or trades; no backend calls added.
+ * Preserves existing Stats calendar behavior with strict Asia/Karachi conversion.
  */
 const CalendarHistoryEngine = {
   activeTab: "signals",
@@ -2622,29 +3661,21 @@ const CalendarHistoryEngine = {
   limitOrderRecords: [],
 
   extractPktDateIso(rawStamp) {
-    if (!rawStamp || rawStamp === "--") return null;
-    const str = String(rawStamp).trim();
-    const isoMatch = str.match(/^(\d{4}-\d{2}-\d{2})/);
-    if (isoMatch) return isoMatch[1];
-    const ms = Date.parse(str.includes("T") ? str : str.replace(" ", "T"));
-    if (Number.isFinite(ms)) {
-      return this.getPktParts(new Date(ms)).iso;
-    }
-    return null;
+    return toPktDateKey(rawStamp);
   },
 
   classifyOutcome(sig) {
     const o = String(sig.outcome || "").toUpperCase();
     const st = String(sig.status || "").toUpperCase();
-    if (o.includes("TP") || o === "WIN" || st === "TP HIT" || st === "WIN") return "TP WIN";
-    if (o.includes("SL") || o === "LOSS" || st === "SL HIT" || st === "LOSS") return "SL LOSS";
+    if (o.includes("TP") || o === "WIN" || st === "TP HIT" || st === "TP_HIT" || st === "WIN") return "TP WIN";
+    if (o.includes("SL") || o === "LOSS" || st === "SL HIT" || st === "SL_HIT" || st === "LOSS") return "SL LOSS";
     return null;
   },
 
   classifyLimitStatus(ord) {
     const raw = String(ord.status || "").toUpperCase().trim();
-    if (raw === "TP COMPLETED" || raw === "TP HIT" || raw === "WIN") return "TP COMPLETED";
-    if (raw === "SL COMPLETED" || raw === "SL HIT" || raw === "LOSS") return "SL COMPLETED";
+    if (raw === "TP COMPLETED" || raw === "TP_COMPLETED" || raw === "TP HIT" || raw === "TP_HIT" || raw === "WIN") return "TP COMPLETED";
+    if (raw === "SL COMPLETED" || raw === "SL_COMPLETED" || raw === "SL HIT" || raw === "SL_HIT" || raw === "LOSS") return "SL COMPLETED";
     if (raw === "ACTIVATED" || raw === "TRIGGERED" || raw === "ACTIVE") return "ACTIVATED";
     if (raw === "EXPIRED") return "EXPIRED";
     if (raw === "INVALIDATED" || raw === "CANCELLED" || raw === "CANCELED") return "INVALIDATED";
@@ -2657,8 +3688,8 @@ const CalendarHistoryEngine = {
     const seenSig = new Set();
     (TradeMindState.historySignals || []).forEach(s => {
       const outcome = this.classifyOutcome(s);
-      if (!outcome) return; // Only TP WIN or SL LOSS; never pending/active
-      const completionStamp = s.completedPkt || s.pktTime;
+      if (!outcome) return;
+      const completionStamp = s.completedRaw || s.completedPkt || null;
       const completionDatePkt = this.extractPktDateIso(completionStamp);
       if (!completionDatePkt) return;
       const key = `${s.id}_${outcome}_${completionDatePkt}`;
@@ -2674,7 +3705,7 @@ const CalendarHistoryEngine = {
         tp: s.tp,
         outcome,
         completionDatePkt,
-        completionTimePkt: completionStamp
+        completionTimePkt: completionStamp ? formatPktDateTime(completionStamp) : "--"
       });
     });
     this.signalRecords = completedSignals;
@@ -2683,10 +3714,10 @@ const CalendarHistoryEngine = {
     const dedupMap = new Map();
     combinedLimits.forEach(o => {
       const status = this.classifyLimitStatus(o);
-      const creationDatePkt = this.extractPktDateIso(o.createdPkt || o.pktTime);
-      const activationDatePkt = this.extractPktDateIso(o.activatedPkt);
-      const completionDatePkt = this.extractPktDateIso(o.completedPkt);
-      const expiryOrInvDatePkt = this.extractPktDateIso(o.expiredPkt || o.invalidatedPkt);
+      const creationDatePkt = this.extractPktDateIso(o.createdRaw || o.createdPkt);
+      const activationDatePkt = this.extractPktDateIso(o.activatedRaw || o.activatedPkt);
+      const completionDatePkt = this.extractPktDateIso(o.completedRaw || o.completedPkt);
+      const expiryOrInvDatePkt = this.extractPktDateIso(o.expiredRaw || o.expiredPkt || o.invalidatedRaw || o.invalidatedPkt);
 
       let eventDatePkt = creationDatePkt;
       if (status === "TP COMPLETED" || status === "SL COMPLETED") {
@@ -2699,41 +3730,30 @@ const CalendarHistoryEngine = {
 
       const orderKey = String(o.id || `${o.symbol}_${o.tf}_${o.entry}_${status}_${eventDatePkt || ""}`);
       dedupMap.set(orderKey, {
-          id: o.id,
-          symbol: o.symbol,
-          timeframe: o.tf,
-          orderType: o.orderType,
-          status,
-          entry: o.entry,
-          sl: o.sl,
-          tp: o.tp,
-          creationDatePkt,
-          activationDatePkt,
-          completionDatePkt,
-          expiryOrInvDatePkt,
-          eventDatePkt,
-          activatedAtPkt: o.activatedPkt || "--",
-          completedAtPkt: o.completedPkt || o.expiredPkt || o.invalidatedPkt || "--"
-        });
+        id: o.id,
+        symbol: o.symbol,
+        timeframe: o.tf,
+        orderType: o.orderType,
+        status,
+        entry: o.entry,
+        sl: o.sl,
+        tp: o.tp,
+        creationDatePkt,
+        activationDatePkt,
+        completionDatePkt,
+        expiryOrInvDatePkt,
+        eventDatePkt,
+        activatedAtPkt: o.activatedRaw ? formatPktDateTime(o.activatedRaw) : "--",
+        completedAtPkt: (o.completedRaw || o.expiredRaw || o.invalidatedRaw)
+          ? formatPktDateTime(o.completedRaw || o.expiredRaw || o.invalidatedRaw)
+          : "--"
+      });
     });
     this.limitOrderRecords = Array.from(dedupMap.values());
   },
 
   getPktParts(dateObj = new Date()) {
-    const parts = new Intl.DateTimeFormat("en-CA", {
-      timeZone: TradeMindConfig.timezone,
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit"
-    }).formatToParts(dateObj);
-    const map = {};
-    parts.forEach(p => { if (p.type !== "literal") map[p.type] = p.value; });
-    return {
-      year: Number(map.year),
-      month: Number(map.month),
-      day: Number(map.day),
-      iso: `${map.year}-${map.month}-${map.day}`
-    };
+    return getPktDatePartsFromMs(dateObj.getTime());
   },
 
   getTodayPktIso() {
@@ -3144,13 +4164,13 @@ const PreferencesEngine = {
     }
     const perm = Notification.permission;
     if (this.notificationsEnabled && perm === "granted") {
-      statusEl.textContent = "Enabled (foreground browser alerts only)";
+      statusEl.textContent = "Enabled (active session browser alerts; closed-app push requires FCM)";
       btnEl.textContent = "Disable";
     } else if (perm === "denied") {
       statusEl.textContent = "Permission blocked in browser settings";
       btnEl.textContent = "Blocked";
     } else {
-      statusEl.textContent = "Off · Browser permission only (no background push)";
+      statusEl.textContent = "Off · Active session alerts only (closed-app push not configured)";
       btnEl.textContent = "Enable";
     }
   },
@@ -3165,6 +4185,12 @@ const PreferencesEngine = {
     }
     if (Notification.permission === "granted") {
       this.notificationsEnabled = true;
+      SignalNotificationTracker.loadSeen();
+      (TradeMindState.activeSignals || []).forEach(s => {
+        if (s && s.id) SignalNotificationTracker.seenIds.add(String(s.id));
+      });
+      SignalNotificationTracker.saveSeen();
+      SignalNotificationTracker.initializedBaseline = true;
       this.saveLocal();
       this.updateNotifUi();
       return;
@@ -3172,6 +4198,14 @@ const PreferencesEngine = {
     try {
       const perm = await Notification.requestPermission();
       this.notificationsEnabled = (perm === "granted");
+      if (this.notificationsEnabled) {
+        SignalNotificationTracker.loadSeen();
+        (TradeMindState.activeSignals || []).forEach(s => {
+          if (s && s.id) SignalNotificationTracker.seenIds.add(String(s.id));
+        });
+        SignalNotificationTracker.saveSeen();
+        SignalNotificationTracker.initializedBaseline = true;
+      }
       this.saveLocal();
       this.updateNotifUi();
     } catch (_) {
@@ -3189,7 +4223,7 @@ const PreferencesEngine = {
       if (statusEl) statusEl.textContent = "Enable browser notification permission first.";
       return;
     }
-    new Notification("TradeMind", {
+    new Notification("TradeMind — New Signal", {
       body: `Test alert (${getPktClock()}) · Broker execution disabled.`
     });
     if (statusEl) statusEl.textContent = `Test notification sent at ${getPktClock()}.`;
@@ -3241,10 +4275,13 @@ const PreferencesEngine = {
     try {
       localStorage.removeItem(this._storageKey);
       localStorage.removeItem(TvChart._storageKey);
+      localStorage.removeItem(SignalNotificationTracker._storageKey);
     } catch (_) {}
     TradeMindConfig.apiBaseUrl = "http://127.0.0.1:8000";
     this.notificationsEnabled = false;
     this.pollIntervalMs = 20000;
+    SignalNotificationTracker.seenIds.clear();
+    SignalNotificationTracker.initializedBaseline = false;
     document.getElementById("prefRiskDisplay").textContent = "1.00%";
     TvChart.resetViewport();
     TvChart.clearDrawings();
@@ -3271,6 +4308,7 @@ const TradeMindApp = {
 
       const [healthR, marketsR, tfR, actSigR, histSigR, perfR, pendLimR, histLimR] = results;
       const wasOffline = !TradeMindState.backendOnline;
+      const hadSyncedBefore = Boolean(TradeMindState.lastSyncPkt);
       const dataSyncSuccess = results.slice(1).some(r => r.status === "fulfilled");
 
       if (dataSyncSuccess) {
@@ -3310,6 +4348,10 @@ const TradeMindApp = {
       if (actSigR.status === "fulfilled") {
         const raw = Array.isArray(actSigR.value.signals) ? actSigR.value.signals : [];
         TradeMindState.activeSignals = raw.map(r => normalizeSignalRecord(r, "ACTIVE"));
+        SignalNotificationTracker.processActiveSignals(
+          TradeMindState.activeSignals,
+          hadSyncedBefore || TradeMindState.backendOnline
+        );
       }
 
       if (histSigR.status === "fulfilled") {
@@ -3336,7 +4378,7 @@ const TradeMindApp = {
       SignalsEngine.render();
       LimitsEngine.render();
       PerformanceEngine.render();
-CalendarHistoryEngine.render();
+      CalendarHistoryEngine.render();
       TvChart.updateHeader();
       TvChart.updateCountdown();
       TvChart.render();
