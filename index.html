@@ -1519,11 +1519,11 @@ const TermuxControlEngine = {
 
   setUi(stateOn, noteText) {
     this.isOn = Boolean(stateOn);
-    const btn = document.getElementById("tmTermuxToggleBtn");
-    const note = document.getElementById("tmTermuxControlNote");
+    const btn = document.getElementById("termuxToggleBtn");
+    const note = document.getElementById("termuxControlNote");
     if (btn) {
       btn.disabled = this.busy;
-      btn.textContent = this.busy ? "..." : (this.isOn ? "ON" : "OFF");
+      btn.textContent = this.busy ? "..." : (this.isOn ? "STOP" : "START");
       btn.classList.toggle("is-on", this.isOn);
       btn.classList.toggle("is-off", !this.isOn);
     }
@@ -1534,13 +1534,15 @@ const TermuxControlEngine = {
 
   launchScript(scriptPath) {
     try {
-      const intentUrl =
-        "intent:#Intent;action=com.termux.RUN_COMMAND;package=com.termux;" +
-        `S.com.termux.RUN_COMMAND_PATH=${scriptPath};` +
-        "B.com.termux.RUN_COMMAND_BACKGROUND=true;end";
-      window.location.href = intentUrl;
+      const isStart = scriptPath === this.startScriptPath;
+      const cmdText = isStart ? "~/TradeMind/backend/start.sh" : "~/TradeMind/backend/stop.sh";
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(cmdText).catch(() => {});
+      }
+      window.location.href = "termux://";
     } catch (_) {}
   },
+
 
   async checkHealthOnce() {
     const healthUrl = `${TradeMindConfig.apiBaseUrl.replace(/\/+$/, "")}/health`;
