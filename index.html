@@ -270,6 +270,28 @@
     cursor: pointer;
   }
 
+  .tm-toggle-btn {
+    border-radius: var(--radius-pill);
+    padding: 7px 14px;
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    transition: all 0.15s ease;
+  }
+
+  .tm-toggle-btn.is-on {
+    background: var(--bull-bg);
+    border-color: var(--bull);
+    color: var(--bull);
+  }
+
+  .tm-toggle-btn.is-off {
+    background: var(--bear-bg);
+    border-color: var(--bear);
+    color: var(--bear);
+  }
+
   .tm-badge {
     display: inline-block;
     padding: 2px 8px;
@@ -1055,9 +1077,13 @@
     <div class="tm-card" id="prefBackendStatusCard">
       <div class="row-between" style="padding:4px 0;">
         <strong style="font-size:13px;">Backend Connection</strong>
-        <span id="prefBackendStatusBadge" class="tm-live-pill lost">OFFLINE</span>
+        <div class="row-inline">
+          <button id="tmTermuxToggleBtn" type="button" class="tm-toggle-btn is-off" onclick="TermuxControlEngine.toggle()">OFF</button>
+          <span id="prefBackendStatusBadge" class="tm-live-pill lost">OFFLINE</span>
+        </div>
       </div>
       <div id="prefBackendStatusDetail" class="tm-sec-meta">Checking backend connection...</div>
+      <div id="tmTermuxControlNote" class="tm-sec-meta" style="margin-top:5px;">Termux backend: OFF</div>
       <div id="prefLastSyncText" class="tm-sec-meta" style="margin-top:7px;">Last successful data sync: --</div>
     </div>
     <div class="tm-card">
@@ -1475,7 +1501,133 @@ function updateGlobalBanner() {
   if (settingsSync) {
     settingsSync.textContent = `Last successful data sync: ${TradeMindState.lastSyncPkt || "--"}`;
   }
+
+  if (typeof TermuxControlEngine !== "undefined") {
+    TermuxControlEngine.syncWithBackend();
+  }
 }
+
+/**
+ * TERMUX ON/OFF CONTROL ENGINE (SETTINGS)
+ * Launches Termux start.sh / stop.sh via com.termux.RUN_COMMAND and polls /health.
+ */
+const TermuxControlEngine = {
+  isOn: false,
+  busy: false,
+  startScriptPath: "/data/data/com.termux/files/home/TradeMind/backend/start.sh",
+  stopScriptPath: "/data/data/com.termux/files/home/TradeMind/backend/stop.sh",
+
+  setUi(stateOn, noteText) {
+    this.isOn = Boolean(stateOn);
+    const btn = document.getElementById("tmTermuxToggleBtn");
+    const note = document.getElementById("tmTermuxControlNote");
+    if (btn) {
+      btn.disabled = this.busy;
+      btn.textContent = this.busy ? "..." : (this.isOn ? "ON" : "OFF");
+      btn.classList.toggle("is-on", this.isOn);
+      btn.classList.toggle("is-off", !this.isOn);
+    }
+    if (note && noteText) {
+      note.textContent = noteText;
+    }
+  },
+
+  launchScript(scriptPath) {
+    try {
+      const intentUrl =
+        "intent:#Intent;action=com.termux.RUN_COMMAND;package=com.termux;" +
+        `S.com.termux.RUN_COMMAND_PATH=${scriptPath};` +
+        "B.com.termux.RUN_COMMAND_BACKGROUND=true;end";
+      window.location.href = intentUrl;
+    } catch (_) {}
+  },
+
+  async checkHealthOnce() {
+    const healthUrl = `${TradeMindConfig.apiBaseUrl.replace(/\/+$/, "")}/health`;
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 3000);
+    try {
+      const res = await fetch(healthUrl, {
+        method: "GET",
+        headers: { "Accept": "application/json" },
+        signal: controller.signal
+      });
+      clearTimeout(timer);
+      return res.ok;
+    } catch (_) {
+      clearTimeout(timer);
+      return false;
+    }
+  },
+
+  syncWithBackend() {
+    if (this.busy) return;
+    if (TradeMindState.backendOnline) {
+      this.setUi(true, "Termux backend running (127.0.0.1:8000)");
+    } else {
+      this.setUi(false, "Termux backend OFF (127.0.0.1:8000)");
+    }
+  },
+
+  async startBackend() {
+    this.busy = true;
+    this.setUi(true, "Starting Termux backend via start.sh...");
+    this.launchScript(this.startScriptPath);
+
+    for (let i = 0; i < 8; i++) {
+      await new Promise(r => setTimeout(r, 1500));
+      const alive = await this.checkHealthOnce();
+      if (alive) {
+        this.busy = false;
+        await TradeMindApp.refreshAll(true);
+        this.setUi(true, "Termux backend ONLINE (127.0.0.1:8000)");
+        return;
+      }
+    }
+
+    this.busy = false;
+    await TradeMindApp.refreshAll(true);
+    if (TradeMindState.backendOnline) {
+      this.setUi(true, "Termux backend ONLINE (127.0.0.1:8000)");
+    } else {
+      this.setUi(false, "start.sh sent — backend not responding on 127.0.0.1:8000 yet");
+    }
+  },
+
+  async stopBackend() {
+    this.busy = true;
+    this.setUi(false, "Stopping Termux backend via stop.sh...");
+    this.launchScript(this.stopScriptPath);
+
+    for (let i = 0; i < 8; i++) {
+      await new Promise(r => setTimeout(r, 1200));
+      const alive = await this.checkHealthOnce();
+      if (!alive) {
+        this.busy = false;
+        await TradeMindApp.refreshAll(true);
+        this.setUi(false, "Termux backend OFFLINE (127.0.0.1:8000)");
+        return;
+      }
+    }
+
+    this.busy = false;
+    await TradeMindApp.refreshAll(true);
+    if (TradeMindState.backendOnline) {
+      this.setUi(true, "stop.sh sent — backend still responding on 127.0.0.1:8000");
+    } else {
+      this.setUi(false, "Termux backend OFFLINE (127.0.0.1:8000)");
+    }
+  },
+
+  toggle() {
+    if (this.busy) return;
+    if (!this.isOn && !TradeMindState.backendOnline) {
+      this.startBackend();
+    } else {
+      this.stopBackend();
+    }
+  }
+};
 
 const HomeEngine = {
   render() {
