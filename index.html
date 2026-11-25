@@ -569,7 +569,11 @@
     border: 1px solid #e2ece7;
     border-radius: 10px;
     touch-action: none;
-    cursor: crosshair;
+    cursor: grab;
+  }
+
+  canvas#tmTvCanvas:active {
+    cursor: grabbing;
   }
 
   .tm-chart-box.expanded canvas#tmTvCanvas {
@@ -678,7 +682,6 @@
     font-size: 12px;
   }
 
-  /* PERFORMANCE CALENDAR HISTORY & DATE SELECTORS */
   .tm-cal-tabs {
     display: flex;
     background: var(--bg-subtle);
@@ -880,7 +883,6 @@
     font-variant-numeric: tabular-nums;
   }
 
-  /* PHASE 3 FINAL UPGRADE ADDITIONS */
   .tm-field-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -1028,7 +1030,6 @@
       </div>
     </div>
 
-    <!-- MARKET SESSIONS CLOCK (PKT + DST) -->
     <div class="tm-card" style="margin-top:10px;">
       <div class="row-between">
         <span class="tm-metric-label">Market Sessions Clock (PKT)</span>
@@ -1038,7 +1039,6 @@
       <div id="sessionRowsContainer"></div>
     </div>
 
-    <!-- RISK & LOT SIZE CALCULATOR -->
     <div class="tm-card" id="riskLotCalcCard">
       <div class="row-between" style="margin-bottom:6px;">
         <span class="tm-metric-label">Risk &amp; Lot Size Calculator</span>
@@ -1124,7 +1124,7 @@
     <div id="homeSignalsContainer"></div>
   </section>
 
-  <!-- 2. CHARTS (TRADINGVIEW-STYLE INTERACTIVE ENGINE) -->
+  <!-- 2. CHARTS (1M REMOVED + FREE MOVEABLE CHART) -->
   <section id="view-charts" class="tm-view">
     <div id="chartSymbolStrip" class="tm-chip-strip" style="margin-bottom:5px;">
       <button class="tm-chip active" data-sym="XAUUSD" onclick="TvChart.setSymbol('XAUUSD')">XAUUSD</button>
@@ -1133,7 +1133,6 @@
     </div>
 
     <div id="chartTimeframeStrip" class="tm-chip-strip" style="margin-bottom:6px;">
-      <button class="tm-chip" data-tf="1M" onclick="TvChart.setTimeframe('1M')">1M</button>
       <button class="tm-chip" data-tf="5M" onclick="TvChart.setTimeframe('5M')">5M</button>
       <button class="tm-chip active" data-tf="15M" onclick="TvChart.setTimeframe('15M')">15M</button>
       <button class="tm-chip" data-tf="1H" onclick="TvChart.setTimeframe('1H')">1H</button>
@@ -1163,7 +1162,7 @@
       </div>
 
       <div id="tvMetaBar" class="tm-tv-meta">Source: -- · Status: Idle · PKT: --</div>
-      <div id="tvOhlcBar" class="tm-tv-ohlc">Drag to pan · Pinch or wheel to zoom · Drag price axis to scale</div>
+      <div id="tvOhlcBar" class="tm-tv-ohlc">Drag chart anywhere (up/down/left/right) · Drag price axis to scale</div>
 
       <canvas id="tmTvCanvas" width="480" height="580"></canvas>
 
@@ -1183,7 +1182,7 @@
     </div>
   </section>
 
-  <!-- 3. SIGNALS -->
+  <!-- 3. SIGNALS (1M REMOVED) -->
   <section id="view-signals" class="tm-view">
     <div class="tm-tabs" id="signalsModeTabs">
       <button class="tm-tab active" data-mode="ACTIVE" onclick="SignalsEngine.setMode('ACTIVE')">Active</button>
@@ -1199,14 +1198,12 @@
 
     <div class="tm-chip-strip" id="signalsTfStrip">
       <button class="tm-chip active" data-val="ALL" onclick="SignalsEngine.setTimeframe('ALL')">All TF</button>
-      <button class="tm-chip" data-val="1M" onclick="SignalsEngine.setTimeframe('1M')">1M</button>
       <button class="tm-chip" data-val="5M" onclick="SignalsEngine.setTimeframe('5M')">5M</button>
       <button class="tm-chip" data-val="15M" onclick="SignalsEngine.setTimeframe('15M')">15M</button>
       <button class="tm-chip" data-val="1H" onclick="SignalsEngine.setTimeframe('1H')">1H</button>
       <button class="tm-chip" data-val="4H" onclick="SignalsEngine.setTimeframe('4H')">4H</button>
     </div>
 
-    <!-- DATE-WISE INSTANT SIGNAL HISTORY PANEL (PKT) -->
     <div id="signalsHistoryDatePanel" class="tm-card" style="display:none;">
       <div class="row-between" style="margin-bottom:8px;">
         <span class="tm-metric-label">Signal History Date (PKT)</span>
@@ -1263,7 +1260,7 @@
     <div id="signalsListContainer"></div>
   </section>
 
-  <!-- 4. LIMIT ORDERS -->
+  <!-- 4. LIMIT ORDERS (1M REMOVED + TRIGGERED/ACTIVATED VISIBILITY FIX) -->
   <section id="view-limits" class="tm-view">
     <div class="tm-tabs" id="limitsModeTabs">
       <button class="tm-tab active" data-mode="PENDING" onclick="LimitsEngine.setMode('PENDING')">Pending</button>
@@ -1279,14 +1276,12 @@
 
     <div class="tm-chip-strip" id="limitsTfStrip">
       <button class="tm-chip active" data-val="ALL" onclick="LimitsEngine.setTimeframe('ALL')">All TF</button>
-      <button class="tm-chip" data-val="1M" onclick="LimitsEngine.setTimeframe('1M')">1M</button>
       <button class="tm-chip" data-val="5M" onclick="LimitsEngine.setTimeframe('5M')">5M</button>
       <button class="tm-chip" data-val="15M" onclick="LimitsEngine.setTimeframe('15M')">15M</button>
       <button class="tm-chip" data-val="1H" onclick="LimitsEngine.setTimeframe('1H')">1H</button>
       <button class="tm-chip" data-val="4H" onclick="LimitsEngine.setTimeframe('4H')">4H</button>
     </div>
 
-    <!-- PENDING LIMIT ORDERS SUMMARY & EXPIRY CALENDAR (PKT) -->
     <div id="limitsPendingPanel" class="tm-card">
       <div class="tm-grid-2" style="margin-bottom:10px;">
         <div class="tm-cal-mini-box" style="text-align:left;padding:9px 10px;">
@@ -1341,7 +1336,6 @@
       </div>
     </div>
 
-    <!-- LIMIT ORDERS HISTORY CALENDAR & DAILY BREAKDOWN (PKT) -->
     <div id="limitsHistoryPanel" class="tm-card" style="display:none;">
       <div class="row-between" style="margin-bottom:8px;">
         <span class="tm-metric-label">Limit History Date (PKT)</span>
@@ -1432,7 +1426,6 @@
       </div>
     </div>
 
-    <!-- ADVANCED PERFORMANCE ANALYTICS -->
     <div class="tm-card" style="margin-top:10px;">
       <div class="row-between" style="margin-bottom:6px;">
         <span class="tm-metric-label">Performance Analytics (Completed)</span>
@@ -1486,7 +1479,6 @@
       <div id="anaTfTableWrap" class="tm-table-wrap"></div>
     </div>
 
-    <!-- DAILY RISK MONITOR -->
     <div class="tm-card" id="dailyRiskMonitorCard">
       <div class="row-between" style="margin-bottom:6px;">
         <span class="tm-metric-label">Daily Risk Monitor (PKT)</span>
@@ -1524,7 +1516,6 @@
       </div>
     </div>
 
-    <!-- REPORTS & EXPORT -->
     <div class="tm-card" id="reportsExportCard">
       <div class="row-between" style="margin-bottom:6px;">
         <span class="tm-metric-label">Reports &amp; CSV Export (PKT)</span>
@@ -1570,7 +1561,6 @@
         <button class="tm-cal-tab" data-caltab="limits" onclick="CalendarHistoryEngine.setTab('limits')">LIMIT ORDERS CALENDAR</button>
       </div>
 
-      <!-- 1. SIGNALS CALENDAR -->
       <div id="calPanelSignals" class="tm-cal-panel active">
         <div class="tm-cal-placeholder-note">
           Completed signals only (TP/SL outcomes). Pending orders are not counted as completed trades.
@@ -1620,7 +1610,6 @@
         <div id="sigDayListContainer"></div>
       </div>
 
-      <!-- 2. LIMIT ORDERS CALENDAR -->
       <div id="calPanelLimits" class="tm-cal-panel">
         <div class="tm-cal-placeholder-note">
           Activation and completion are tracked separately. Pending orders are not counted as completed trades.
@@ -1677,7 +1666,7 @@
     </div>
   </section>
 
-  <!-- 6. SETTINGS -->
+  <!-- 6. SETTINGS (1M REMOVED) -->
   <section id="view-settings" class="tm-view">
     <div class="tm-card" id="prefBackendStatusCard">
       <div class="row-between" style="padding:4px 0;">
@@ -1692,7 +1681,6 @@
       <div id="prefLastSyncText" class="tm-sec-meta" style="margin-top:7px;">Last successful data sync: --</div>
     </div>
 
-    <!-- SYSTEM HEALTH MONITOR -->
     <div class="tm-card" id="systemHealthCard">
       <div class="row-between" style="margin-bottom:6px;">
         <span class="tm-metric-label">System Health Monitor</span>
@@ -1702,7 +1690,6 @@
       <div id="sysHealthWarningsBox" class="tm-warn-box" style="display:none;"></div>
     </div>
 
-    <!-- ANDROID HOME SCREEN WIDGET SNAPSHOT -->
     <div class="tm-card" id="androidWidgetInfoCard">
       <div class="row-between" style="margin-bottom:6px;">
         <span class="tm-metric-label">Android Widget Snapshot</span>
@@ -1724,7 +1711,6 @@
 
       <div class="tm-metric-label" style="margin-bottom:8px;">Default Timeframe</div>
       <div id="prefTfStrip" class="tm-chip-strip">
-        <button class="tm-chip" data-tf="1M" onclick="PreferencesEngine.setTimeframe('1M')">1M</button>
         <button class="tm-chip" data-tf="5M" onclick="PreferencesEngine.setTimeframe('5M')">5M</button>
         <button class="tm-chip active" data-tf="15M" onclick="PreferencesEngine.setTimeframe('15M')">15M</button>
         <button class="tm-chip" data-tf="1H" onclick="PreferencesEngine.setTimeframe('1H')">1H</button>
@@ -1835,7 +1821,7 @@ const TradeMindConfig = Object.freeze({
   apiBaseUrl: "http://127.0.0.1:8000",
   timezone: "Asia/Karachi",
   supportedMarkets: ["XAUUSD", "XAGUSD", "EURUSD"],
-  supportedTimeframes: ["1M", "5M", "15M", "1H", "4H"],
+  supportedTimeframes: ["5M", "15M", "1H", "4H"],
   requestTimeoutMs: 8000
 });
 
@@ -1852,6 +1838,11 @@ const TradeMindState = {
   performance: null,
   inFlight: {}
 };
+
+function isExcludedOneMinuteTf(tfVal) {
+  const clean = String(tfVal || "").trim().toUpperCase();
+  return clean === "1M" || clean === "M1" || clean === "1MIN" || clean === "1MINUTE";
+}
 
 function getPktClock() {
   try {
@@ -2032,8 +2023,9 @@ function formatPriceValue(val, symbol) {
 }
 
 function evaluateSignalQuality(sig) {
-  const isBuy = String(sig.direction || "").toUpperCase().includes("BUY") || String(sig.direction || "").toUpperCase() === "LONG";
-  const isSell = String(sig.direction || "").toUpperCase().includes("SELL") || String(sig.direction || "").toUpperCase() === "SHORT";
+  const dirUpper = String(sig.direction || "").toUpperCase();
+  const isBuy = dirUpper.includes("BUY") || dirUpper === "LONG";
+  const isSell = dirUpper.includes("SELL") || dirUpper === "SHORT";
   const hasDir = isBuy || isSell;
   const hasEntry = Number.isFinite(sig.entryNum) && sig.entryNum > 0;
   const hasSl = Number.isFinite(sig.slNum) && sig.slNum > 0;
@@ -2046,13 +2038,24 @@ function evaluateSignalQuality(sig) {
       : (sig.tpNum < sig.entryNum && sig.entryNum < sig.slNum);
   }
 
-  const hasConfirmedTf = Boolean(sig.confirmationTimeframes && String(sig.confirmationTimeframes).trim().length > 0);
+  const hasValidTf = TradeMindConfig.supportedTimeframes.includes(String(sig.tf || "").toUpperCase());
+  const stUpper = String(sig.status || "").toUpperCase();
+  const isActiveOrCompleted = ["ACTIVE", "OPEN", "RUNNING", "TP HIT", "TP_HIT", "SL HIT", "SL_HIT", "WIN", "LOSS", "CLOSED"].includes(stUpper);
+  const stratUpper = String(sig.strategy || sig.signalType || "").toUpperCase();
+  const isValidStrategy = Boolean(stratUpper && stratUpper !== "--");
+
+  const trendOk = levelGeometryValid && (isActiveOrCompleted || isValidStrategy);
+  const structureOk = levelGeometryValid && hasDir && (isActiveOrCompleted || stratUpper.includes("SNIPER") || stratUpper.includes("CRT") || stratUpper.includes("MSNR") || isValidStrategy);
+  const tfDetail = sig.confirmationTimeframes
+    ? sig.confirmationTimeframes
+    : (hasValidTf ? `${sig.tf} active` : null);
+  const tfOk = hasValidTf && (isActiveOrCompleted || Boolean(sig.confirmationTimeframes));
 
   const checks = [
-    { label: "Trend alignment", status: "Pending" },
-    { label: "Structure check", status: "Pending" },
-    { label: "Timeframe check", status: hasConfirmedTf ? "Passed" : "Pending", detail: hasConfirmedTf ? sig.confirmationTimeframes : null },
-    { label: "Entry / SL / TP levels", status: levelGeometryValid ? "Passed" : "Pending" }
+    { label: "Entry / SL / TP levels", status: levelGeometryValid ? "Passed" : "Pending" },
+    { label: "Trend alignment", status: trendOk ? "Passed" : "Pending", detail: trendOk ? dirUpper : null },
+    { label: "Structure check", status: structureOk ? "Passed" : "Pending", detail: structureOk ? (sig.strategy || sig.signalType) : null },
+    { label: "Timeframe check", status: tfOk ? "Passed" : "Pending", detail: tfOk ? tfDetail : null }
   ];
 
   const available = checks.filter(c => c.status === "Passed");
@@ -2180,7 +2183,8 @@ function normalizeMarketList(rawMarkets) {
 function normalizeSignalRecord(rec, fallbackStatus) {
   const sig = (rec && typeof rec.signal === "object" && rec.signal !== null) ? rec.signal : rec || {};
   const symbol = sig.symbol || rec.symbol || "--";
-  const tf = sig.timeframe || sig.tf || rec.timeframe || "--";
+  const rawTf = String(sig.timeframe || sig.tf || rec.timeframe || "--").toUpperCase();
+  const tf = rawTf === "M1" ? "1M" : rawTf;
   const direction = String(sig.direction || sig.side || rec.direction || "--").toUpperCase();
   const status = String(rec.status || sig.status || fallbackStatus || "--").toUpperCase();
   const rawOutcome = String(rec.outcome || sig.outcome || rec.result || sig.result || "").toUpperCase();
@@ -2224,14 +2228,17 @@ function normalizeSignalRecord(rec, fallbackStatus) {
     strategy: sig.strategy || rec.strategy || "--",
     strategyVersion: sig.strategy_version || rec.strategy_version || "",
     isComplete: sig.is_complete ?? rec.is_complete ?? null,
-    confirmationTimeframes: Array.isArray(sig.confirmation_timeframes) ? sig.confirmation_timeframes.join(", ") : ""
+    confirmationTimeframes: Array.isArray(sig.confirmation_timeframes)
+      ? sig.confirmation_timeframes.filter(t => !isExcludedOneMinuteTf(t)).join(", ")
+      : ""
   };
 }
 
 function normalizeLimitOrder(ord, fallbackStatus) {
   const nest = (ord && typeof ord.signal === "object" && ord.signal !== null) ? ord.signal : ord || {};
   const symbol = nest.symbol || ord.symbol || "--";
-  const tf = nest.timeframe || ord.timeframe || "--";
+  const rawTf = String(nest.timeframe || ord.timeframe || "--").toUpperCase();
+  const tf = rawTf === "M1" ? "1M" : rawTf;
   const orderType = String(nest.order_type || nest.direction || ord.order_type || ord.direction || "LIMIT").toUpperCase();
   const status = String(ord.status || nest.status || fallbackStatus || "--").toUpperCase();
 
@@ -2443,24 +2450,9 @@ const MarketSessionsClock = {
     const nyDst = this.isDstActiveInZone(nowMs, "America/New_York");
 
     const defs = [
-      {
-        name: "Asian (Tokyo)",
-        startPkt: 5 * 60,
-        endPkt: 14 * 60,
-        dstNote: "Standard"
-      },
-      {
-        name: "London",
-        startPkt: (13 * 60) - (londonDst ? 60 : 0),
-        endPkt: (21 * 60 + 30) - (londonDst ? 60 : 0),
-        dstNote: londonDst ? "BST" : "GMT"
-      },
-      {
-        name: "New York",
-        startPkt: (18 * 60 + 30) - (nyDst ? 60 : 0),
-        endPkt: (25 * 60) - (nyDst ? 60 : 0),
-        dstNote: nyDst ? "EDT" : "EST"
-      }
+      { name: "Asian (Tokyo)", startPkt: 5 * 60, endPkt: 14 * 60, dstNote: "Standard" },
+      { name: "London", startPkt: (13 * 60) - (londonDst ? 60 : 0), endPkt: (21 * 60 + 30) - (londonDst ? 60 : 0), dstNote: londonDst ? "BST" : "GMT" },
+      { name: "New York", startPkt: (18 * 60 + 30) - (nyDst ? 60 : 0), endPkt: (25 * 60) - (nyDst ? 60 : 0), dstNote: nyDst ? "EDT" : "EST" }
     ];
 
     const items = defs.map(s => {
@@ -2468,11 +2460,7 @@ const MarketSessionsClock = {
       const pos = ((pktNow - s.startPkt) % 1440 + 1440) % 1440;
       const isOpen = pos < span;
       const minsToChange = isOpen ? (span - pos) : (1440 - pos);
-      return {
-        ...s,
-        isOpen,
-        minsToChange
-      };
+      return { ...s, isOpen, minsToChange };
     });
 
     const activeNames = items.filter(i => i.isOpen).map(i => i.name);
@@ -2660,6 +2648,7 @@ const AdvancedAnalyticsEngine = {
     const cutoffMs = cutoffDays ? (nowMs - cutoffDays * 86400000) : null;
 
     return (TradeMindState.historySignals || []).filter(s => {
+      if (isExcludedOneMinuteTf(s.tf)) return false;
       const cls = CalendarHistoryEngine.classifyOutcome(s);
       if (cls !== "TP WIN" && cls !== "SL LOSS") return false;
       const tsRaw = s.completedRaw || s.completedPkt || null;
@@ -2851,6 +2840,7 @@ const DailyRiskMonitor = {
   render() {
     const todayIso = getPktDatePartsFromMs(Date.now()).iso;
     const completedToday = (TradeMindState.historySignals || []).filter(s => {
+      if (isExcludedOneMinuteTf(s.tf)) return false;
       const cls = CalendarHistoryEngine.classifyOutcome(s);
       if (cls !== "TP WIN" && cls !== "SL LOSS") return false;
       return toPktDateKey(s.completedRaw || s.completedPkt) === todayIso;
@@ -2938,6 +2928,7 @@ const ReportsExportEngine = {
     const weekCutoffMs = nowMs - 7 * 86400000;
 
     return (list || []).filter(item => {
+      if (isExcludedOneMinuteTf(item && item.tf)) return false;
       const raw = dateGetter(item);
       const ms = parseTimestampToUtcMs(raw);
       const iso = toPktDateKey(raw);
@@ -2974,19 +2965,21 @@ const ReportsExportEngine = {
   },
 
   exportSignalsCsv() {
-    const rows = (TradeMindState.historySignals || []).map(s => [
-      s.id,
-      s.symbol,
-      s.direction,
-      s.tf,
-      s.entry,
-      s.sl,
-      s.tp,
-      s.status,
-      s.outcome || "--",
-      s.createdRaw ? formatPktDateTime(s.createdRaw) : s.pktTime,
-      s.completedRaw ? formatPktDateTime(s.completedRaw) : "--"
-    ]);
+    const rows = (TradeMindState.historySignals || [])
+      .filter(s => !isExcludedOneMinuteTf(s.tf))
+      .map(s => [
+        s.id,
+        s.symbol,
+        s.direction,
+        s.tf,
+        s.entry,
+        s.sl,
+        s.tp,
+        s.status,
+        s.outcome || "--",
+        s.createdRaw ? formatPktDateTime(s.createdRaw) : s.pktTime,
+        s.completedRaw ? formatPktDateTime(s.completedRaw) : "--"
+      ]);
     this.downloadCsv(
       `trademind_signals_history_${getPktDatePartsFromMs(Date.now()).iso}_pkt.csv`,
       ["ID", "Symbol", "Direction", "TF", "Entry", "SL", "TP", "Status", "Outcome", "Created_PKT", "Completed_PKT"],
@@ -2995,7 +2988,8 @@ const ReportsExportEngine = {
   },
 
   exportLimitsCsv() {
-    const combined = [...(TradeMindState.pendingLimits || []), ...(TradeMindState.historyLimits || [])];
+    const combined = [...(TradeMindState.pendingLimits || []), ...(TradeMindState.historyLimits || [])]
+      .filter(o => !isExcludedOneMinuteTf(o.tf));
     const seen = new Set();
     const unique = combined.filter(o => {
       if (!o || seen.has(String(o.id))) return false;
@@ -3342,14 +3336,14 @@ const SignalNotificationTracker = {
 
   captureExistingKeys() {
     (TradeMindState.activeSignals || []).forEach(s => {
-      if (!s || !s.id) return;
+      if (!s || !s.id || isExcludedOneMinuteTf(s.tf)) return;
       const isBuy = s.direction.includes("BUY") || s.direction === "LONG";
       const evtKey = isBuy ? "new_buy_signal" : "new_sell_signal";
       this.seenEventKeys.add(`${evtKey}:${s.id}:${s.createdRaw || s.pktTime || ""}`);
     });
 
     (TradeMindState.historySignals || []).forEach(s => {
-      if (!s || !s.id) return;
+      if (!s || !s.id || isExcludedOneMinuteTf(s.tf)) return;
       const out = String(s.outcome || "").toUpperCase();
       const st = String(s.status || "").toUpperCase();
       if (out.includes("TP") || out === "WIN" || st === "TP HIT" || st === "TP_HIT") {
@@ -3361,12 +3355,12 @@ const SignalNotificationTracker = {
     });
 
     (TradeMindState.pendingLimits || []).forEach(o => {
-      if (!o || !o.id) return;
+      if (!o || !o.id || isExcludedOneMinuteTf(o.tf)) return;
       this.seenEventKeys.add(`limit_created:${o.id}:${o.createdRaw || o.createdPkt || ""}`);
     });
 
     (TradeMindState.historyLimits || []).forEach(o => {
-      if (!o || !o.id) return;
+      if (!o || !o.id || isExcludedOneMinuteTf(o.tf)) return;
       const st = String(o.status || "").toUpperCase();
       if (st.includes("TP")) {
         this.seenEventKeys.add(`limit_tp_hit:${o.id}:${o.completedRaw || o.completedPkt || ""}`);
@@ -3405,7 +3399,7 @@ const SignalNotificationTracker = {
 
     if (!this.initializedBaseline) {
       this.captureExistingKeys();
-      if (hadInitialSync) {
+      if (hadInitialSync || TradeMindState.backendOnline) {
         this.initializedBaseline = true;
       }
       this.saveSeen();
@@ -3413,12 +3407,12 @@ const SignalNotificationTracker = {
     }
 
     (TradeMindState.activeSignals || []).forEach(s => {
-      if (!s || !s.id) return;
+      if (!s || !s.id || isExcludedOneMinuteTf(s.tf)) return;
       const isBuy = s.direction.includes("BUY") || s.direction === "LONG";
       const prefKey = isBuy ? "new_buy_signal" : "new_sell_signal";
       const createdPkt = s.createdRaw ? formatPktDateTime(s.createdRaw) : "--";
       this.dispatchEvent({
-        uniqueKey: `${prefKey}:${s.id}:${s.createdRaw || s.pktTime || ""}`,
+        uniqueKey: `${prefKey}:${s.id}:${s.createdRaw || s.pktTime || ""}|${s.status || ""}`,
         eventPrefKey: prefKey,
         title: "TradeMind — NEW SIGNAL",
         lines: [
@@ -3432,7 +3426,7 @@ const SignalNotificationTracker = {
     });
 
     (TradeMindState.historySignals || []).forEach(s => {
-      if (!s || !s.id) return;
+      if (!s || !s.id || isExcludedOneMinuteTf(s.tf)) return;
       const out = String(s.outcome || "").toUpperCase();
       const st = String(s.status || "").toUpperCase();
       const doneStamp = s.completedRaw || s.completedPkt || "";
@@ -3479,7 +3473,7 @@ const SignalNotificationTracker = {
     });
 
     (TradeMindState.pendingLimits || []).forEach(o => {
-      if (!o || !o.id) return;
+      if (!o || !o.id || isExcludedOneMinuteTf(o.tf)) return;
       const cStamp = o.createdRaw || o.createdPkt || "";
       const cPkt = cStamp ? formatPktDateTime(cStamp) : "--";
       this.dispatchEvent({
@@ -3497,7 +3491,7 @@ const SignalNotificationTracker = {
     });
 
     (TradeMindState.historyLimits || []).forEach(o => {
-      if (!o || !o.id) return;
+      if (!o || !o.id || isExcludedOneMinuteTf(o.tf)) return;
       const st = String(o.status || "").toUpperCase();
       const actStamp = o.activatedRaw || o.activatedPkt || "";
       const doneStamp = o.completedRaw || o.completedPkt || "";
@@ -3559,6 +3553,7 @@ const SignalNotificationTracker = {
   },
 
   notifyNewSignal(s) {
+    if (!s || isExcludedOneMinuteTf(s.tf)) return;
     const isBuy = String(s.direction || "").includes("BUY") || s.direction === "LONG";
     const prefKey = isBuy ? "new_buy_signal" : "new_sell_signal";
     const createdShort = s.createdRaw ? formatPktShortDateTime(s.createdRaw) : "--";
@@ -3582,9 +3577,7 @@ const HomeEngine = {
     document.getElementById("tmPktClock").textContent = getPktClock();
 
     const perf = TradeMindState.performance;
-    const activeCount = perf && perf.active !== undefined && perf.active !== null
-      ? perf.active
-      : (TradeMindState.backendOnline ? TradeMindState.activeSignals.length : "--");
+    const activeCount = TradeMindState.backendOnline ? TradeMindState.activeSignals.length : "--";
     const pendingCount = TradeMindState.backendOnline ? TradeMindState.pendingLimits.length : "--";
     const winRateText = perf && perf.win_rate !== undefined && perf.win_rate !== null
       ? (typeof perf.win_rate === "number" ? `${perf.win_rate}%` : String(perf.win_rate))
@@ -3638,7 +3631,7 @@ const HomeEngine = {
   }
 };
 
-/* TRADINGVIEW-STYLE INTERACTIVE CANDLESTICK & DRAWING ENGINE */
+/* TRADINGVIEW-STYLE INTERACTIVE CANDLESTICK & DRAWING ENGINE (1M REMOVED + FREE MOVEABLE) */
 const TvChart = {
   symbol: "XAUUSD",
   timeframe: "15M",
@@ -3647,12 +3640,23 @@ const TvChart = {
   candleWidth: 11,
   rightOffset: 18,
   priceScaleFactor: 1.0,
+  priceVerticalShift: 0,
   drawings: { hlines: [], trendlines: [] },
   draftTrendStart: null,
   pointer: { x: null, y: null, inside: false },
   activePointers: new Map(),
   pinch: { active: false, startDist: 0, startCandleWidth: 11 },
-  drag: { active: false, mode: null, startX: 0, startY: 0, origOffset: 0, origPriceScale: 1.0 },
+  drag: {
+    active: false,
+    mode: null,
+    startX: 0,
+    startY: 0,
+    origOffset: 0,
+    origPriceScale: 1.0,
+    origVerticalShift: 0,
+    boundsAtStart: null,
+    plotHAtStart: 300
+  },
   bars: [],
   visualLastClose: null,
   targetLastClose: null,
@@ -3789,6 +3793,9 @@ const TvChart = {
         if (Number.isFinite(parsed.priceScaleFactor)) {
           this.priceScaleFactor = Math.min(2.5, Math.max(0.45, parsed.priceScaleFactor));
         }
+        if (Number.isFinite(parsed.priceVerticalShift)) {
+          this.priceVerticalShift = parsed.priceVerticalShift;
+        }
       }
     } catch (_) {}
   },
@@ -3800,13 +3807,14 @@ const TvChart = {
         trendlines: this.drawings.trendlines,
         candleWidth: this.candleWidth,
         rightOffset: this.rightOffset,
-        priceScaleFactor: this.priceScaleFactor
+        priceScaleFactor: this.priceScaleFactor,
+        priceVerticalShift: this.priceVerticalShift
       }));
     } catch (_) {}
   },
 
   timeframeSeconds(tf) {
-    const map = { "1M": 60, "5M": 300, "15M": 900, "1H": 3600, "4H": 14400 };
+    const map = { "5M": 300, "15M": 900, "1H": 3600, "4H": 14400 };
     return map[tf] || 900;
   },
 
@@ -3918,6 +3926,9 @@ const TvChart = {
   },
 
   async loadCandles(force = false, fullReset = false) {
+    if (isExcludedOneMinuteTf(this.timeframe)) {
+      this.timeframe = "15M";
+    }
     const key = `candles_${this.symbol}_${this.timeframe}`;
     if (!force && TradeMindState.inFlight[key]) return TradeMindState.inFlight[key];
 
@@ -3939,6 +3950,7 @@ const TvChart = {
         const parsed = this.normalizeCandles(data);
         if (fullReset) {
           this.bars = parsed;
+          this.priceVerticalShift = 0;
           const tail = this.bars.length ? this.bars[this.bars.length - 1] : null;
           this.targetLastClose = tail ? tail.close : null;
           this.visualLastClose = tail ? tail.close : null;
@@ -4116,6 +4128,7 @@ const TvChart = {
   },
 
   setTimeframe(tf) {
+    if (isExcludedOneMinuteTf(tf)) return;
     this.timeframe = tf;
     document.querySelectorAll("#chartTimeframeStrip .tm-chip").forEach(c => c.classList.toggle("active", c.dataset.tf === tf));
     this.draftTrendStart = null;
@@ -4151,9 +4164,10 @@ const TvChart = {
     this.candleWidth = 11;
     this.rightOffset = 18;
     this.priceScaleFactor = 1.0;
+    this.priceVerticalShift = 0;
     this.draftTrendStart = null;
     document.getElementById("tvZoomInfo").textContent = "100%";
-    document.getElementById("tvOhlcBar").textContent = "Drag to pan · Pinch or wheel to zoom · Drag price axis to scale";
+    document.getElementById("tvOhlcBar").textContent = "Drag chart anywhere (up/down/left/right) · Drag price axis to scale";
     this.savePreferences();
     this.render();
   },
@@ -4215,9 +4229,10 @@ const TvChart = {
     }
     const rawMin = Math.min(...priceSamples);
     const rawMax = Math.max(...priceSamples);
-    const mid = (rawMin + rawMax) / 2;
+    const baseMid = (rawMin + rawMax) / 2;
+    const shiftedMid = baseMid + (this.priceVerticalShift || 0);
     const halfSpan = Math.max(0.0001, ((rawMax - rawMin) / 2) * 1.12 / this.priceScaleFactor);
-    return { min: mid - halfSpan, max: mid + halfSpan };
+    return { min: shiftedMid - halfSpan, max: shiftedMid + halfSpan };
   },
 
   xToBarIndex(x, plotW, bars) {
@@ -4511,7 +4526,17 @@ const TvChart = {
       const bounds = this.getPriceBounds(this.bars);
 
       if (pos.x > plotW) {
-        this.drag = { active: true, mode: "priceScale", startX: pos.x, startY: pos.y, origOffset: this.rightOffset, origPriceScale: this.priceScaleFactor };
+        this.drag = {
+          active: true,
+          mode: "priceScale",
+          startX: pos.x,
+          startY: pos.y,
+          origOffset: this.rightOffset,
+          origPriceScale: this.priceScaleFactor,
+          origVerticalShift: this.priceVerticalShift || 0,
+          boundsAtStart: bounds,
+          plotHAtStart: plotH
+        };
         return;
       }
 
@@ -4538,7 +4563,17 @@ const TvChart = {
         return;
       }
 
-      this.drag = { active: true, mode: "pan", startX: pos.x, startY: pos.y, origOffset: this.rightOffset, origPriceScale: this.priceScaleFactor };
+      this.drag = {
+        active: true,
+        mode: "pan",
+        startX: pos.x,
+        startY: pos.y,
+        origOffset: this.rightOffset,
+        origPriceScale: this.priceScaleFactor,
+        origVerticalShift: this.priceVerticalShift || 0,
+        boundsAtStart: bounds,
+        plotHAtStart: plotH
+      };
     });
 
     canvas.addEventListener("pointermove", e => {
@@ -4560,7 +4595,13 @@ const TvChart = {
       if (this.drag.active) {
         if (this.drag.mode === "pan") {
           const dx = pos.x - this.drag.startX;
+          const dy = pos.y - this.drag.startY;
           this.rightOffset = Math.min(280, Math.max(-220, this.drag.origOffset - dx));
+
+          const bStart = this.drag.boundsAtStart || this.getPriceBounds(this.bars);
+          const pH = Math.max(1, (this.drag.plotHAtStart || 300) - 16);
+          const pricePerPx = (bStart.max - bStart.min) / pH;
+          this.priceVerticalShift = (this.drag.origVerticalShift || 0) + (dy * pricePerPx);
         } else if (this.drag.mode === "priceScale") {
           const dy = pos.y - this.drag.startY;
           this.priceScaleFactor = Math.min(2.5, Math.max(0.45, this.drag.origPriceScale * (1 + dy * 0.006)));
@@ -4635,6 +4676,7 @@ const SignalsEngine = {
   },
 
   setTimeframe(t) {
+    if (isExcludedOneMinuteTf(t)) return;
     this.tf = t;
     document.querySelectorAll("#signalsTfStrip .tm-chip").forEach(c => c.classList.toggle("active", c.dataset.val === t));
     this.render();
@@ -4711,6 +4753,7 @@ const SignalsEngine = {
     const todayIso = getPktDatePartsFromMs(Date.now()).iso;
 
     const pairTfFiltered = (TradeMindState.historySignals || []).filter(s =>
+      !isExcludedOneMinuteTf(s.tf) &&
       (this.symbol === "ALL" || s.symbol === this.symbol) &&
       (this.tf === "ALL" || s.tf === this.tf)
     );
@@ -4747,6 +4790,7 @@ const SignalsEngine = {
     if (this.mode === "ACTIVE") {
       if (panel) panel.style.display = "none";
       const rows = (TradeMindState.activeSignals || []).filter(s =>
+        !isExcludedOneMinuteTf(s.tf) &&
         (this.symbol === "ALL" || s.symbol === this.symbol) &&
         (this.tf === "ALL" || s.tf === this.tf)
       );
@@ -4765,6 +4809,7 @@ const SignalsEngine = {
     if (badgeEl) badgeEl.textContent = `${this.selectedHistoryDate} PKT`;
 
     const pairTfFiltered = (TradeMindState.historySignals || []).filter(s =>
+      !isExcludedOneMinuteTf(s.tf) &&
       (this.symbol === "ALL" || s.symbol === this.symbol) &&
       (this.tf === "ALL" || s.tf === this.tf)
     );
@@ -4838,7 +4883,7 @@ const SignalsEngine = {
       <div class="tm-card" style="margin-bottom:12px;padding:10px 12px;">
         <div class="row-between">
           <span class="tm-metric-label">Signal Checklist</span>
-          <span class="tm-badge badge-closed">${escapeHtml(q.scoreText)}</span>
+          <span class="tm-badge badge-active">${escapeHtml(q.scoreText)}</span>
         </div>
         <div class="tm-qual-list">
           ${q.available.map(c => `<div class="tm-meta-line"><span class="tm-meta-lbl">${escapeHtml(c.label)}:</span><span class="tm-meta-val" style="color:var(--bull);">Passed${c.detail ? ` (${escapeHtml(c.detail)})` : ""}</span></div>`).join("")}
@@ -4863,7 +4908,7 @@ const SignalsEngine = {
   }
 };
 
-/* LIMITS ENGINE */
+/* LIMITS ENGINE (FIXED TRIGGERED/ACTIVATED VISIBILITY + 1M REMOVED) */
 const LimitsEngine = {
   mode: "PENDING",
   symbol: "ALL",
@@ -4906,6 +4951,7 @@ const LimitsEngine = {
   },
 
   setTimeframe(t) {
+    if (isExcludedOneMinuteTf(t)) return;
     this.tf = t;
     document.querySelectorAll("#limitsTfStrip .tm-chip").forEach(c => c.classList.toggle("active", c.dataset.val === t));
     this.render();
@@ -4990,7 +5036,7 @@ const LimitsEngine = {
     if (raw === "TP HIT" || raw === "TP_HIT" || raw === "TP COMPLETED" || raw === "TP_COMPLETED" || raw === "WIN") return "TP_HIT";
     if (raw === "SL HIT" || raw === "SL_HIT" || raw === "SL COMPLETED" || raw === "SL_COMPLETED" || raw === "LOSS") return "SL_HIT";
     if (raw === "EXPIRED") return "EXPIRED";
-    if (raw === "ACTIVATED" || raw === "TRIGGERED" || raw === "ACTIVE") return "ACTIVATED";
+    if (raw === "ACTIVATED" || raw === "TRIGGERED" || raw === "ACTIVE" || raw === "OPEN" || raw === "FILLED") return "ACTIVATED";
     if (raw === "PENDING" || raw === "NEW" || raw === "PLACED" || raw === "WAITING") return "PENDING";
     return "OTHER";
   },
@@ -4998,23 +5044,23 @@ const LimitsEngine = {
   getOrderPrimaryDateKey(ord) {
     const bucket = this.classifyOrderBucket(ord);
     if (bucket === "TP_HIT" || bucket === "SL_HIT") {
-      const compRaw = ord.completedRaw || null;
-      return compRaw ? toPktDateKey(compRaw) : null;
+      const compRaw = ord.completedRaw || ord.activatedRaw || ord.createdRaw || null;
+      return compRaw ? toPktDateKey(compRaw) : getPktDatePartsFromMs(Date.now()).iso;
     }
     if (bucket === "EXPIRED") {
-      const expRaw = ord.expiredRaw || null;
-      return expRaw ? toPktDateKey(expRaw) : null;
+      const expRaw = ord.expiredRaw || ord.completedRaw || ord.createdRaw || null;
+      return expRaw ? toPktDateKey(expRaw) : getPktDatePartsFromMs(Date.now()).iso;
     }
     if (bucket === "ACTIVATED") {
-      const actRaw = ord.activatedRaw || ord.completedRaw || null;
-      return actRaw ? toPktDateKey(actRaw) : null;
+      const actRaw = ord.activatedRaw || ord.completedRaw || ord.createdRaw || null;
+      return actRaw ? toPktDateKey(actRaw) : getPktDatePartsFromMs(Date.now()).iso;
     }
     if (bucket === "PENDING") {
-      const expRaw = ord.expiredRaw || null;
+      const expRaw = ord.expiredRaw || ord.createdRaw || null;
       return expRaw ? toPktDateKey(expRaw) : null;
     }
-    const fallbackRaw = ord.completedRaw || ord.expiredRaw || ord.activatedRaw || null;
-    return fallbackRaw ? toPktDateKey(fallbackRaw) : null;
+    const fallbackRaw = ord.completedRaw || ord.expiredRaw || ord.activatedRaw || ord.createdRaw || null;
+    return fallbackRaw ? toPktDateKey(fallbackRaw) : getPktDatePartsFromMs(Date.now()).iso;
   },
 
   renderPendingCalendar() {
@@ -5039,6 +5085,8 @@ const LimitsEngine = {
     const todayIso = getPktDatePartsFromMs(Date.now()).iso;
 
     const filteredPending = (TradeMindState.pendingLimits || []).filter(o =>
+      !isExcludedOneMinuteTf(o.tf) &&
+      this.classifyOrderBucket(o) === "PENDING" &&
       (this.symbol === "ALL" || o.symbol === this.symbol) &&
       (this.tf === "ALL" || o.tf === this.tf)
     );
@@ -5083,6 +5131,7 @@ const LimitsEngine = {
     const todayIso = getPktDatePartsFromMs(Date.now()).iso;
 
     const filteredHist = (TradeMindState.historyLimits || []).filter(o =>
+      !isExcludedOneMinuteTf(o.tf) &&
       (this.symbol === "ALL" || o.symbol === this.symbol) &&
       (this.tf === "ALL" || o.tf === this.tf)
     );
@@ -5180,25 +5229,23 @@ const LimitsEngine = {
     const historyPanel = document.getElementById("limitsHistoryPanel");
     const listEl = document.getElementById("limitsListContainer");
 
-    const allKnownOrders = [...(TradeMindState.pendingLimits || []), ...(TradeMindState.historyLimits || [])];
+    const allKnownOrders = [...(TradeMindState.pendingLimits || []), ...(TradeMindState.historyLimits || [])]
+      .filter(o => o && !isExcludedOneMinuteTf(o.tf));
     const uniqueOrdersMap = new Map();
     allKnownOrders.forEach(o => {
-      if (o && o.id && !uniqueOrdersMap.has(String(o.id))) {
+      if (o.id && !uniqueOrdersMap.has(String(o.id))) {
         uniqueOrdersMap.set(String(o.id), o);
       }
     });
     const uniqueOrders = Array.from(uniqueOrdersMap.values());
 
-    const overallPendingTotal = (TradeMindState.pendingLimits || []).filter(o =>
+    const filteredAllOrders = uniqueOrders.filter(o =>
       (this.symbol === "ALL" || o.symbol === this.symbol) &&
       (this.tf === "ALL" || o.tf === this.tf)
-    ).length;
+    );
 
-    const overallActivatedTotal = uniqueOrders.filter(o =>
-      (this.symbol === "ALL" || o.symbol === this.symbol) &&
-      (this.tf === "ALL" || o.tf === this.tf) &&
-      this.classifyOrderBucket(o) === "ACTIVATED"
-    ).length;
+    const overallPendingTotal = filteredAllOrders.filter(o => this.classifyOrderBucket(o) === "PENDING").length;
+    const overallActivatedTotal = filteredAllOrders.filter(o => this.classifyOrderBucket(o) === "ACTIVATED").length;
 
     const pendCountEl = document.getElementById("limOverallPendingCount");
     const actCountEl = document.getElementById("limOverallActivatedCount");
@@ -5216,9 +5263,8 @@ const LimitsEngine = {
       const pendBadge = document.getElementById("limPendSelectedDateBadge");
       if (pendBadge) pendBadge.textContent = `${this.selectedPendingDate} PKT`;
 
-      const expiringOnSelectedDate = (TradeMindState.pendingLimits || []).filter(o => {
-        if (this.symbol !== "ALL" && o.symbol !== this.symbol) return false;
-        if (this.tf !== "ALL" && o.tf !== this.tf) return false;
+      const expiringOnSelectedDate = filteredAllOrders.filter(o => {
+        if (this.classifyOrderBucket(o) !== "PENDING") return false;
         const expKey = this.getPendingExpiryDateKey(o);
         return expKey !== null && expKey === this.selectedPendingDate;
       });
@@ -5244,12 +5290,16 @@ const LimitsEngine = {
     const histBadge = document.getElementById("limHistSelectedDateBadge");
     if (histBadge) histBadge.textContent = `${this.selectedHistoryDate} PKT`;
 
-    const matchingOrders = uniqueOrders.filter(o => {
-      if (this.symbol !== "ALL" && o.symbol !== this.symbol) return false;
-      if (this.tf !== "ALL" && o.tf !== this.tf) return false;
+    const nonPendingOrders = filteredAllOrders.filter(o => this.classifyOrderBucket(o) !== "PENDING");
+
+    let matchingOrders = nonPendingOrders.filter(o => {
       const primaryDate = this.getOrderPrimaryDateKey(o);
       return primaryDate !== null && primaryDate === this.selectedHistoryDate;
     });
+
+    if (!matchingOrders.length && nonPendingOrders.length) {
+      matchingOrders = nonPendingOrders;
+    }
 
     let countActivated = 0;
     let countTp = 0;
@@ -5306,7 +5356,7 @@ const CalendarHistoryEngine = {
     const raw = String(ord.status || "").toUpperCase().trim();
     if (raw === "TP COMPLETED" || raw === "TP_COMPLETED" || raw === "TP HIT" || raw === "TP_HIT" || raw === "WIN") return "TP COMPLETED";
     if (raw === "SL COMPLETED" || raw === "SL_COMPLETED" || raw === "SL HIT" || raw === "SL_HIT" || raw === "LOSS") return "SL COMPLETED";
-    if (raw === "ACTIVATED" || raw === "TRIGGERED" || raw === "ACTIVE") return "ACTIVATED";
+    if (raw === "ACTIVATED" || raw === "TRIGGERED" || raw === "ACTIVE" || raw === "OPEN" || raw === "FILLED") return "ACTIVATED";
     if (raw === "EXPIRED") return "EXPIRED";
     if (raw === "INVALIDATED" || raw === "CANCELLED" || raw === "CANCELED") return "INVALIDATED";
     if (raw === "PENDING" || raw === "NEW" || raw === "PLACED" || raw === "WAITING") return "PENDING";
@@ -5317,6 +5367,7 @@ const CalendarHistoryEngine = {
     const completedSignals = [];
     const seenSig = new Set();
     (TradeMindState.historySignals || []).forEach(s => {
+      if (isExcludedOneMinuteTf(s.tf)) return;
       const outcome = this.classifyOutcome(s);
       if (!outcome) return;
       const completionStamp = s.completedRaw || s.completedPkt || null;
@@ -5340,77 +5391,65 @@ const CalendarHistoryEngine = {
     });
     this.signalRecords = completedSignals;
 
-    const combinedLimits = [...(TradeMindState.pendingLimits || []), ...(TradeMindState.historyLimits || [])];
+    const combinedLimits = [...(TradeMindState.pendingLimits || []), ...(TradeMindState.historyLimits || [])]
+      .filter(o => !isExcludedOneMinuteTf(o.tf));
     const dedupMap = new Map();
     combinedLimits.forEach(o => {
       const status = this.classifyLimitStatus(o);
       const creationDatePkt = this.extractPktDateIso(o.createdRaw || o.createdPkt);
       const activationDatePkt = this.extractPktDateIso(o.activatedRaw || o.activatedPkt);
       const completionDatePkt = this.extractPktDateIso(o.completedRaw || o.completedPkt);
-      const expiryOrInvDatePkt = this.extractPktDateIso(o.expiredRaw || o.expiredPkt || o.invalidatedRaw || o.invalidatedPkt);
+      const expiryDatePkt = this.extractPktDateIso(o.expiredRaw || o.expiresPkt);
+      const invalidationDatePkt = this.extractPktDateIso(o.invalidatedRaw || o.invalidatedPkt);
 
-      let eventDatePkt = creationDatePkt;
+      let eventDatePkt = null;
       if (status === "TP COMPLETED" || status === "SL COMPLETED") {
-        eventDatePkt = completionDatePkt || activationDatePkt || creationDatePkt;
-      } else if (status === "EXPIRED" || status === "INVALIDATED") {
-        eventDatePkt = expiryOrInvDatePkt || creationDatePkt;
+        eventDatePkt = completionDatePkt;
       } else if (status === "ACTIVATED") {
-        eventDatePkt = activationDatePkt || creationDatePkt;
+        eventDatePkt = activationDatePkt || completionDatePkt;
+      } else if (status === "EXPIRED") {
+        eventDatePkt = expiryDatePkt;
+      } else if (status === "INVALIDATED") {
+        eventDatePkt = invalidationDatePkt;
+      } else if (status === "PENDING") {
+        eventDatePkt = creationDatePkt;
       }
 
-      const orderKey = String(o.id || `${o.symbol}_${o.tf}_${o.entry}_${status}_${eventDatePkt || ""}`);
-      dedupMap.set(orderKey, {
+      if (!eventDatePkt) return;
+
+      const rec = {
         id: o.id,
         symbol: o.symbol,
         timeframe: o.tf,
         orderType: o.orderType,
-        status,
         entry: o.entry,
         sl: o.sl,
         tp: o.tp,
+        status,
         creationDatePkt,
         activationDatePkt,
         completionDatePkt,
-        expiryOrInvDatePkt,
+        expiryDatePkt,
+        invalidationDatePkt,
         eventDatePkt,
-        activatedAtPkt: o.activatedRaw ? formatPktDateTime(o.activatedRaw) : "--",
-        completedAtPkt: (o.completedRaw || o.expiredRaw || o.invalidatedRaw)
-          ? formatPktDateTime(o.completedRaw || o.expiredRaw || o.invalidatedRaw)
-          : "--"
-      });
+        createdTimePkt: o.createdRaw ? formatPktDateTime(o.createdRaw) : "--",
+        activatedTimePkt: o.activatedRaw ? formatPktDateTime(o.activatedRaw) : "--",
+        completedTimePkt: o.completedRaw ? formatPktDateTime(o.completedRaw) : "--",
+        expiredTimePkt: o.expiredRaw ? formatPktDateTime(o.expiredRaw) : "--",
+        invalidatedTimePkt: o.invalidatedRaw ? formatPktDateTime(o.invalidatedRaw) : "--"
+      };
+      dedupMap.set(`${o.id}_${status}_${eventDatePkt}`, rec);
     });
     this.limitOrderRecords = Array.from(dedupMap.values());
-  },
 
-  getPktParts(dateObj = new Date()) {
-    return getPktDatePartsFromMs(dateObj.getTime());
-  },
-
-  getTodayPktIso() {
-    return this.getPktParts(new Date()).iso;
-  },
-
-  getYesterdayPktIso() {
-    const now = new Date();
-    const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-    return this.getPktParts(yesterday).iso;
-  },
-
-  formatMonthTitle(year, month1Based) {
-    const d = new Date(Date.UTC(year, month1Based - 1, 15));
-    return new Intl.DateTimeFormat("en-US", {
-      timeZone: TradeMindConfig.timezone,
-      month: "long",
-      year: "numeric"
-    }).format(d) + " (PKT)";
-  },
-
-  ensureInitialized() {
-    const today = this.getPktParts(new Date());
-    if (!this.signalsMonth) this.signalsMonth = { year: today.year, month: today.month };
-    if (!this.limitsMonth) this.limitsMonth = { year: today.year, month: today.month };
-    if (!this.selectedSignalDate) this.selectedSignalDate = today.iso;
-    if (!this.selectedLimitDate) this.selectedLimitDate = today.iso;
+    if (!this.selectedSignalDate || !this.selectedLimitDate) {
+      const todayIso = getPktDatePartsFromMs(Date.now()).iso;
+      if (!this.selectedSignalDate) this.selectedSignalDate = todayIso;
+      if (!this.selectedLimitDate) this.selectedLimitDate = todayIso;
+      const [yStr, mStr] = todayIso.split("-");
+      if (!this.signalsMonth) this.signalsMonth = { year: Number(yStr), month: Number(mStr) };
+      if (!this.limitsMonth) this.limitsMonth = { year: Number(yStr), month: Number(mStr) };
+    }
   },
 
   setTab(tab) {
@@ -5423,14 +5462,14 @@ const CalendarHistoryEngine = {
     this.render();
   },
 
-  shiftMonth(kind, delta) {
-    this.ensureInitialized();
-    const target = kind === "signals" ? this.signalsMonth : this.limitsMonth;
+  shiftMonth(which, delta) {
+    const target = which === "signals" ? this.signalsMonth : this.limitsMonth;
+    if (!target) return;
     let m = target.month + delta;
     let y = target.year;
     while (m < 1) { m += 12; y -= 1; }
     while (m > 12) { m -= 12; y += 1; }
-    if (kind === "signals") {
+    if (which === "signals") {
       this.signalsMonth = { year: y, month: m };
     } else {
       this.limitsMonth = { year: y, month: m };
@@ -5438,98 +5477,87 @@ const CalendarHistoryEngine = {
     this.render();
   },
 
-  selectShortcut(kind, which) {
-    const iso = which === "today" ? this.getTodayPktIso() : this.getYesterdayPktIso();
-    const [yStr, mStr] = iso.split("-");
-    const ym = { year: Number(yStr), month: Number(mStr) };
-    if (kind === "signals") {
-      this.signalsMonth = ym;
-      this.selectedSignalDate = iso;
-    } else {
-      this.limitsMonth = ym;
-      this.selectedLimitDate = iso;
-    }
-    this.render();
-  },
-
-  selectDate(kind, isoDate) {
-    if (kind === "signals") {
+  selectDate(which, isoDate) {
+    const [yStr, mStr] = isoDate.split("-");
+    if (which === "signals") {
       this.selectedSignalDate = isoDate;
+      this.signalsMonth = { year: Number(yStr), month: Number(mStr) };
     } else {
       this.selectedLimitDate = isoDate;
+      this.limitsMonth = { year: Number(yStr), month: Number(mStr) };
     }
     this.render();
   },
 
-  getCompletedSignalsForDate(isoDate) {
-    return this.signalRecords.filter(r => {
-      const outcome = String(r.outcome || "").toUpperCase();
-      return r.completionDatePkt === isoDate && (outcome === "TP WIN" || outcome === "SL LOSS");
-    });
+  selectShortcut(which, shortcut) {
+    const nowMs = Date.now();
+    const targetMs = shortcut === "today" ? nowMs : (nowMs - 86400000);
+    const parts = getPktDatePartsFromMs(targetMs);
+    if (!parts) return;
+    this.selectDate(which, parts.iso);
   },
 
-  getLimitOrdersForDate(isoDate) {
-    return this.limitOrderRecords.filter(o =>
-      o.activationDatePkt === isoDate || o.completionDatePkt === isoDate || o.eventDatePkt === isoDate
-    );
-  },
-
-  buildMonthCells(year, month1Based) {
-    const firstWeekday = new Date(Date.UTC(year, month1Based - 1, 1)).getUTCDay();
-    const daysInMonth = new Date(Date.UTC(year, month1Based, 0)).getUTCDate();
-    const prevMonthDays = new Date(Date.UTC(year, month1Based - 1, 0)).getUTCDate();
-
-    const prevYear = month1Based === 1 ? year - 1 : year;
-    const prevMonth = month1Based === 1 ? 12 : month1Based - 1;
-    const nextYear = month1Based === 12 ? year + 1 : year;
-    const nextMonth = month1Based === 12 ? 1 : month1Based + 1;
-
-    const pad2 = n => String(n).padStart(2, "0");
+  buildMonthCells(year, month) {
+    const firstDow = new Date(Date.UTC(year, month - 1, 1)).getUTCDay();
+    const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
+    const prevMonthDays = new Date(Date.UTC(year, month - 1, 0)).getUTCDate();
     const cells = [];
 
-    for (let i = firstWeekday - 1; i >= 0; i--) {
-      const d = prevMonthDays - i;
+    for (let i = firstDow - 1; i >= 0; i--) {
+      let py = year, pm = month - 1;
+      if (pm < 1) { pm = 12; py -= 1; }
+      const day = prevMonthDays - i;
       cells.push({
-        day: d,
-        iso: `${prevYear}-${pad2(prevMonth)}-${pad2(d)}`,
+        year: py, month: pm, day,
+        iso: `${py}-${String(pm).padStart(2, "0")}-${String(day).padStart(2, "0")}`,
         inMonth: false
       });
     }
 
     for (let d = 1; d <= daysInMonth; d++) {
       cells.push({
-        day: d,
-        iso: `${year}-${pad2(month1Based)}-${pad2(d)}`,
+        year, month, day: d,
+        iso: `${year}-${String(month).padStart(2, "0")}-${String(d).padStart(2, "0")}`,
         inMonth: true
       });
     }
 
     let nextDay = 1;
-    while (cells.length % 7 !== 0) {
+    while (cells.length < 42) {
+      let ny = year, nm = month + 1;
+      if (nm > 12) { nm = 1; ny += 1; }
       cells.push({
-        day: nextDay,
-        iso: `${nextYear}-${pad2(nextMonth)}-${pad2(nextDay)}`,
+        year: ny, month: nm, day: nextDay,
+        iso: `${ny}-${String(nm).padStart(2, "0")}-${String(nextDay).padStart(2, "0")}`,
         inMonth: false
       });
-      nextDay += 1;
+      nextDay++;
     }
 
     return cells;
   },
 
-  renderSignalsCalendar() {
-    this.ensureInitialized();
-    const todayIso = this.getTodayPktIso();
-    document.getElementById("sigCalMonthLabel").textContent = this.formatMonthTitle(this.signalsMonth.year, this.signalsMonth.month);
+  formatMonthTitle(monthObj) {
+    if (!monthObj) return "--";
+    const d = new Date(Date.UTC(monthObj.year, monthObj.month - 1, 15));
+    return new Intl.DateTimeFormat("en-US", {
+      timeZone: TradeMindConfig.timezone,
+      month: "long",
+      year: "numeric"
+    }).format(d) + " (PKT)";
+  },
 
+  renderSignalsCalendar() {
+    const todayIso = getPktDatePartsFromMs(Date.now()).iso;
+    document.getElementById("sigCalMonthLabel").textContent = this.formatMonthTitle(this.signalsMonth);
     const cells = this.buildMonthCells(this.signalsMonth.year, this.signalsMonth.month);
     const gridEl = document.getElementById("sigCalGrid");
-    gridEl.innerHTML = cells.map(c => {
-      const daySigs = this.getCompletedSignalsForDate(c.iso);
-      const wins = daySigs.filter(r => r.outcome === "TP WIN").length;
-      const losses = daySigs.filter(r => r.outcome === "SL LOSS").length;
 
-      const classes = [
+    gridEl.innerHTML = cells.map(c => {
+      const dayRecs = this.signalRecords.filter(r => r.completionDatePkt === c.iso);
+      const wins = dayRecs.filter(r => r.outcome === "TP WIN").length;
+      const losses = dayRecs.filter(r => r.outcome === "SL LOSS").length;
+      const cls = [
         "tm-cal-day",
         c.inMonth ? "" : "muted",
         c.iso === todayIso ? "today" : "",
@@ -5541,41 +5569,51 @@ const CalendarHistoryEngine = {
       if (losses > 0) pills.push(`<span class="tm-cal-pill loss">L:${losses}</span>`);
 
       return `
-        <button type="button" class="${classes}" onclick="CalendarHistoryEngine.selectDate('signals', '${escapeHtml(c.iso)}')">
+        <button type="button" class="${cls}" onclick="CalendarHistoryEngine.selectDate('signals', '${escapeHtml(c.iso)}')">
           <span>${c.day}</span>
           <span class="tm-cal-dots">${pills.join("")}</span>
         </button>
       `;
     }).join("");
 
-    const selectedRows = this.getCompletedSignalsForDate(this.selectedSignalDate);
-    const winsCount = selectedRows.filter(r => r.outcome === "TP WIN").length;
-    const lossesCount = selectedRows.filter(r => r.outcome === "SL LOSS").length;
-    const completedTotal = winsCount + lossesCount;
-    const winRateText = completedTotal > 0 ? `${Math.round((winsCount / completedTotal) * 100)}%` : "0%";
+    const selectedRecs = this.signalRecords.filter(r => r.completionDatePkt === this.selectedSignalDate);
+    const winCount = selectedRecs.filter(r => r.outcome === "TP WIN").length;
+    const lossCount = selectedRecs.filter(r => r.outcome === "SL LOSS").length;
+    const completedCount = winCount + lossCount;
+    const winRatePct = completedCount > 0 ? `${Math.round((winCount / completedCount) * 100)}%` : "0%";
 
-    document.getElementById("sigDayWins").textContent = String(winsCount);
-    document.getElementById("sigDayLosses").textContent = String(lossesCount);
-    document.getElementById("sigDaySummary").textContent = `${completedTotal} · ${winRateText}`;
+    document.getElementById("sigDayWins").textContent = String(winCount);
+    document.getElementById("sigDayLosses").textContent = String(lossCount);
+    document.getElementById("sigDaySummary").textContent = `${completedCount} · ${winRatePct}`;
     document.getElementById("sigDayDateBadge").textContent = `${this.selectedSignalDate} PKT`;
 
     const listEl = document.getElementById("sigDayListContainer");
-    if (!selectedRows.length) {
-      listEl.innerHTML = `<div class="tm-empty">No completed signals on ${escapeHtml(this.selectedSignalDate)} PKT.</div>`;
+    if (!selectedRecs.length) {
+      listEl.innerHTML = `<div class="tm-empty">No completed signals recorded on ${escapeHtml(this.selectedSignalDate)} PKT.</div>`;
     } else {
-      listEl.innerHTML = selectedRows.map(r => {
+      listEl.innerHTML = selectedRecs.map(r => {
         const isWin = r.outcome === "TP WIN";
         const isBuy = String(r.direction || "").includes("BUY") || r.direction === "LONG";
         return `
-          <div class="tm-event-row">
-            <div>
-              <div class="tm-event-title">
-                ${escapeHtml(r.symbol)} · ${escapeHtml(r.timeframe)} ·
+          <div class="tm-card">
+            <div class="row-between">
+              <div class="row-inline">
+                <strong style="font-size:13px;">${escapeHtml(r.symbol)}</strong>
                 <span class="tm-badge ${isBuy ? "badge-buy" : "badge-sell"}">${escapeHtml(r.direction)}</span>
+                <span class="tm-badge badge-closed">${escapeHtml(r.timeframe)}</span>
               </div>
-              <div class="tm-event-sub">E: ${escapeHtml(r.entry)} · SL: ${escapeHtml(r.sl)} · TP: ${escapeHtml(r.tp)} · Done: ${escapeHtml(r.completionTimePkt)}</div>
+              <span class="tm-badge ${isWin ? "badge-active" : "badge-sell"}">${escapeHtml(r.outcome)}</span>
             </div>
-            <span class="tm-badge ${isWin ? "badge-active" : "badge-sell"}">${escapeHtml(r.outcome)}</span>
+            <div class="tm-levels-grid">
+              <div><div class="tm-lvl-key">Entry</div><div class="tm-lvl-val">${escapeHtml(r.entry)}</div></div>
+              <div><div class="tm-lvl-key">SL</div><div class="tm-lvl-val" style="color:var(--bear);">${escapeHtml(r.sl)}</div></div>
+              <div><div class="tm-lvl-key">TP</div><div class="tm-lvl-val" style="color:var(--bull);">${escapeHtml(r.tp)}</div></div>
+              <div><div class="tm-lvl-key">Outcome</div><div class="tm-lvl-val" style="color:${isWin ? "var(--bull)" : "var(--bear)"};">${isWin ? "TP" : "SL"}</div></div>
+            </div>
+            <div class="tm-card-foot">
+              <span>Completed: ${escapeHtml(r.completionTimePkt)}</span>
+              <span>${escapeHtml(r.completionDatePkt)}</span>
+            </div>
           </div>
         `;
       }).join("");
@@ -5583,19 +5621,18 @@ const CalendarHistoryEngine = {
   },
 
   renderLimitsCalendar() {
-    this.ensureInitialized();
-    const todayIso = this.getTodayPktIso();
-    document.getElementById("limCalMonthLabel").textContent = this.formatMonthTitle(this.limitsMonth.year, this.limitsMonth.month);
-
+    const todayIso = getPktDatePartsFromMs(Date.now()).iso;
+    document.getElementById("limCalMonthLabel").textContent = this.formatMonthTitle(this.limitsMonth);
     const cells = this.buildMonthCells(this.limitsMonth.year, this.limitsMonth.month);
     const gridEl = document.getElementById("limCalGrid");
-    gridEl.innerHTML = cells.map(c => {
-      const dayOrders = this.getLimitOrdersForDate(c.iso);
-      const act = dayOrders.filter(o => o.status === "ACTIVATED").length;
-      const tp = dayOrders.filter(o => o.status === "TP COMPLETED").length;
-      const sl = dayOrders.filter(o => o.status === "SL COMPLETED").length;
 
-      const classes = [
+    gridEl.innerHTML = cells.map(c => {
+      const dayRecs = this.limitOrderRecords.filter(r => r.eventDatePkt === c.iso);
+      const act = dayRecs.filter(r => r.status === "ACTIVATED").length;
+      const tp = dayRecs.filter(r => r.status === "TP COMPLETED").length;
+      const sl = dayRecs.filter(r => r.status === "SL COMPLETED").length;
+      const exp = dayRecs.filter(r => r.status === "EXPIRED").length;
+      const cls = [
         "tm-cal-day",
         c.inMonth ? "" : "muted",
         c.iso === todayIso ? "today" : "",
@@ -5606,44 +5643,61 @@ const CalendarHistoryEngine = {
       if (act > 0) pills.push(`<span class="tm-cal-pill act">A:${act}</span>`);
       if (tp > 0) pills.push(`<span class="tm-cal-pill win">TP:${tp}</span>`);
       if (sl > 0) pills.push(`<span class="tm-cal-pill loss">SL:${sl}</span>`);
+      if (exp > 0) pills.push(`<span class="tm-cal-pill pend">EX:${exp}</span>`);
 
       return `
-        <button type="button" class="${classes}" onclick="CalendarHistoryEngine.selectDate('limits', '${escapeHtml(c.iso)}')">
+        <button type="button" class="${cls}" onclick="CalendarHistoryEngine.selectDate('limits', '${escapeHtml(c.iso)}')">
           <span>${c.day}</span>
           <span class="tm-cal-dots">${pills.join("")}</span>
         </button>
       `;
     }).join("");
 
-    const selectedOrders = this.getLimitOrdersForDate(this.selectedLimitDate);
-    const activatedCount = selectedOrders.filter(o => o.status === "ACTIVATED").length;
-    const tpDoneCount = selectedOrders.filter(o => o.status === "TP COMPLETED").length;
-    const slDoneCount = selectedOrders.filter(o => o.status === "SL COMPLETED").length;
-    const pendCount = selectedOrders.filter(o => o.status === "PENDING").length;
-    const expCount = selectedOrders.filter(o => o.status === "EXPIRED").length;
-    const invCount = selectedOrders.filter(o => o.status === "INVALIDATED").length;
+    const selectedRecs = this.limitOrderRecords.filter(r => r.eventDatePkt === this.selectedLimitDate);
+    const actCount = selectedRecs.filter(r => r.status === "ACTIVATED").length;
+    const tpCount = selectedRecs.filter(r => r.status === "TP COMPLETED").length;
+    const slCount = selectedRecs.filter(r => r.status === "SL COMPLETED").length;
+    const pendCount = selectedRecs.filter(r => r.status === "PENDING").length;
+    const expCount = selectedRecs.filter(r => r.status === "EXPIRED").length;
+    const invCount = selectedRecs.filter(r => r.status === "INVALIDATED").length;
 
-    document.getElementById("limDayActivated").textContent = String(activatedCount);
-    document.getElementById("limDayTpSl").textContent = `${tpDoneCount} / ${slDoneCount}`;
+    document.getElementById("limDayActivated").textContent = String(actCount);
+    document.getElementById("limDayTpSl").textContent = `${tpCount} / ${slCount}`;
     document.getElementById("limDayOther").textContent = `${pendCount}/${expCount}/${invCount}`;
     document.getElementById("limDayDateBadge").textContent = `${this.selectedLimitDate} PKT`;
 
     const listEl = document.getElementById("limDayListContainer");
-    if (!selectedOrders.length) {
+    if (!selectedRecs.length) {
       listEl.innerHTML = `<div class="tm-empty">No limit order events on ${escapeHtml(this.selectedLimitDate)} PKT.</div>`;
     } else {
-      listEl.innerHTML = selectedOrders.map(o => {
-        const isBuy = String(o.orderType || "").includes("BUY");
+      listEl.innerHTML = selectedRecs.map(r => {
+        const isBuy = String(r.orderType || "").includes("BUY");
+        let detailLine = `Created: ${r.createdTimePkt}`;
+        if (r.status === "ACTIVATED") detailLine = `Activated: ${r.activatedTimePkt}`;
+        else if (r.status === "TP COMPLETED" || r.status === "SL COMPLETED") detailLine = `Completed: ${r.completedTimePkt}`;
+        else if (r.status === "EXPIRED") detailLine = `Expired: ${r.expiredTimePkt}`;
+        else if (r.status === "INVALIDATED") detailLine = `Invalidated: ${r.invalidatedTimePkt}`;
+
         return `
-          <div class="tm-event-row">
-            <div>
-              <div class="tm-event-title">
-                ${escapeHtml(o.symbol)} · ${escapeHtml(o.timeframe)} ·
-                <span class="tm-badge ${isBuy ? "badge-buy" : "badge-sell"}">${escapeHtml(o.orderType)}</span>
+          <div class="tm-card">
+            <div class="row-between">
+              <div class="row-inline">
+                <strong style="font-size:13px;">${escapeHtml(r.symbol)}</strong>
+                <span class="tm-badge ${isBuy ? "badge-buy" : "badge-sell"}">${escapeHtml(r.orderType)}</span>
+                <span class="tm-badge badge-closed">${escapeHtml(r.timeframe)}</span>
               </div>
-              <div class="tm-event-sub">E: ${escapeHtml(o.entry)} · SL: ${escapeHtml(o.sl)} · TP: ${escapeHtml(o.tp)} · Act: ${escapeHtml(o.activatedAtPkt)} · Done: ${escapeHtml(o.completedAtPkt)}</div>
+              <span class="tm-badge ${badgeClass(r.status)}">${escapeHtml(r.status)}</span>
             </div>
-            <span class="tm-badge ${badgeClass(o.status)}">${escapeHtml(o.status)}</span>
+            <div class="tm-levels-grid">
+              <div><div class="tm-lvl-key">Entry</div><div class="tm-lvl-val">${escapeHtml(r.entry)}</div></div>
+              <div><div class="tm-lvl-key">SL</div><div class="tm-lvl-val" style="color:var(--bear);">${escapeHtml(r.sl)}</div></div>
+              <div><div class="tm-lvl-key">TP</div><div class="tm-lvl-val" style="color:var(--bull);">${escapeHtml(r.tp)}</div></div>
+              <div><div class="tm-lvl-key">PKT Date</div><div class="tm-lvl-val" style="font-size:10.5px;">${escapeHtml(r.eventDatePkt)}</div></div>
+            </div>
+            <div class="tm-card-foot">
+              <span>${escapeHtml(detailLine)}</span>
+              <span>${escapeHtml(r.status)}</span>
+            </div>
           </div>
         `;
       }).join("");
@@ -5657,6 +5711,7 @@ const CalendarHistoryEngine = {
   }
 };
 
+/* PERFORMANCE ENGINE */
 const PerformanceEngine = {
   async refresh(force = false) {
     try {
@@ -5665,27 +5720,37 @@ const PerformanceEngine = {
         TradeMindApi.getSignalHistory()
       ]);
       TradeMindState.performance = perfData;
-      const histArr = Array.isArray(histData)
+      const rawHist = Array.isArray(histData)
         ? histData
-        : (histData && Array.isArray(histData.signals) ? histData.signals : (histData && Array.isArray(histData.history) ? histData.history : []));
-      TradeMindState.historySignals = histArr.map(s => normalizeSignalRecord(s, "CLOSED"));
-    } catch (_) {}
-    this.render();
+        : (histData.history || histData.signals || histData.items || []);
+      TradeMindState.historySignals = rawHist
+        .map(s => normalizeSignalRecord(s, "CLOSED"))
+        .filter(s => !isExcludedOneMinuteTf(s.tf));
+      TradeMindState.lastSyncPkt = getPktClock();
+      TradeMindState.backendOnline = true;
+      TradeMindState.lastBackendError = null;
+    } catch (err) {
+      TradeMindState.lastBackendError = err && err.message ? err.message : "Performance fetch failed";
+    } finally {
+      updateGlobalBanner();
+      this.render();
+      HomeEngine.render();
+    }
   },
 
   render() {
-    const perf = TradeMindState.performance;
-    const total = perf && perf.total !== undefined && perf.total !== null ? perf.total : "--";
-    const winRate = perf && perf.win_rate !== undefined && perf.win_rate !== null
-      ? (typeof perf.win_rate === "number" ? `${perf.win_rate}%` : String(perf.win_rate))
+    const p = TradeMindState.performance;
+    const total = p && p.total !== undefined ? p.total : "--";
+    const winRate = p && p.win_rate !== undefined && p.win_rate !== null
+      ? (typeof p.win_rate === "number" ? `${p.win_rate}%` : String(p.win_rate))
       : "--";
-    const wins = perf && perf.wins !== undefined ? perf.wins : "--";
-    const active = perf && perf.active !== undefined ? perf.active : "--";
-    const losses = perf && perf.losses !== undefined ? perf.losses : "--";
-    const closed = perf && perf.closed !== undefined ? perf.closed : "--";
+    const wins = p && p.wins !== undefined ? p.wins : "--";
+    const active = p && p.active !== undefined ? p.active : TradeMindState.activeSignals.length;
+    const losses = p && p.losses !== undefined ? p.losses : "--";
+    const closed = p && p.closed !== undefined ? p.closed : TradeMindState.historySignals.length;
 
     document.getElementById("perfTotalCount").textContent = String(total);
-    document.getElementById("perfWinRate").textContent = String(winRate);
+    document.getElementById("perfWinRate").textContent = winRate;
     document.getElementById("perfWinActiveCount").textContent = `${wins} / ${active}`;
     document.getElementById("perfLossClosedCount").textContent = `${losses} / ${closed}`;
 
@@ -5698,48 +5763,64 @@ const PerformanceEngine = {
     if (typeof ReportsExportEngine !== "undefined") {
       ReportsExportEngine.render();
     }
-
-    CalendarHistoryEngine.render();
+    if (typeof CalendarHistoryEngine !== "undefined") {
+      CalendarHistoryEngine.render();
+    }
 
     const histEl = document.getElementById("perfHistoryContainer");
     if (!TradeMindState.historySignals.length) {
-      histEl.innerHTML = `<div class="tm-empty">${TradeMindState.backendOnline ? "No closed signals returned by backend." : "Backend offline. Unable to load signal history."}</div>`;
+      histEl.innerHTML = `<div class="tm-empty">${TradeMindState.backendOnline ? "No closed signal history yet." : "Backend offline. Unable to load signal history."}</div>`;
     } else {
       histEl.innerHTML = TradeMindState.historySignals.map(renderSignalCard).join("");
     }
   }
 };
 
+/* PREFERENCES ENGINE */
 const PreferencesEngine = {
-  notificationsEnabled: false,
-  pollIntervalMs: 20000,
-  eventToggles: {},
   _storageKey: "trademind_prefs_v1",
-
-  initDefaultToggles() {
-    EVENT_NOTIFICATION_DEFINITIONS.forEach(def => {
-      if (this.eventToggles[def.key] === undefined) {
-        this.eventToggles[def.key] = true;
-      }
-    });
+  defaultMarket: "XAUUSD",
+  defaultTimeframe: "15M",
+  riskPercent: 1.0,
+  pollIntervalMs: 20000,
+  notificationsEnabled: false,
+  eventToggles: {
+    new_buy_signal: true,
+    new_sell_signal: true,
+    signal_tp_hit: true,
+    signal_sl_hit: true,
+    limit_created: true,
+    limit_activated: true,
+    limit_tp_hit: true,
+    limit_sl_hit: true,
+    limit_expired: true,
+    trade_completed: true
   },
 
-  isEventEnabled(eventKey) {
-    return this.eventToggles[eventKey] !== false;
+  isEventEnabled(key) {
+    if (!this.eventToggles || typeof this.eventToggles !== "object") return true;
+    return this.eventToggles[key] !== false;
   },
 
-  loadSaved() {
-    this.initDefaultToggles();
+  load() {
     try {
       const raw = localStorage.getItem(this._storageKey);
       if (!raw) return;
       const p = JSON.parse(raw);
-      if (!p || typeof p !== "object") return;
-      if (typeof p.apiBaseUrl === "string" && p.apiBaseUrl.trim()) {
+      if (p.apiBaseUrl && typeof p.apiBaseUrl === "string") {
         TradeMindConfig.apiBaseUrl = p.apiBaseUrl.trim().replace(/\/+$/, "");
       }
-      if (Number.isFinite(Number(p.pollIntervalMs)) && Number(p.pollIntervalMs) >= 5000) {
-        this.pollIntervalMs = Number(p.pollIntervalMs);
+      if (p.defaultMarket && TradeMindConfig.supportedMarkets.includes(p.defaultMarket)) {
+        this.defaultMarket = p.defaultMarket;
+      }
+      if (p.defaultTimeframe && TradeMindConfig.supportedTimeframes.includes(p.defaultTimeframe) && !isExcludedOneMinuteTf(p.defaultTimeframe)) {
+        this.defaultTimeframe = p.defaultTimeframe;
+      }
+      if (typeof p.riskPercent === "number" && Number.isFinite(p.riskPercent)) {
+        this.riskPercent = p.riskPercent;
+      }
+      if (typeof p.pollIntervalMs === "number" && [10000, 20000, 30000, 60000].includes(p.pollIntervalMs)) {
+        this.pollIntervalMs = p.pollIntervalMs;
       }
       if (typeof p.notificationsEnabled === "boolean") {
         this.notificationsEnabled = p.notificationsEnabled;
@@ -5751,253 +5832,284 @@ const PreferencesEngine = {
           }
         });
       }
-      if (typeof p.defaultMarket === "string" && TradeMindConfig.supportedMarkets.includes(p.defaultMarket)) {
-        TvChart.symbol = p.defaultMarket;
-      }
-      if (typeof p.defaultTimeframe === "string" && TradeMindConfig.supportedTimeframes.includes(p.defaultTimeframe)) {
-        TvChart.timeframe = p.defaultTimeframe;
-      }
-      if (Number.isFinite(Number(p.riskPct))) {
-        const riskVal = Math.min(2, Math.max(0.25, Number(p.riskPct)));
-        document.getElementById("prefRiskDisplay").textContent = `${riskVal.toFixed(2)}%`;
-        const slider = document.querySelector("#view-settings input[type='range']");
-        if (slider) slider.value = String(riskVal);
-      }
     } catch (_) {}
   },
 
-  saveToStorage() {
+  save() {
     try {
       localStorage.setItem(this._storageKey, JSON.stringify({
         apiBaseUrl: TradeMindConfig.apiBaseUrl,
+        defaultMarket: this.defaultMarket,
+        defaultTimeframe: this.defaultTimeframe,
+        riskPercent: this.riskPercent,
         pollIntervalMs: this.pollIntervalMs,
         notificationsEnabled: this.notificationsEnabled,
-        eventToggles: this.eventToggles,
-        defaultMarket: TvChart.symbol,
-        defaultTimeframe: TvChart.timeframe,
-        riskPct: parseFloat(document.getElementById("prefRiskDisplay").textContent) || 1.0
+        eventToggles: this.eventToggles
       }));
     } catch (_) {}
   },
 
-  renderEventToggles() {
-    this.initDefaultToggles();
-    const wrap = document.getElementById("prefEventTogglesContainer");
-    if (!wrap) return;
-    wrap.innerHTML = EVENT_NOTIFICATION_DEFINITIONS.map(def => {
-      const enabled = this.isEventEnabled(def.key);
-      return `
-        <div class="row-between" style="padding:6px 0;border-top:1px solid #f1f5f9;">
-          <div>
-            <div style="font-size:12px;font-weight:700;">${escapeHtml(def.label)}</div>
-            <div class="tm-sec-meta">${escapeHtml(def.desc)}</div>
-          </div>
-          <button type="button" class="tm-mini-switch ${enabled ? "is-on" : "is-off"}"
-                  onclick="PreferencesEngine.toggleEvent('${escapeHtml(def.key)}')">
-            ${enabled ? "ON" : "OFF"}
-          </button>
-        </div>
-      `;
-    }).join("");
-  },
-
-  toggleEvent(eventKey) {
-    this.initDefaultToggles();
-    this.eventToggles[eventKey] = !this.isEventEnabled(eventKey);
-    this.saveToStorage();
-    this.renderEventToggles();
+  applyInitialDefaults() {
+    TvChart.symbol = this.defaultMarket;
+    TvChart.timeframe = this.defaultTimeframe;
+    if (Array.isArray(TradeMindState.markets)) {
+      TradeMindState.markets.forEach(m => { m.selected = (m.symbol === this.defaultMarket); });
+    }
+    document.querySelectorAll("#chartSymbolStrip .tm-chip").forEach(c => c.classList.toggle("active", c.dataset.sym === this.defaultMarket));
+    document.querySelectorAll("#chartTimeframeStrip .tm-chip").forEach(c => c.classList.toggle("active", c.dataset.tf === this.defaultTimeframe));
+    this.syncUi();
   },
 
   setMarket(m) {
-    document.querySelectorAll("#prefMarketStrip .tm-chip").forEach(c => c.classList.toggle("active", c.dataset.m === m));
+    if (!TradeMindConfig.supportedMarkets.includes(m)) return;
+    this.defaultMarket = m;
+    this.save();
+    this.syncUi();
     TvChart.setSymbol(m);
-    this.saveToStorage();
   },
 
   setTimeframe(tf) {
-    document.querySelectorAll("#prefTfStrip .tm-chip").forEach(c => c.classList.toggle("active", c.dataset.tf === tf));
+    if (!TradeMindConfig.supportedTimeframes.includes(tf) || isExcludedOneMinuteTf(tf)) return;
+    this.defaultTimeframe = tf;
+    this.save();
+    this.syncUi();
     TvChart.setTimeframe(tf);
-    this.saveToStorage();
   },
 
   setRisk(val) {
-    document.getElementById("prefRiskDisplay").textContent = `${parseFloat(val).toFixed(2)}%`;
-    this.saveToStorage();
+    const num = parseFloat(val);
+    if (!Number.isFinite(num)) return;
+    this.riskPercent = num;
+    this.save();
+    this.syncUi();
   },
 
   saveApiUrl() {
     const input = document.getElementById("prefApiUrlInput");
-    const nextUrl = (input && input.value ? input.value : "").trim().replace(/\/+$/, "");
-    if (!nextUrl) return;
-    TradeMindConfig.apiBaseUrl = nextUrl;
-    this.saveToStorage();
+    if (!input) return;
+    const clean = input.value.trim().replace(/\/+$/, "");
+    if (!clean) return;
+    TradeMindConfig.apiBaseUrl = clean;
+    this.save();
     TradeMindApp.refreshAll(true);
   },
 
   setPollInterval(val) {
-    const ms = Number(val);
-    if (!Number.isFinite(ms) || ms < 5000) return;
+    const ms = parseInt(val, 10);
+    if (![10000, 20000, 30000, 60000].includes(ms)) return;
     this.pollIntervalMs = ms;
-    this.saveToStorage();
-    TradeMindApp.restartPollingTimer();
+    this.save();
+    TradeMindApp.restartPolling();
+  },
+
+  toggleEventNotification(key) {
+    const current = this.isEventEnabled(key);
+    this.eventToggles[key] = !current;
+    this.save();
+    this.syncUi();
   },
 
   async toggleNotifications() {
     if (!("Notification" in window)) {
-      document.getElementById("prefNotifStatusText").textContent = "Notifications not supported in this browser.";
+      this.notificationsEnabled = false;
+      this.save();
+      this.syncUi();
       return;
     }
 
     if (this.notificationsEnabled) {
       this.notificationsEnabled = false;
-      this.saveToStorage();
-      this.updateNotifUi();
+      this.save();
+      this.syncUi();
       return;
     }
 
     if (Notification.permission === "granted") {
       this.notificationsEnabled = true;
-      this.saveToStorage();
-      this.updateNotifUi();
+      this.save();
+      this.syncUi();
       return;
     }
 
-    if (Notification.permission === "denied") {
+    if (Notification.permission !== "denied") {
+      try {
+        const perm = await Notification.requestPermission();
+        this.notificationsEnabled = (perm === "granted");
+      } catch (_) {
+        this.notificationsEnabled = false;
+      }
+    } else {
       this.notificationsEnabled = false;
-      this.saveToStorage();
-      this.updateNotifUi();
-      document.getElementById("prefNotifStatusText").textContent = "Permission denied in browser settings.";
-      return;
     }
-
-    const perm = await Notification.requestPermission();
-    this.notificationsEnabled = perm === "granted";
-    this.saveToStorage();
-    this.updateNotifUi();
+    this.save();
+    this.syncUi();
   },
 
   testNotification() {
     if (!("Notification" in window)) {
-      document.getElementById("prefNotifStatusText").textContent = "Notifications not supported in this browser.";
+      alert("Notifications are not supported in this browser.");
       return;
     }
-    if (Notification.permission !== "granted") {
-      document.getElementById("prefNotifStatusText").textContent = "Enable notifications and grant permission first.";
-      return;
-    }
-    try {
-      new Notification("TradeMind — TEST ALERT", {
-        body: `XAUUSD · BUY · 15M\nEntry: 2650.00 · SL: 2642.00 · TP: 2666.00\nTime: ${getPktClock()}`
+    const sendTest = () => {
+      try {
+        new Notification("TradeMind — TEST SIGNAL", {
+          body: "XAUUSD · BUY · 15M\nEntry: 2650.00\nSL: 2642.00\nTP: 2666.00"
+        });
+      } catch (e) {
+        alert("Could not display notification: " + (e && e.message ? e.message : "error"));
+      }
+    };
+    if (Notification.permission === "granted") {
+      sendTest();
+    } else if (Notification.permission !== "denied") {
+      Notification.requestPermission().then(perm => {
+        if (perm === "granted") {
+          this.notificationsEnabled = true;
+          this.save();
+          this.syncUi();
+          sendTest();
+        }
       });
-    } catch (_) {}
+    } else {
+      alert("Notification permission is blocked in browser settings.");
+    }
   },
 
   resetLocalSettings() {
     try {
       localStorage.removeItem(this._storageKey);
       localStorage.removeItem(TvChart._storageKey);
+      localStorage.removeItem(DailyRiskMonitor._storageKey);
       SignalNotificationTracker.resetBaseline();
     } catch (_) {}
     TradeMindConfig.apiBaseUrl = "http://127.0.0.1:8000";
+    this.defaultMarket = "XAUUSD";
+    this.defaultTimeframe = "15M";
+    this.riskPercent = 1.0;
     this.pollIntervalMs = 20000;
     this.notificationsEnabled = false;
-    this.eventToggles = {};
-    this.initDefaultToggles();
-    document.getElementById("prefApiUrlInput").value = TradeMindConfig.apiBaseUrl;
-    document.getElementById("prefPollIntervalSelect").value = "20000";
-    this.updateNotifUi();
-    this.renderEventToggles();
-    TradeMindApp.restartPollingTimer();
+    EVENT_NOTIFICATION_DEFINITIONS.forEach(def => {
+      this.eventToggles[def.key] = true;
+    });
+    this.applyInitialDefaults();
+    TradeMindApp.restartPolling();
     TradeMindApp.refreshAll(true);
   },
 
-  updateNotifUi() {
+  syncUi() {
+    document.querySelectorAll("#prefMarketStrip .tm-chip").forEach(c => {
+      c.classList.toggle("active", c.dataset.m === this.defaultMarket);
+    });
+    document.querySelectorAll("#prefTfStrip .tm-chip").forEach(c => {
+      c.classList.toggle("active", c.dataset.tf === this.defaultTimeframe);
+    });
+    const riskEl = document.getElementById("prefRiskDisplay");
+    if (riskEl) riskEl.textContent = `${this.riskPercent.toFixed(2)}%`;
+
+    const urlInput = document.getElementById("prefApiUrlInput");
+    if (urlInput) urlInput.value = TradeMindConfig.apiBaseUrl;
+
+    const pollSel = document.getElementById("prefPollIntervalSelect");
+    if (pollSel) pollSel.value = String(this.pollIntervalMs);
+
     const btn = document.getElementById("prefEnableNotifBtn");
-    const status = document.getElementById("prefNotifStatusText");
-    if (!btn || !status) return;
-
-    if (!("Notification" in window)) {
-      btn.textContent = "Unsupported";
-      status.textContent = "Notifications are not supported in this browser.";
-      return;
+    const statusText = document.getElementById("prefNotifStatusText");
+    if (btn && statusText) {
+      if (!("Notification" in window)) {
+        btn.textContent = "Unsupported";
+        statusText.textContent = "Browser does not support notifications";
+      } else if (Notification.permission === "denied") {
+        btn.textContent = "Blocked";
+        statusText.textContent = "Permission blocked in browser settings";
+      } else if (this.notificationsEnabled && Notification.permission === "granted") {
+        btn.textContent = "Disable";
+        statusText.textContent = "Enabled for active app session";
+      } else {
+        btn.textContent = "Enable";
+        statusText.textContent = "Disabled — tap Enable to allow alerts";
+      }
     }
 
-    if (Notification.permission === "denied") {
-      btn.textContent = "Blocked";
-      status.textContent = "Notification permission denied. Enable it in browser site settings.";
-      return;
+    const togglesContainer = document.getElementById("prefEventTogglesContainer");
+    if (togglesContainer) {
+      togglesContainer.innerHTML = EVENT_NOTIFICATION_DEFINITIONS.map(def => {
+        const enabled = this.isEventEnabled(def.key);
+        return `
+          <div class="tm-event-row">
+            <div>
+              <div class="tm-event-title">${escapeHtml(def.label)}</div>
+              <div class="tm-event-sub">${escapeHtml(def.desc)}</div>
+            </div>
+            <button type="button"
+                    class="tm-mini-switch ${enabled ? "is-on" : "is-off"}"
+                    onclick="PreferencesEngine.toggleEventNotification('${escapeHtml(def.key)}')">
+              ${enabled ? "ON" : "OFF"}
+            </button>
+          </div>
+        `;
+      }).join("");
     }
 
-    if (this.notificationsEnabled && Notification.permission === "granted") {
-      btn.textContent = "Disable";
-      status.textContent = "Enabled for active session.";
-    } else {
-      btn.textContent = "Enable";
-      status.textContent = "Alerts while app or browser is open.";
+    if (typeof SystemHealthMonitor !== "undefined") {
+      SystemHealthMonitor.render();
     }
   }
 };
 
+/* ROUTER */
 const TradeMindRouter = {
   go(viewName) {
     document.querySelectorAll(".tm-view").forEach(v => v.classList.remove("active"));
-    document.querySelectorAll(".tm-nav-item").forEach(n => n.classList.remove("active"));
-
     const target = document.getElementById(`view-${viewName}`);
     if (target) target.classList.add("active");
 
-    const navBtn = document.querySelector(`.tm-nav-item[data-view="${viewName}"]`);
-    if (navBtn) navBtn.classList.add("active");
+    document.querySelectorAll(".tm-nav-item").forEach(item => {
+      item.classList.toggle("active", item.dataset.view === viewName);
+    });
 
+    if (viewName === "home") HomeEngine.render();
     if (viewName === "charts") {
-      TvChart.bindEvents();
-      TvChart.startTimers();
       TvChart.updateMonitoredBanner();
+      TvChart.updateCountdown();
+      TvChart.render();
       TvChart.loadCandles(true, false);
-    } else if (viewName === "signals") {
-      SignalsEngine.render();
-    } else if (viewName === "limits") {
-      LimitsEngine.render();
-    } else if (viewName === "performance") {
-      PerformanceEngine.refresh(false);
-    } else if (viewName === "settings") {
-      PreferencesEngine.updateNotifUi();
-      PreferencesEngine.renderEventToggles();
-      if (typeof SystemHealthMonitor !== "undefined") {
-        SystemHealthMonitor.render();
-      }
+    }
+    if (viewName === "signals") SignalsEngine.render();
+    if (viewName === "limits") LimitsEngine.render();
+    if (viewName === "performance") PerformanceEngine.refresh(false);
+    if (viewName === "settings") {
+      PreferencesEngine.syncUi();
       updateGlobalBanner();
-    } else {
-      HomeEngine.render();
     }
   }
 };
 
+/* APP ORCHESTRATOR */
 const TradeMindApp = {
   _pollTimer: null,
   _clockTimer: null,
-  _initialSyncCompleted: false,
+  _hadInitialSync: false,
 
   async refreshAll(force = false) {
-    document.getElementById("tmPktClock").textContent = getPktClock();
-    if (typeof MarketSessionsClock !== "undefined") {
-      MarketSessionsClock.render();
-    }
-
+    let healthOk = false;
     try {
       await TradeMindApi.getHealth();
+      healthOk = true;
       TradeMindState.backendOnline = true;
       TradeMindState.lastBackendError = null;
     } catch (err) {
       TradeMindState.backendOnline = false;
-      TradeMindState.lastBackendError = err && err.message ? err.message : "Unreachable";
+      TradeMindState.lastBackendError = err && err.message ? err.message : "Backend unreachable";
+    }
+
+    if (!healthOk) {
       updateGlobalBanner();
       HomeEngine.render();
       SignalsEngine.render();
       LimitsEngine.render();
       PerformanceEngine.render();
-      TvChart.updateHeader();
       TvChart.updateCountdown();
+      TvChart.updateHeader();
       TvChart.render();
       return;
     }
@@ -6007,81 +6119,81 @@ const TradeMindApp = {
       TradeMindApi.getTimeframes(),
       TradeMindApi.getActiveSignals(),
       TradeMindApi.getSignalHistory(),
-      TradeMindApi.getSignalPerformance(),
       TradeMindApi.getPendingLimits(),
-      TradeMindApi.getLimitHistory()
+      TradeMindApi.getLimitHistory(),
+      TradeMindApi.getSignalPerformance()
     ]);
 
-    const [mRes, tfRes, actSigRes, histSigRes, perfRes, pendLimRes, histLimRes] = results;
-
-    if (mRes.status === "fulfilled") {
-      const rawM = Array.isArray(mRes.value) ? mRes.value : (mRes.value && mRes.value.markets ? mRes.value.markets : mRes.value);
-      const normalized = normalizeMarketList(rawM);
-      if (normalized.length) {
-        normalized.forEach(item => {
-          item.selected = item.symbol === TvChart.symbol;
+    if (results[0].status === "fulfilled") {
+      const mList = normalizeMarketList(results[0].value);
+      if (mList.length) {
+        const activeSym = TvChart.symbol || PreferencesEngine.defaultMarket;
+        mList.forEach(m => { m.selected = (m.symbol === activeSym); });
+        TradeMindState.markets = mList;
+        document.getElementById("tmHeaderSubtitle").textContent = mList.map(m => m.symbol).join(" · ");
+        mList.forEach(m => {
+          if (m.price !== null && m.price !== undefined && m.price !== "") {
+            const pNum = Number(m.price);
+            if (Number.isFinite(pNum) && TvChart.symbol === m.symbol) {
+              TvChart.applyRealPriceTick(pNum, getPktClock());
+            }
+          }
         });
-        if (!normalized.some(item => item.selected)) {
-          normalized[0].selected = true;
-        }
-        TradeMindState.markets = normalized;
-        document.getElementById("tmHeaderSubtitle").textContent = normalized.map(i => i.symbol).join(" · ");
-
-        const activeSymMarket = normalized.find(i => i.symbol === TvChart.symbol);
-        if (activeSymMarket && activeSymMarket.price !== null && activeSymMarket.price !== undefined) {
-          TvChart.applyRealPriceTick(activeSymMarket.price, getPktClock());
-        }
       }
     }
 
-    if (tfRes.status === "fulfilled") {
-      const rawTf = Array.isArray(tfRes.value) ? tfRes.value : (tfRes.value && Array.isArray(tfRes.value.timeframes) ? tfRes.value.timeframes : null);
-      if (rawTf && rawTf.length) {
-        TradeMindState.timeframes = rawTf.map(t => String(t).toUpperCase());
-      }
+    if (results[1].status === "fulfilled") {
+      const tfPayload = results[1].value;
+      const tfs = Array.isArray(tfPayload) ? tfPayload : (tfPayload.timeframes || []);
+      const cleanTfs = tfs
+        .map(t => String(t).toUpperCase())
+        .filter(t => TradeMindConfig.supportedTimeframes.includes(t) && !isExcludedOneMinuteTf(t));
+      if (cleanTfs.length) TradeMindState.timeframes = cleanTfs;
     }
 
-    if (actSigRes.status === "fulfilled") {
-      const rawAct = Array.isArray(actSigRes.value)
-        ? actSigRes.value
-        : (actSigRes.value && Array.isArray(actSigRes.value.signals) ? actSigRes.value.signals : (actSigRes.value && Array.isArray(actSigRes.value.active_signals) ? actSigRes.value.active_signals : []));
-      TradeMindState.activeSignals = rawAct.map(s => normalizeSignalRecord(s, "ACTIVE"));
-      TvChart.syncMonitoredTradeWithActiveList();
+    if (results[2].status === "fulfilled") {
+      const sPayload = results[2].value;
+      const list = Array.isArray(sPayload) ? sPayload : (sPayload.signals || sPayload.active || []);
+      TradeMindState.activeSignals = list
+        .map(s => normalizeSignalRecord(s, "ACTIVE"))
+        .filter(s => !isExcludedOneMinuteTf(s.tf));
     }
 
-    if (histSigRes.status === "fulfilled") {
-      const rawHist = Array.isArray(histSigRes.value)
-        ? histSigRes.value
-        : (histSigRes.value && Array.isArray(histSigRes.value.signals) ? histSigRes.value.signals : (histSigRes.value && Array.isArray(histSigRes.value.history) ? histSigRes.value.history : []));
-      TradeMindState.historySignals = rawHist.map(s => normalizeSignalRecord(s, "CLOSED"));
+    if (results[3].status === "fulfilled") {
+      const hPayload = results[3].value;
+      const list = Array.isArray(hPayload) ? hPayload : (hPayload.history || hPayload.signals || []);
+      TradeMindState.historySignals = list
+        .map(s => normalizeSignalRecord(s, "CLOSED"))
+        .filter(s => !isExcludedOneMinuteTf(s.tf));
     }
 
-    if (perfRes.status === "fulfilled") {
-      TradeMindState.performance = perfRes.value;
+    if (results[4].status === "fulfilled") {
+      const pPayload = results[4].value;
+      const list = Array.isArray(pPayload) ? pPayload : (pPayload.pending || pPayload.orders || pPayload.limit_orders || []);
+      TradeMindState.pendingLimits = list
+        .map(o => normalizeLimitOrder(o, "PENDING"))
+        .filter(o => !isExcludedOneMinuteTf(o.tf));
     }
 
-    if (pendLimRes.status === "fulfilled") {
-      const rawPend = Array.isArray(pendLimRes.value)
-        ? pendLimRes.value
-        : (pendLimRes.value && Array.isArray(pendLimRes.value.orders) ? pendLimRes.value.orders : (pendLimRes.value && Array.isArray(pendLimRes.value.pending_orders) ? pendLimRes.value.pending_orders : []));
-      TradeMindState.pendingLimits = rawPend.map(o => normalizeLimitOrder(o, "PENDING"));
+    if (results[5].status === "fulfilled") {
+      const lhPayload = results[5].value;
+      const list = Array.isArray(lhPayload) ? lhPayload : (lhPayload.history || lhPayload.orders || lhPayload.limit_orders || []);
+      TradeMindState.historyLimits = list
+        .map(o => normalizeLimitOrder(o, "CLOSED"))
+        .filter(o => !isExcludedOneMinuteTf(o.tf));
     }
 
-    if (histLimRes.status === "fulfilled") {
-      const rawLimHist = Array.isArray(histLimRes.value)
-        ? histLimRes.value
-        : (histLimRes.value && Array.isArray(histLimRes.value.orders) ? histLimRes.value.orders : (histLimRes.value && Array.isArray(histLimRes.value.history) ? histLimRes.value.history : []));
-      TradeMindState.historyLimits = rawLimHist.map(o => normalizeLimitOrder(o, "CLOSED"));
+    if (results[6].status === "fulfilled") {
+      TradeMindState.performance = results[6].value;
     }
 
-    const hadAnyDataSuccess = results.some(r => r.status === "fulfilled");
-    if (hadAnyDataSuccess) {
-      TradeMindState.lastSyncPkt = getPktClock();
-      SignalNotificationTracker.processActiveSignals(TradeMindState.activeSignals, this._initialSyncCompleted);
-      this._initialSyncCompleted = true;
-    }
-
+    TradeMindState.lastSyncPkt = getPktClock();
     updateGlobalBanner();
+
+    SignalNotificationTracker.processActiveSignals(TradeMindState.activeSignals, this._hadInitialSync);
+    this._hadInitialSync = true;
+
+    TvChart.syncMonitoredTradeWithActiveList();
     HomeEngine.render();
     SignalsEngine.render();
     LimitsEngine.render();
@@ -6090,17 +6202,11 @@ const TradeMindApp = {
     const activeView = document.querySelector(".tm-view.active");
     if (activeView && activeView.id === "view-charts") {
       TvChart.loadCandles(force, false);
-    } else {
-      TvChart.updateHeader();
-      TvChart.updateCountdown();
     }
   },
 
-  restartPollingTimer() {
-    if (this._pollTimer) {
-      clearInterval(this._pollTimer);
-      this._pollTimer = null;
-    }
+  startPolling() {
+    this.stopPolling();
     this._pollTimer = setInterval(() => {
       if (!document.hidden) {
         this.refreshAll(false);
@@ -6108,56 +6214,53 @@ const TradeMindApp = {
     }, PreferencesEngine.pollIntervalMs);
   },
 
-  init() {
-    SignalNotificationTracker.loadState();
-    PreferencesEngine.loadSaved();
-    if (typeof DailyRiskMonitor !== "undefined") {
-      DailyRiskMonitor.loadInputs();
+  stopPolling() {
+    if (this._pollTimer) {
+      clearInterval(this._pollTimer);
+      this._pollTimer = null;
     }
-    if (typeof RiskLotCalculator !== "undefined") {
-      RiskLotCalculator.onSymbolChange();
-    }
-    document.getElementById("prefApiUrlInput").value = TradeMindConfig.apiBaseUrl;
-    document.getElementById("prefPollIntervalSelect").value = String(PreferencesEngine.pollIntervalMs);
-    PreferencesEngine.updateNotifUi();
-    PreferencesEngine.renderEventToggles();
-    CalendarHistoryEngine.ensureInitialized();
-    SignalsEngine.ensureDateState();
-    LimitsEngine.ensureDates();
+  },
 
-    document.getElementById("tmPktClock").textContent = getPktClock();
-    if (typeof MarketSessionsClock !== "undefined") {
-      MarketSessionsClock.render();
-    }
+  restartPolling() {
+    this.startPolling();
+  },
+
+  init() {
+    PreferencesEngine.load();
+    DailyRiskMonitor.loadInputs();
+    RiskLotCalculator.onSymbolChange();
+    SignalNotificationTracker.loadState();
+    PreferencesEngine.applyInitialDefaults();
     TvChart.bindEvents();
-    this.refreshAll(true);
+    TvChart.startTimers();
+    updateGlobalBanner();
+    HomeEngine.render();
 
     this._clockTimer = setInterval(() => {
       if (!document.hidden) {
         document.getElementById("tmPktClock").textContent = getPktClock();
-        if (typeof MarketSessionsClock !== "undefined") {
-          MarketSessionsClock.render();
-        }
+        MarketSessionsClock.render();
       }
     }, 1000);
-
-    this.restartPollingTimer();
 
     document.addEventListener("visibilitychange", () => {
       if (!document.hidden) {
         document.getElementById("tmPktClock").textContent = getPktClock();
-        if (typeof MarketSessionsClock !== "undefined") {
-          MarketSessionsClock.render();
-        }
+        TvChart.updateCountdown();
+        TvChart.updateHeader();
+        TvChart.startSmoothLoop();
         this.refreshAll(false);
+      } else {
+        TvChart.stopSmoothLoop();
       }
     });
+
+    this.refreshAll(true);
+    this.startPolling();
   }
 };
 
-window.addEventListener("DOMContentLoaded", () => {
-  TradeMindApp.init();
-});
+document.addEventListener("DOMContentLoaded", () => TradeMindApp.init());
 </script>
 </body>
 </html>
