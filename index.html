@@ -259,6 +259,11 @@
     background: var(--surface-tint);
   }
 
+  .tm-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
   .tm-btn-primary {
     background: var(--accent);
     border: 1px solid var(--accent);
@@ -273,6 +278,11 @@
   .tm-btn-primary:hover {
     background: var(--accent-dark);
     border-color: var(--accent-dark);
+  }
+
+  .tm-btn-primary:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
   }
 
   .tm-toggle-btn {
@@ -414,6 +424,7 @@
     font-weight: 700;
     color: var(--text-primary);
     font-variant-numeric: tabular-nums;
+    word-break: break-all;
   }
 
   .tm-monitor-banner {
@@ -1005,7 +1016,7 @@
   </header>
 
   <div id="tmGlobalSyncBanner" class="tm-status-banner">
-    <span id="tmBackendStatusText">Connecting to backend (127.0.0.1:8000)...</span>
+    <span id="tmBackendStatusText">Connecting to backend...</span>
     <span id="tmLastUpdatedText" class="tm-sec-meta">Updated: --</span>
   </div>
 
@@ -1681,6 +1692,60 @@
       <div id="prefLastSyncText" class="tm-sec-meta" style="margin-top:7px;">Last successful data sync: --</div>
     </div>
 
+    <!-- NATIVE ANDROID DEVICE PAIRING & FCM PUSH REGISTRATION -->
+    <div class="tm-card" id="nativeFcmPairingCard">
+      <div class="row-between" style="margin-bottom:6px;">
+        <span class="tm-metric-label">Android Device Pairing &amp; FCM Push</span>
+        <span id="fcmPairingStatusBadge" class="tm-live-pill lost">NOT REGISTERED</span>
+      </div>
+
+      <div class="tm-meta-box" style="margin-top:0;margin-bottom:8px;">
+        <div class="tm-meta-line">
+          <span class="tm-meta-lbl">Native Bridge:</span>
+          <span id="fcmBridgeStateText" class="tm-meta-val">Checking Capacitor Push plugin...</span>
+        </div>
+        <div class="tm-meta-line">
+          <span class="tm-meta-lbl">Device Auth:</span>
+          <span id="fcmDeviceAuthText" class="tm-meta-val">Unpaired</span>
+        </div>
+        <div class="tm-meta-line">
+          <span class="tm-meta-lbl">FCM Registration:</span>
+          <span id="fcmTokenStateText" class="tm-meta-val">Not registered</span>
+        </div>
+        <div class="tm-meta-line">
+          <span class="tm-meta-lbl">Backend Pref Sync:</span>
+          <span id="fcmPrefSyncText" class="tm-meta-val">--</span>
+        </div>
+      </div>
+
+      <div class="tm-field-grid" style="margin-top:4px;">
+        <div class="tm-field-group">
+          <label class="tm-lvl-key" for="fcmPairingCodeInput">One-Time Pairing Code</label>
+          <input id="fcmPairingCodeInput" type="text" autocomplete="off" class="tm-input" placeholder="Enter pairing code" />
+        </div>
+        <div class="tm-field-group">
+          <label class="tm-lvl-key" for="fcmDeviceNameInput">Device Name</label>
+          <input id="fcmDeviceNameInput" type="text" class="tm-input" placeholder="Android Device" />
+        </div>
+      </div>
+
+      <div class="row-inline" style="margin-top:9px;">
+        <button id="fcmPairRegisterBtn" type="button" class="tm-btn-primary" style="flex:1;" onclick="NativeFcmManager.pairAndRegister()">
+          Pair Device &amp; Enable Push
+        </button>
+        <button id="fcmRetryPushBtn" type="button" class="tm-btn" onclick="NativeFcmManager.retryFcmRegistration()">
+          Retry FCM
+        </button>
+        <button id="fcmUnpairBtn" type="button" class="tm-btn" onclick="NativeFcmManager.clearPairing()">
+          Unpair
+        </button>
+      </div>
+
+      <div id="fcmFeedbackBox" class="tm-info-box">
+        Enter your one-time backend pairing code to authenticate this Android device and register native FCM push alerts (New BUY, New SELL, TP Hit, SL Hit).
+      </div>
+    </div>
+
     <div class="tm-card" id="systemHealthCard">
       <div class="row-between" style="margin-bottom:6px;">
         <span class="tm-metric-label">System Health Monitor</span>
@@ -1733,7 +1798,7 @@
       </div>
       <div class="row-between" style="font-size:12px;padding:4px 0;">
         <span style="color:var(--text-secondary);">Backend Base URL</span>
-        <strong>http://127.0.0.1:8000</strong>
+        <strong id="prefBaseUrlDisplay">https://recorder-past-monsters-ads.trycloudflare.com</strong>
       </div>
       <div class="row-between" style="font-size:12px;padding:4px 0;">
         <span style="color:var(--text-secondary);">Auto Trade</span>
@@ -1741,7 +1806,7 @@
       </div>
       <div class="row-between" style="font-size:12px;padding:4px 0;">
         <span style="color:var(--text-secondary);">Background Push</span>
-        <strong>Active App Session</strong>
+        <strong id="prefPushModeDisplay">Native FCM / Active Session</strong>
       </div>
     </div>
 
@@ -1750,7 +1815,7 @@
 
       <label class="tm-lvl-key" for="prefApiUrlInput">Backend API URL</label>
       <div class="row-inline" style="margin-top:4px;margin-bottom:10px;">
-        <input id="prefApiUrlInput" type="text" value="http://127.0.0.1:8000"
+        <input id="prefApiUrlInput" type="text" value="https://recorder-past-monsters-ads.trycloudflare.com"
                style="flex:1;min-width:160px;padding:7px 9px;border:1px solid var(--border);border-radius:8px;font-size:12px;" />
         <button class="tm-btn" onclick="PreferencesEngine.saveApiUrl()">Save URL</button>
       </div>
@@ -1769,7 +1834,7 @@
       <div class="row-between" style="padding:6px 0;border-top:1px solid #eef2f6;">
         <div>
           <div style="font-size:12px;font-weight:700;">Master Notifications Switch</div>
-          <div id="prefNotifStatusText" class="tm-sec-meta">Alerts while app/browser is open</div>
+          <div id="prefNotifStatusText" class="tm-sec-meta">Alerts while app/browser is open or paired via FCM</div>
         </div>
         <button id="prefEnableNotifBtn" class="tm-btn" onclick="PreferencesEngine.toggleNotifications()">Enable</button>
       </div>
@@ -1817,16 +1882,19 @@
 </nav>
 
 <script>
-const TradeMindConfig = Object.freeze({
-  apiBaseUrl: "http://127.0.0.1:8000",
+const BACKEND_BASE_URL = "https://recorder-past-monsters-ads.trycloudflare.com";
+
+const TradeMindConfig = {
+  apiBaseUrl: BACKEND_BASE_URL,
   timezone: "Asia/Karachi",
   supportedMarkets: ["XAUUSD", "XAGUSD", "EURUSD"],
   supportedTimeframes: ["5M", "15M", "1H", "4H"],
   requestTimeoutMs: 8000
-});
+};
 
 const TradeMindState = {
   backendOnline: false,
+  authRequired: false,
   lastBackendError: null,
   lastSyncPkt: null,
   markets: [],
@@ -2116,14 +2184,23 @@ function evaluateSignalQuality(sig) {
 }
 
 const TradeMindApi = {
-  async request(path, params = null) {
-    const dedupeKey = `${path}?${params ? new URLSearchParams(params).toString() : ""}`;
+  getDeviceToken() {
+    if (typeof NativeFcmManager !== "undefined" && NativeFcmManager.deviceAccessToken) {
+      return String(NativeFcmManager.deviceAccessToken).trim();
+    }
+    return null;
+  },
+
+  async request(path, params = null, timeoutOverrideMs = null) {
+    const token = this.getDeviceToken();
+    const dedupeKey = `${path}?${params ? new URLSearchParams(params).toString() : ""}|auth=${token ? "1" : "0"}`;
     if (TradeMindState.inFlight[dedupeKey]) {
       return TradeMindState.inFlight[dedupeKey];
     }
 
     const promise = (async () => {
-      const url = new URL(`${TradeMindConfig.apiBaseUrl}${path}`);
+      const base = String(TradeMindConfig.apiBaseUrl || BACKEND_BASE_URL).replace(/\/+$/, "");
+      const url = new URL(`${base}${path}`);
       if (params && typeof params === "object") {
         Object.entries(params).forEach(([k, v]) => {
           if (v !== undefined && v !== null && v !== "") {
@@ -2133,18 +2210,30 @@ const TradeMindApi = {
       }
 
       const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), TradeMindConfig.requestTimeoutMs);
+      const timeoutMs = timeoutOverrideMs || TradeMindConfig.requestTimeoutMs;
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
+      const headers = { "Accept": "application/json" };
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
 
       try {
         const res = await fetch(url.toString(), {
           method: "GET",
-          headers: { "Accept": "application/json" },
+          headers,
           signal: controller.signal
         });
         clearTimeout(timer);
 
         if (!res.ok) {
-          throw new Error(`HTTP ${res.status} on ${path}`);
+          let detail = null;
+          try {
+            const errJson = await res.json();
+            detail = errJson && (errJson.detail || errJson.message || errJson.error);
+          } catch (_) {}
+          const err = new Error(detail ? String(detail) : `HTTP ${res.status} on ${path}`);
+          err.status = res.status;
+          throw err;
         }
 
         const data = await res.json();
@@ -2167,6 +2256,56 @@ const TradeMindApi = {
     return promise;
   },
 
+  async requestJson(path, { method = "POST", body = null, bearerToken = null } = {}) {
+    const base = String(TradeMindConfig.apiBaseUrl || BACKEND_BASE_URL).replace(/\/+$/, "");
+    const url = new URL(`${base}${path}`);
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), TradeMindConfig.requestTimeoutMs);
+    const headers = {
+      "Accept": "application/json",
+      "Content-Type": "application/json"
+    };
+    const authToken = bearerToken || this.getDeviceToken();
+    if (authToken) {
+      headers["Authorization"] = `Bearer ${authToken}`;
+    }
+
+    try {
+      const res = await fetch(url.toString(), {
+        method,
+        headers,
+        body: body !== null ? JSON.stringify(body) : undefined,
+        signal: controller.signal
+      });
+      clearTimeout(timer);
+
+      let data = null;
+      const text = await res.text();
+      if (text) {
+        try {
+          data = JSON.parse(text);
+        } catch (_) {
+          data = { detail: text };
+        }
+      }
+
+      if (!res.ok) {
+        const detail = (data && (data.detail || data.message || data.error)) || `HTTP ${res.status}`;
+        const err = new Error(String(detail));
+        err.status = res.status;
+        err.payload = data;
+        throw err;
+      }
+      return data || {};
+    } catch (err) {
+      clearTimeout(timer);
+      if (err && err.name === "AbortError") {
+        throw new Error(`Request timeout on ${path}`);
+      }
+      throw err;
+    }
+  },
+
   getHealth() {
     return this.request("/health");
   },
@@ -2177,7 +2316,11 @@ const TradeMindApi = {
     return this.request("/market/timeframes");
   },
   getCandles({ symbol, timeframe, limit = 100, mode = "live" }) {
-    return this.request("/market/candles", { symbol, timeframe, limit, mode });
+    const query = { symbol, timeframe, limit };
+    if (mode !== undefined && mode !== null && mode !== "") {
+      query.mode = mode;
+    }
+    return this.request("/market/candles", query, 15000);
   },
   getActiveSignals() {
     return this.request("/instant-signals/");
@@ -2193,6 +2336,734 @@ const TradeMindApi = {
   },
   getLimitHistory() {
     return this.request("/limit-orders/history");
+  },
+  getBacktestHistory(params = null) {
+    return this.request("/backtest-history/", params);
+  },
+  registerDevice(pairingCode, deviceName) {
+    return this.requestJson("/device/register", {
+      method: "POST",
+      body: {
+        pairing_code: String(pairingCode || "").trim(),
+        device_name: String(deviceName || "Android Device").trim()
+      }
+    });
+  },
+  registerFcmToken(fcmToken, deviceAccessToken, deviceName) {
+    return this.requestJson("/fcm/register", {
+      method: "POST",
+      bearerToken: deviceAccessToken,
+      body: {
+        fcm_token: String(fcmToken || "").trim(),
+        token: String(fcmToken || "").trim(),
+        platform: "android",
+        device_name: String(deviceName || "Android Device").trim()
+      }
+    });
+  },
+  getNotificationPreferences(deviceAccessToken) {
+    return this.requestJson("/notifications/preferences", {
+      method: "GET",
+      bearerToken: deviceAccessToken
+    });
+  },
+  updateNotificationPreferences(preferencesPayload, deviceAccessToken) {
+    return this.requestJson("/notifications/preferences", {
+      method: "PUT",
+      bearerToken: deviceAccessToken,
+      body: preferencesPayload
+    });
+  }
+};
+
+/* SECURE NATIVE / SESSION TOKEN STORAGE ADAPTER */
+const SecureDeviceStorage = {
+  _tokenKey: "trademind_device_access_token_v1",
+  _metaKey: "trademind_device_meta_v1",
+
+  getCapacitorSecurePlugin() {
+    const cap = window.Capacitor;
+    if (!cap || !cap.Plugins) return null;
+    if (cap.Plugins.SecureStoragePlugin && typeof cap.Plugins.SecureStoragePlugin.set === "function") {
+      return { type: "secure_storage", plugin: cap.Plugins.SecureStoragePlugin };
+    }
+    if (cap.Plugins.Preferences && typeof cap.Plugins.Preferences.set === "function") {
+      return { type: "capacitor_preferences", plugin: cap.Plugins.Preferences };
+    }
+    return null;
+  },
+
+  async setItem(key, value) {
+    const strVal = String(value ?? "");
+    const native = this.getCapacitorSecurePlugin();
+    if (native) {
+      try {
+        await native.plugin.set({ key, value: strVal });
+        try { sessionStorage.removeItem(key); } catch (_) {}
+        return native.type;
+      } catch (_) {}
+    }
+    try {
+      sessionStorage.setItem(key, strVal);
+      return "session_storage";
+    } catch (_) {
+      return "memory";
+    }
+  },
+
+  async getItem(key) {
+    const native = this.getCapacitorSecurePlugin();
+    if (native) {
+      try {
+        const res = await native.plugin.get({ key });
+        if (res && typeof res.value === "string" && res.value.length > 0) {
+          return res.value;
+        }
+      } catch (_) {}
+    }
+    try {
+      const sVal = sessionStorage.getItem(key);
+      if (sVal && sVal.length > 0) return sVal;
+    } catch (_) {}
+    return null;
+  },
+
+  async removeItem(key) {
+    const native = this.getCapacitorSecurePlugin();
+    if (native) {
+      try {
+        await native.plugin.remove({ key });
+      } catch (_) {}
+    }
+    try {
+      sessionStorage.removeItem(key);
+    } catch (_) {}
+    try {
+      localStorage.removeItem(key);
+    } catch (_) {}
+  },
+
+  async saveDeviceToken(token) {
+    return this.setItem(this._tokenKey, token);
+  },
+
+  async loadDeviceToken() {
+    return this.getItem(this._tokenKey);
+  },
+
+  async clearDeviceToken() {
+    await this.removeItem(this._tokenKey);
+    await this.removeItem(this._metaKey);
+  }
+};
+
+/* NATIVE ANDROID CAPACITOR FCM & DEVICE PAIRING MANAGER */
+const NativeFcmManager = {
+  pluginAvailable: false,
+  permissionState: "unknown",
+  deviceAccessToken: null,
+  deviceName: "Android Device",
+  deviceId: null,
+  fcmToken: null,
+  lastRegisteredFcmToken: null,
+  lastRegisteredBaseUrl: null,
+  fcmRegistered: false,
+  prefSyncStatus: "--",
+  storageBackend: "none",
+  statusMessage: "Not paired",
+  statusLevel: "idle",
+  busy: false,
+  _listenersBound: false,
+  _inFlightFcmRegister: null,
+
+  isCapacitorNativeAndroid() {
+    const cap = window.Capacitor;
+    if (!cap) return false;
+    if (typeof cap.isNativePlatform === "function") {
+      try {
+        if (!cap.isNativePlatform()) return false;
+      } catch (_) {}
+    }
+    if (typeof cap.getPlatform === "function") {
+      try {
+        const plat = String(cap.getPlatform() || "").toLowerCase();
+        if (plat && plat !== "android") return false;
+      } catch (_) {}
+    }
+    return Boolean(cap.Plugins && cap.Plugins.PushNotifications);
+  },
+
+  getPushPlugin() {
+    if (!this.isCapacitorNativeAndroid()) return null;
+    const cap = window.Capacitor;
+    if (!cap || !cap.Plugins || !cap.Plugins.PushNotifications) return null;
+    return cap.Plugins.PushNotifications;
+  },
+
+  detectDefaultDeviceName() {
+    const ua = navigator.userAgent || "";
+    const androidMatch = /Android\s+[\d.]+;\s*([^;)]+)/i.exec(ua);
+    if (androidMatch && androidMatch[1]) {
+      return androidMatch[1].trim().slice(0, 48);
+    }
+    return "Android Device";
+  },
+
+  async init() {
+    this.deviceName = this.detectDefaultDeviceName();
+    const nameInput = document.getElementById("fcmDeviceNameInput");
+    if (nameInput && !nameInput.value.trim()) {
+      nameInput.value = this.deviceName;
+    }
+
+    const plugin = this.getPushPlugin();
+    this.pluginAvailable = Boolean(plugin);
+
+    const savedToken = await SecureDeviceStorage.loadDeviceToken();
+    if (savedToken) {
+      this.deviceAccessToken = savedToken;
+      this.storageBackend = SecureDeviceStorage.getCapacitorSecurePlugin() ? "native" : "session";
+    }
+
+    const savedMetaRaw = await SecureDeviceStorage.getItem(SecureDeviceStorage._metaKey);
+    if (savedMetaRaw) {
+      try {
+        const meta = JSON.parse(savedMetaRaw);
+        if (meta && typeof meta === "object") {
+          if (meta.deviceName) {
+            this.deviceName = meta.deviceName;
+            if (nameInput) nameInput.value = meta.deviceName;
+          }
+          if (meta.deviceId) this.deviceId = meta.deviceId;
+          if (meta.lastRegisteredFcmToken) this.lastRegisteredFcmToken = meta.lastRegisteredFcmToken;
+          if (meta.lastRegisteredBaseUrl) this.lastRegisteredBaseUrl = meta.lastRegisteredBaseUrl;
+        }
+      } catch (_) {}
+    }
+
+    if (!plugin) {
+      this.fcmRegistered = false;
+      this.permissionState = "unavailable";
+    }
+
+    if (plugin) {
+      this.bindNativeListeners(plugin);
+      try {
+        const perm = await plugin.checkPermissions();
+        this.permissionState = (perm && perm.receive) ? perm.receive : "unknown";
+      } catch (_) {
+        this.permissionState = "error";
+      }
+
+      if (this.deviceAccessToken) {
+        if (this.permissionState === "granted") {
+          await this.triggerNativeFcmRegister(false);
+        } else {
+          this.setFeedback("Device paired. Tap 'Pair Device & Enable Push' or 'Retry FCM' to grant notification permission.", "warn");
+        }
+        await this.pullPreferencesFromBackend();
+      }
+    } else if (this.deviceAccessToken) {
+      this.setFeedback("Device paired. Native Capacitor PushNotifications is unavailable in this browser/preview runtime; FCM requires the native Android app.", "warn");
+      await this.pullPreferencesFromBackend();
+    } else {
+      this.setFeedback("Native FCM unavailable in browser/preview runtime. You can still enter a pairing code to authenticate API requests.", "info");
+    }
+
+    this.renderUi();
+  },
+
+  bindNativeListeners(plugin) {
+    if (this._listenersBound || !plugin || typeof plugin.addListener !== "function") return;
+    this._listenersBound = true;
+
+    plugin.addListener("registration", async (tokenObj) => {
+      const realToken = tokenObj && typeof tokenObj.value === "string" ? tokenObj.value.trim() : "";
+      if (!realToken) {
+        this.fcmRegistered = false;
+        this.setFeedback("Native FCM returned an empty registration token.", "error");
+        this.renderUi();
+        return;
+      }
+      const isRefresh = Boolean(this.fcmToken && this.fcmToken !== realToken);
+      this.fcmToken = realToken;
+      if (isRefresh) {
+        this.fcmRegistered = false;
+        this.lastRegisteredFcmToken = null;
+      }
+      await this.sendFcmTokenToBackend(realToken, isRefresh);
+    });
+
+    plugin.addListener("registrationError", (err) => {
+      this.fcmRegistered = false;
+      const msg = (err && (err.error || err.message)) ? String(err.error || err.message) : "Native FCM registration failed";
+      this.setFeedback(`FCM registration error: ${msg}`, "error");
+      this.renderUi();
+    });
+
+    plugin.addListener("pushNotificationReceived", (notification) => {
+      this.handleIncomingFcmNotification(notification, false);
+    });
+
+    plugin.addListener("pushNotificationActionPerformed", (action) => {
+      const notif = action && action.notification ? action.notification : action;
+      this.handleIncomingFcmNotification(notif, true);
+    });
+  },
+
+  setFeedback(message, level = "info") {
+    this.statusMessage = message;
+    this.statusLevel = level;
+  },
+
+  async persistMeta() {
+    await SecureDeviceStorage.setItem(SecureDeviceStorage._metaKey, JSON.stringify({
+      deviceName: this.deviceName,
+      deviceId: this.deviceId,
+      lastRegisteredFcmToken: this.lastRegisteredFcmToken,
+      lastRegisteredBaseUrl: this.lastRegisteredBaseUrl
+    }));
+  },
+
+  async pairAndRegister() {
+    if (this.busy) return;
+    const codeInput = document.getElementById("fcmPairingCodeInput");
+    const nameInput = document.getElementById("fcmDeviceNameInput");
+    const pairingCode = String(codeInput ? codeInput.value : "").trim();
+    const enteredName = String(nameInput ? nameInput.value : "").trim() || this.detectDefaultDeviceName();
+    this.deviceName = enteredName;
+
+    if (!this.deviceAccessToken && !pairingCode) {
+      this.setFeedback("Please enter a valid one-time pairing code from the backend.", "warn");
+      this.renderUi();
+      return;
+    }
+
+    this.busy = true;
+    this.renderUi();
+
+    try {
+      if (pairingCode) {
+        this.setFeedback("Registering device with backend...", "info");
+        this.renderUi();
+
+        const regRes = await TradeMindApi.registerDevice(pairingCode, enteredName);
+        const accessToken =
+          regRes.access_token ||
+          regRes.device_token ||
+          regRes.token ||
+          (regRes.data && (regRes.data.access_token || regRes.data.device_token || regRes.data.token)) ||
+          null;
+
+        if (!accessToken || typeof accessToken !== "string") {
+          throw new Error("Backend did not return a device access token.");
+        }
+
+        this.deviceAccessToken = accessToken;
+        this.deviceId = regRes.device_id || (regRes.data && regRes.data.device_id) || this.deviceId;
+        this.storageBackend = await SecureDeviceStorage.saveDeviceToken(accessToken);
+        this.fcmRegistered = false;
+        this.lastRegisteredFcmToken = null;
+        await this.persistMeta();
+
+        if (codeInput) {
+          codeInput.value = "";
+        }
+
+        await TradeMindApp.refreshAll(true);
+      }
+
+      await this.pullPreferencesFromBackend();
+      await this.pushPreferencesToBackend();
+
+      const plugin = this.getPushPlugin();
+      this.pluginAvailable = Boolean(plugin);
+      if (!plugin) {
+        this.fcmRegistered = false;
+        this.setFeedback(
+          "Device paired and authenticated. Native Capacitor PushNotifications is unavailable in this browser/preview runtime, so FCM is not active here.",
+          "warn"
+        );
+        return;
+      }
+
+      await this.triggerNativeFcmRegister(true);
+    } catch (err) {
+      if (err && err.status === 401) {
+        this.deviceAccessToken = null;
+        this.fcmRegistered = false;
+        await SecureDeviceStorage.clearDeviceToken();
+        this.setFeedback("Unauthorized (401): Device token expired or invalid. Enter a fresh pairing code.", "error");
+      } else if (err && (err.status === 400 || err.status === 404 || err.status === 410 || err.status === 422)) {
+        this.setFeedback(`Pairing failed: ${err.message}. Verify your one-time pairing code.`, "error");
+      } else {
+        this.setFeedback(`Connection/pairing error: ${err && err.message ? err.message : "Network error"}`, "error");
+      }
+    } finally {
+      this.busy = false;
+      this.renderUi();
+    }
+  },
+
+  async triggerNativeFcmRegister(forceRegisterCall = false) {
+    const plugin = this.getPushPlugin();
+    if (!plugin) {
+      this.pluginAvailable = false;
+      this.fcmRegistered = false;
+      this.setFeedback("Native Capacitor PushNotifications unavailable in browser/preview runtime.", "warn");
+      this.renderUi();
+      return;
+    }
+    this.pluginAvailable = true;
+    this.bindNativeListeners(plugin);
+
+    try {
+      let perm = await plugin.checkPermissions();
+      this.permissionState = (perm && perm.receive) ? perm.receive : "unknown";
+      if (this.permissionState !== "granted") {
+        perm = await plugin.requestPermissions();
+        this.permissionState = (perm && perm.receive) ? perm.receive : "denied";
+      }
+
+      if (this.permissionState !== "granted") {
+        this.fcmRegistered = false;
+        this.setFeedback("Android notification permission denied. Enable notifications in Android App Settings and tap Retry FCM.", "error");
+        this.renderUi();
+        return;
+      }
+
+      if (this.fcmToken && !forceRegisterCall && this.lastRegisteredFcmToken === this.fcmToken && this.lastRegisteredBaseUrl === TradeMindConfig.apiBaseUrl) {
+        this.fcmRegistered = true;
+        this.setFeedback("Connected: Android FCM token already registered with backend.", "info");
+        this.renderUi();
+        return;
+      }
+
+      this.setFeedback("Requesting native FCM token from Android...", "info");
+      this.renderUi();
+      await plugin.register();
+    } catch (err) {
+      this.fcmRegistered = false;
+      this.setFeedback(`Native FCM registration error: ${err && err.message ? err.message : "Unknown error"}`, "error");
+      this.renderUi();
+    }
+  },
+
+  async sendFcmTokenToBackend(realToken, force = false) {
+    if (!this.isCapacitorNativeAndroid()) {
+      this.fcmRegistered = false;
+      this.setFeedback("FCM registration requires the native Android Capacitor runtime.", "warn");
+      this.renderUi();
+      return;
+    }
+    if (!realToken || !this.deviceAccessToken) {
+      this.fcmRegistered = false;
+      this.setFeedback("FCM token received, waiting for device pairing token.", "warn");
+      this.renderUi();
+      return;
+    }
+
+    const currentBase = String(TradeMindConfig.apiBaseUrl || BACKEND_BASE_URL).replace(/\/+$/, "");
+    if (!force && this.fcmRegistered && this.lastRegisteredFcmToken === realToken && this.lastRegisteredBaseUrl === currentBase) {
+      return;
+    }
+
+    if (this._inFlightFcmRegister) {
+      return this._inFlightFcmRegister;
+    }
+
+    this._inFlightFcmRegister = (async () => {
+      try {
+        await TradeMindApi.registerFcmToken(realToken, this.deviceAccessToken, this.deviceName);
+        this.fcmRegistered = true;
+        this.lastRegisteredFcmToken = realToken;
+        this.lastRegisteredBaseUrl = currentBase;
+        await this.persistMeta();
+        this.setFeedback("Connected: Android device paired and FCM token registered with backend.", "info");
+      } catch (err) {
+        this.fcmRegistered = false;
+        if (err && err.status === 401) {
+          this.deviceAccessToken = null;
+          await SecureDeviceStorage.clearDeviceToken();
+          this.setFeedback("Unauthorized (401) during /fcm/register. Please re-pair with a new one-time code.", "error");
+        } else {
+          this.setFeedback(`FCM backend registration failed: ${err && err.message ? err.message : "Network error"}`, "error");
+        }
+      } finally {
+        this._inFlightFcmRegister = null;
+        this.renderUi();
+      }
+    })();
+
+    return this._inFlightFcmRegister;
+  },
+
+  async retryFcmRegistration() {
+    if (this.busy) return;
+    if (!this.deviceAccessToken) {
+      this.setFeedback("Device is not paired yet. Enter a one-time pairing code first.", "warn");
+      this.renderUi();
+      return;
+    }
+    if (!this.isCapacitorNativeAndroid()) {
+      this.fcmRegistered = false;
+      this.setFeedback("Native Capacitor PushNotifications unavailable in browser/preview runtime.", "warn");
+      this.renderUi();
+      return;
+    }
+    this.busy = true;
+    this.renderUi();
+    try {
+      if (this.fcmToken) {
+        await this.sendFcmTokenToBackend(this.fcmToken, true);
+      } else {
+        await this.triggerNativeFcmRegister(true);
+      }
+    } finally {
+      this.busy = false;
+      this.renderUi();
+    }
+  },
+
+  async clearPairing() {
+    this.deviceAccessToken = null;
+    this.deviceId = null;
+    this.fcmRegistered = false;
+    this.lastRegisteredFcmToken = null;
+    this.lastRegisteredBaseUrl = null;
+    this.prefSyncStatus = "--";
+    await SecureDeviceStorage.clearDeviceToken();
+    const codeInput = document.getElementById("fcmPairingCodeInput");
+    if (codeInput) codeInput.value = "";
+    this.setFeedback("Device pairing cleared locally.", "info");
+    this.renderUi();
+    TradeMindApp.refreshAll(true);
+  },
+
+  buildPreferencesPayload() {
+    const toggles = {};
+    EVENT_NOTIFICATION_DEFINITIONS.forEach(def => {
+      toggles[def.key] = PreferencesEngine.eventToggles[def.key] !== false;
+    });
+    return {
+      notifications_enabled: Boolean(PreferencesEngine.notificationsEnabled),
+      preferences: toggles,
+      ...toggles
+    };
+  },
+
+  async pullPreferencesFromBackend() {
+    if (!this.deviceAccessToken) return;
+    try {
+      const remote = await TradeMindApi.getNotificationPreferences(this.deviceAccessToken);
+      const sourceObj = (remote && typeof remote.preferences === "object" && remote.preferences !== null)
+        ? remote.preferences
+        : remote;
+
+      if (sourceObj && typeof sourceObj === "object") {
+        let updated = false;
+        if (typeof remote.notifications_enabled === "boolean") {
+          PreferencesEngine.notificationsEnabled = remote.notifications_enabled;
+          updated = true;
+        }
+        EVENT_NOTIFICATION_DEFINITIONS.forEach(def => {
+          if (typeof sourceObj[def.key] === "boolean") {
+            PreferencesEngine.eventToggles[def.key] = sourceObj[def.key];
+            updated = true;
+          }
+        });
+        if (updated) {
+          PreferencesEngine.save();
+          PreferencesEngine.syncUi();
+        }
+      }
+      this.prefSyncStatus = `Synced (${getPktClock()})`;
+    } catch (err) {
+      if (err && err.status === 401) {
+        this.deviceAccessToken = null;
+        this.fcmRegistered = false;
+        await SecureDeviceStorage.clearDeviceToken();
+        this.setFeedback("Unauthorized (401) syncing preferences. Please re-pair device.", "error");
+      }
+      this.prefSyncStatus = `Sync failed (${err && err.message ? err.message : "error"})`;
+    }
+    this.renderUi();
+  },
+
+  async pushPreferencesToBackend() {
+    if (!this.deviceAccessToken) return;
+    try {
+      await TradeMindApi.updateNotificationPreferences(this.buildPreferencesPayload(), this.deviceAccessToken);
+      this.prefSyncStatus = `Saved (${getPktClock()})`;
+    } catch (err) {
+      if (err && err.status === 401) {
+        this.deviceAccessToken = null;
+        this.fcmRegistered = false;
+        await SecureDeviceStorage.clearDeviceToken();
+        this.setFeedback("Unauthorized (401) updating preferences. Please re-pair device.", "error");
+      }
+      this.prefSyncStatus = `Save failed (${err && err.message ? err.message : "error"})`;
+    }
+    this.renderUi();
+  },
+
+  mapPayloadToEventKey(data) {
+    const rawType = String(
+      data.event_type ||
+      data.event ||
+      data.type ||
+      data.notification_type ||
+      ""
+    ).trim().toLowerCase();
+
+    if (EVENT_NOTIFICATION_DEFINITIONS.some(d => d.key === rawType)) {
+      return rawType;
+    }
+
+    const dir = String(data.direction || data.side || "").toUpperCase();
+    const status = String(data.status || data.outcome || "").toUpperCase();
+
+    if (rawType.includes("tp") || status.includes("TP") || status === "WIN") {
+      return rawType.includes("limit") ? "limit_tp_hit" : "signal_tp_hit";
+    }
+    if (rawType.includes("sl") || status.includes("SL") || status === "LOSS") {
+      return rawType.includes("limit") ? "limit_sl_hit" : "signal_sl_hit";
+    }
+    if (rawType.includes("buy") || dir === "BUY" || dir === "LONG") {
+      return "new_buy_signal";
+    }
+    if (rawType.includes("sell") || dir === "SELL" || dir === "SHORT") {
+      return "new_sell_signal";
+    }
+    return null;
+  },
+
+  handleIncomingFcmNotification(notification, isTapAction) {
+    const data = (notification && typeof notification.data === "object" && notification.data !== null)
+      ? notification.data
+      : {};
+    const signalId = data.signal_id ?? data.id ?? null;
+    const symbol = data.symbol ? String(data.symbol).toUpperCase() : null;
+    const tf = data.timeframe || data.tf ? String(data.timeframe || data.tf).toUpperCase() : null;
+    const eventKey = this.mapPayloadToEventKey(data);
+    const stamp = data.timestamp || data.created_at || data.closed_at || "";
+
+    const dedupKey = eventKey && signalId
+      ? `${eventKey}:${signalId}:${stamp}`
+      : `fcm:${notification?.id || signalId || notification?.title || ""}:${stamp}`;
+
+    if (eventKey) {
+      SignalNotificationTracker.loadState();
+      const existing = SignalNotificationTracker.eventStates[dedupKey];
+      const allowedByPref = PreferencesEngine.eventToggles[eventKey] !== false;
+
+      if (!existing || existing.status !== "delivered") {
+        SignalNotificationTracker.setEventState(
+          dedupKey,
+          allowedByPref ? "delivered" : "suppressed",
+          {
+            eventPrefKey: eventKey,
+            reason: allowedByPref ? (isTapAction ? "fcm_tap" : "fcm_foreground") : "user_pref"
+          }
+        );
+      }
+    }
+
+    TradeMindApp.refreshAll(true).then(() => {
+      if (!isTapAction) return;
+
+      if (signalId) {
+        const allSignals = [...(TradeMindState.activeSignals || []), ...(TradeMindState.historySignals || [])];
+        const found = allSignals.find(s => String(s.id) === String(signalId));
+        if (found) {
+          if (isSignalActiveStatus(found)) {
+            TvChart.monitorSignal(found.id);
+          } else {
+            TradeMindRouter.go("signals");
+            SignalsEngine.setMode("HISTORY");
+            SignalsEngine.openDetail(found.id);
+          }
+          return;
+        }
+      }
+
+      if (symbol && TradeMindConfig.supportedMarkets.includes(symbol)) {
+        if (tf && TradeMindConfig.supportedTimeframes.includes(tf)) {
+          TvChart.timeframe = tf;
+        }
+        TvChart.openPair(symbol);
+      } else {
+        TradeMindRouter.go("signals");
+      }
+    });
+  },
+
+  renderUi() {
+    const badgeEl = document.getElementById("fcmPairingStatusBadge");
+    const bridgeEl = document.getElementById("fcmBridgeStateText");
+    const authEl = document.getElementById("fcmDeviceAuthText");
+    const tokenEl = document.getElementById("fcmTokenStateText");
+    const prefSyncEl = document.getElementById("fcmPrefSyncText");
+    const feedbackEl = document.getElementById("fcmFeedbackBox");
+    const pairBtn = document.getElementById("fcmPairRegisterBtn");
+    const retryBtn = document.getElementById("fcmRetryPushBtn");
+    const unpairBtn = document.getElementById("fcmUnpairBtn");
+
+    const nativeActive = this.isCapacitorNativeAndroid();
+    const isFullyConnected = Boolean(nativeActive && this.deviceAccessToken && this.fcmRegistered && this.fcmToken);
+
+    if (badgeEl) {
+      badgeEl.classList.remove("live", "stale", "lost");
+      if (isFullyConnected) {
+        badgeEl.classList.add("live");
+        badgeEl.textContent = "CONNECTED";
+      } else if (this.deviceAccessToken) {
+        badgeEl.classList.add("stale");
+        badgeEl.textContent = nativeActive ? "PAIRED · NO FCM" : "PAIRED · BROWSER";
+      } else {
+        badgeEl.classList.add("lost");
+        badgeEl.textContent = "NOT REGISTERED";
+      }
+    }
+
+    if (bridgeEl) {
+      bridgeEl.textContent = nativeActive
+        ? `Capacitor PushNotifications (${this.permissionState})`
+        : "Unavailable (Browser / Non-Capacitor runtime)";
+    }
+
+    if (authEl) {
+      authEl.textContent = this.deviceAccessToken
+        ? `Paired (${this.deviceName} · ${this.storageBackend})`
+        : "Unpaired";
+    }
+
+    if (tokenEl) {
+      if (!nativeActive) {
+        tokenEl.textContent = "Unavailable in browser/preview";
+      } else if (this.fcmRegistered && this.fcmToken) {
+        tokenEl.textContent = `Registered (${this.fcmToken.slice(0, 14)}...)`;
+      } else if (this.fcmToken) {
+        tokenEl.textContent = `Token received (${this.fcmToken.slice(0, 14)}...) — pending backend sync`;
+      } else {
+        tokenEl.textContent = "Not registered";
+      }
+    }
+
+    if (prefSyncEl) {
+      prefSyncEl.textContent = this.prefSyncStatus;
+    }
+
+    if (feedbackEl) {
+      feedbackEl.className = this.statusLevel === "error" || this.statusLevel === "warn"
+        ? "tm-warn-box"
+        : "tm-info-box";
+      feedbackEl.textContent = this.statusMessage;
+    }
+
+    if (pairBtn) pairBtn.disabled = this.busy;
+    if (retryBtn) retryBtn.disabled = this.busy || !this.deviceAccessToken || !nativeActive;
+    if (unpairBtn) unpairBtn.disabled = this.busy || !this.deviceAccessToken;
   }
 };
 
@@ -2422,6 +3293,11 @@ function updateGlobalBanner() {
   const settingsBadge = document.getElementById("prefBackendStatusBadge");
   const settingsDetail = document.getElementById("prefBackendStatusDetail");
   const settingsSync = document.getElementById("prefLastSyncText");
+  const baseUrlDisp = document.getElementById("prefBaseUrlDisplay");
+
+  if (baseUrlDisp) {
+    baseUrlDisp.textContent = TradeMindConfig.apiBaseUrl;
+  }
 
   if (TradeMindState.lastSyncPkt) {
     if (updatedEl) updatedEl.textContent = `Last sync: ${TradeMindState.lastSyncPkt}`;
@@ -2435,6 +3311,15 @@ function updateGlobalBanner() {
       settingsBadge.className = "tm-live-pill live";
     }
     if (settingsDetail) settingsDetail.textContent = "Backend health check successful.";
+  } else if (TradeMindState.authRequired) {
+    if (banner) banner.classList.add("error");
+    const authMsg = TradeMindState.lastBackendError || "Device authentication required (401). Pair device in Settings.";
+    if (statusEl) statusEl.textContent = authMsg;
+    if (settingsBadge) {
+      settingsBadge.textContent = "AUTH 401";
+      settingsBadge.className = "tm-live-pill lost";
+    }
+    if (settingsDetail) settingsDetail.textContent = authMsg;
   } else {
     if (banner) banner.classList.add("error");
     const err = TradeMindState.lastBackendError || "Connection failed";
@@ -3131,26 +4016,32 @@ const SystemHealthMonitor = {
     const badgeEl = document.getElementById("sysHealthOverallBadge");
     const widgetPrev = document.getElementById("widgetSnapshotPreview");
 
-    const backendStatus = TradeMindState.backendOnline ? "ONLINE" : "OFFLINE";
+    const backendStatus = TradeMindState.backendOnline
+      ? "ONLINE"
+      : (TradeMindState.authRequired ? "AUTH REQUIRED (401)" : "OFFLINE");
     const apiConn = TradeMindState.backendOnline
       ? `Connected (${TradeMindConfig.apiBaseUrl})`
       : (TradeMindState.lastBackendError || "Disconnected");
     const marketFeed = TradeMindState.markets.length
       ? `${TradeMindState.markets.length} pairs loaded`
-      : "No market data";
+      : (TradeMindState.authRequired ? "Auth required" : "No market data");
     const lastUpdate = TradeMindState.lastSyncPkt || "--";
     const signalFeed = TradeMindState.backendOnline
       ? `${TradeMindState.activeSignals.length} active / ${TradeMindState.historySignals.length} closed`
       : "--";
 
     let notifPerm = "Unsupported";
-    if ("Notification" in window) {
-      notifPerm = `${Notification.permission} (${PreferencesEngine.notificationsEnabled ? "ON" : "OFF"})`;
+    if (typeof NativeFcmManager !== "undefined" && NativeFcmManager.isCapacitorNativeAndroid()) {
+      notifPerm = `Native FCM (${NativeFcmManager.fcmRegistered ? "Registered" : NativeFcmManager.permissionState})`;
+    } else if ("Notification" in window) {
+      notifPerm = `Browser (${Notification.permission} · ${PreferencesEngine.notificationsEnabled ? "ON" : "OFF"})`;
     }
 
     const widgetStatus = "Preview Ready";
     const warnings = [];
-    if (!TradeMindState.backendOnline) {
+    if (TradeMindState.authRequired) {
+      warnings.push("Device authentication required (401) — pair device in Settings.");
+    } else if (!TradeMindState.backendOnline) {
       warnings.push("Backend is offline — showing cached or empty state.");
     }
     if (typeof TvChart !== "undefined" && TvChart.evaluateLiveFeedHealth) {
@@ -3247,10 +4138,13 @@ const TermuxControlEngine = {
     const healthUrl = `${TradeMindConfig.apiBaseUrl.replace(/\/+$/, "")}/health`;
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 3000);
+    const token = (typeof TradeMindApi !== "undefined") ? TradeMindApi.getDeviceToken() : null;
+    const headers = { "Accept": "application/json" };
+    if (token) headers["Authorization"] = `Bearer ${token}`;
     try {
       const res = await fetch(healthUrl, {
         method: "GET",
-        headers: { "Accept": "application/json" },
+        headers,
         signal: controller.signal
       });
       clearTimeout(timer);
@@ -3264,9 +4158,11 @@ const TermuxControlEngine = {
   syncWithBackend() {
     if (this.busy) return;
     if (TradeMindState.backendOnline) {
-      this.setUi(true, "Termux backend running (127.0.0.1:8000)");
+      this.setUi(true, `Backend running (${TradeMindConfig.apiBaseUrl})`);
+    } else if (TradeMindState.authRequired) {
+      this.setUi(true, `Backend reachable — device pairing required (${TradeMindConfig.apiBaseUrl})`);
     } else {
-      this.setUi(false, "Termux backend OFF (127.0.0.1:8000)");
+      this.setUi(false, `Backend OFF (${TradeMindConfig.apiBaseUrl})`);
     }
   },
 
@@ -3281,7 +4177,7 @@ const TermuxControlEngine = {
       if (alive) {
         this.busy = false;
         await TradeMindApp.refreshAll(true);
-        this.setUi(true, "Termux backend ONLINE (127.0.0.1:8000)");
+        this.setUi(true, `Backend ONLINE (${TradeMindConfig.apiBaseUrl})`);
         return;
       }
     }
@@ -3289,7 +4185,7 @@ const TermuxControlEngine = {
     this.busy = false;
     await TradeMindApp.refreshAll(true);
     if (TradeMindState.backendOnline) {
-      this.setUi(true, "Termux backend ONLINE (127.0.0.1:8000)");
+      this.setUi(true, `Backend ONLINE (${TradeMindConfig.apiBaseUrl})`);
     } else {
       this.setUi(false, "start.sh sent — backend not responding yet");
     }
@@ -3306,7 +4202,7 @@ const TermuxControlEngine = {
       if (!alive) {
         this.busy = false;
         await TradeMindApp.refreshAll(true);
-        this.setUi(false, "Termux backend OFFLINE (127.0.0.1:8000)");
+        this.setUi(false, `Backend OFFLINE (${TradeMindConfig.apiBaseUrl})`);
         return;
       }
     }
@@ -3316,7 +4212,7 @@ const TermuxControlEngine = {
     if (TradeMindState.backendOnline) {
       this.setUi(true, "stop.sh sent — backend still responding");
     } else {
-      this.setUi(false, "Termux backend OFFLINE (127.0.0.1:8000)");
+      this.setUi(false, `Backend OFFLINE (${TradeMindConfig.apiBaseUrl})`);
     }
   },
 
@@ -3735,7 +4631,9 @@ const HomeEngine = {
     if (!TradeMindState.markets.length) {
       marketsEl.innerHTML = TradeMindState.backendOnline
         ? `<div class="tm-empty">No market records returned by backend.</div>`
-        : `<div class="tm-empty">Backend offline. Unable to load live market list.</div>`;
+        : (TradeMindState.authRequired
+            ? `<div class="tm-empty">Device authentication required (401). Pair device in Settings to view live markets.</div>`
+            : `<div class="tm-empty">Backend offline. Unable to load live market list.</div>`);
     } else {
       marketsEl.innerHTML = TradeMindState.markets.map(m => `
         <div class="tm-card ${m.selected ? "selected-row" : ""}" style="cursor:pointer;" onclick="TvChart.openPair('${escapeHtml(m.symbol)}')">
@@ -3757,7 +4655,9 @@ const HomeEngine = {
     if (!TradeMindState.activeSignals.length) {
       sigEl.innerHTML = TradeMindState.backendOnline
         ? `<div class="tm-empty">No active signals right now.</div>`
-        : `<div class="tm-empty">Backend offline. Active signals could not be fetched.</div>`;
+        : (TradeMindState.authRequired
+            ? `<div class="tm-empty">Device authentication required (401). Pair device in Settings to load signals.</div>`
+            : `<div class="tm-empty">Backend offline. Active signals could not be fetched.</div>`);
     } else {
       sigEl.innerHTML = TradeMindState.activeSignals.map(renderSignalCard).join("");
     }
@@ -3801,6 +4701,7 @@ const TvChart = {
     lastPriceArrivalMs: null,
     status: "Idle",
     error: null,
+    authRequired: false,
     isStale: true
   },
   _eventsBound: false,
@@ -3956,7 +4857,13 @@ const TvChart = {
   },
 
   normalizeCandles(payload) {
-    const rawList = Array.isArray(payload && payload.candles) ? payload.candles : [];
+    const rawList = Array.isArray(payload && payload.candles)
+      ? payload.candles
+      : (Array.isArray(payload && payload.data)
+          ? payload.data
+          : (Array.isArray(payload && payload.bars)
+              ? payload.bars
+              : (Array.isArray(payload) ? payload : [])));
     const seen = new Set();
     const out = [];
 
@@ -3966,17 +4873,17 @@ const TvChart = {
       const low = Number(c.low);
       const close = Number(c.close);
       if (![open, high, low, close].every(Number.isFinite)) return;
-      const utcMs = this.parseUtcMs(c.timestamp);
+      const utcMs = this.parseUtcMs(c.timestamp || c.time || c.datetime);
       const item = {
         open,
         high,
         low,
         close,
         volume: c.volume ?? null,
-        timestampUtc: c.timestamp || null,
+        timestampUtc: c.timestamp || c.time || c.datetime || null,
         utcMs,
-        timestampPkt: c.timestamp_pkt || c.timestamp || "--",
-        source: c.source || payload.source || "biquote",
+        timestampPkt: c.timestamp_pkt || c.timestamp || c.time || "--",
+        source: c.source || (payload && payload.source) || "biquote",
         isComplete: typeof c.is_complete === "boolean" ? c.is_complete : null
       };
       const key = utcMs !== null ? `ms_${utcMs}` : `pkt_${item.timestampPkt}`;
@@ -4005,6 +4912,7 @@ const TvChart = {
     if (this.visualLastClose === null) this.visualLastClose = p;
     this.meta.lastPriceArrivalMs = Date.now();
     this.meta.isStale = false;
+    this.meta.authRequired = false;
     this.meta.status = "LIVE";
     this.meta.error = null;
     if (changed) {
@@ -4062,24 +4970,53 @@ const TvChart = {
     if (isExcludedOneMinuteTf(this.timeframe)) {
       this.timeframe = "15M";
     }
-    const key = `candles_${this.symbol}_${this.timeframe}`;
+    const hasToken = Boolean(TradeMindApi.getDeviceToken());
+    const key = `candles_${this.symbol}_${this.timeframe}_${hasToken ? "1" : "0"}`;
     if (!force && TradeMindState.inFlight[key]) return TradeMindState.inFlight[key];
 
     if (fullReset || !this.bars.length) {
       this.meta.status = "Loading";
       this.meta.error = null;
+      this.meta.authRequired = false;
       this.updateHeader();
       this.render();
     }
 
     const task = (async () => {
       try {
-        const data = await TradeMindApi.getCandles({
-          symbol: this.symbol,
-          timeframe: this.timeframe,
-          limit: 500,
-          mode: "live"
-        });
+        let usedFallbackMode = false;
+        let data;
+        try {
+          data = await TradeMindApi.getCandles({
+            symbol: this.symbol,
+            timeframe: this.timeframe,
+            limit: 500,
+            mode: "live"
+          });
+        } catch (liveErr) {
+          const msgLower = String((liveErr && liveErr.message) || "").toLowerCase();
+          if (liveErr && liveErr.status !== 401 && (msgLower.includes("stale") || liveErr.status === 503 || liveErr.status === 400 || liveErr.status === 422)) {
+            usedFallbackMode = true;
+            try {
+              data = await TradeMindApi.getCandles({
+                symbol: this.symbol,
+                timeframe: this.timeframe,
+                limit: 500,
+                mode: "cached"
+              });
+            } catch (_) {
+              data = await TradeMindApi.getCandles({
+                symbol: this.symbol,
+                timeframe: this.timeframe,
+                limit: 500,
+                mode: ""
+              });
+            }
+          } else {
+            throw liveErr;
+          }
+        }
+
         const parsed = this.normalizeCandles(data);
         if (fullReset) {
           this.bars = parsed;
@@ -4087,19 +5024,29 @@ const TvChart = {
           const tail = this.bars.length ? this.bars[this.bars.length - 1] : null;
           this.targetLastClose = tail ? tail.close : null;
           this.visualLastClose = tail ? tail.close : null;
-          this.meta.lastPriceArrivalMs = parsed.length ? Date.now() : this.meta.lastPriceArrivalMs;
+          this.meta.lastPriceArrivalMs = (!usedFallbackMode && parsed.length) ? Date.now() : this.meta.lastPriceArrivalMs;
         } else if (parsed.length) {
           this.mergeCandles(parsed);
         }
         this.meta.source = data.source || (parsed[0] && parsed[0].source) || "biquote";
-        this.meta.mode = data.mode || "live";
+        this.meta.mode = usedFallbackMode ? "cached" : (data.mode || "live");
         const last = this.bars.length ? this.bars[this.bars.length - 1] : null;
         this.meta.latestPkt = last ? last.timestampPkt : "--";
-        this.meta.status = this.bars.length ? "LIVE" : "Empty";
+        this.meta.authRequired = false;
+        this.meta.status = this.bars.length ? (usedFallbackMode ? "STALE" : "LIVE") : "Empty";
         this.meta.error = null;
       } catch (err) {
-        this.meta.status = "Error";
-        this.meta.error = err && err.message ? err.message : "Failed to load candles";
+        if (err && err.status === 401) {
+          this.meta.authRequired = true;
+          this.meta.status = "AUTH REQUIRED";
+          this.meta.error = !hasToken
+            ? "Authentication required (401): Pair device in Settings to load chart candles."
+            : "Authentication failed (401): Device token rejected. Re-pair device in Settings.";
+        } else {
+          this.meta.authRequired = false;
+          this.meta.status = "Error";
+          this.meta.error = err && err.message ? err.message : "Failed to load candles";
+        }
       } finally {
         this.evaluateLiveFeedHealth();
         this.updateHeader();
@@ -4113,9 +5060,17 @@ const TvChart = {
   },
 
   evaluateLiveFeedHealth() {
+    if (this.meta.authRequired) {
+      this.meta.isStale = true;
+      return "AUTH REQUIRED";
+    }
     if (!TradeMindState.backendOnline || this.meta.status === "Error") {
       this.meta.isStale = true;
       return "OFFLINE";
+    }
+    if (this.meta.mode === "cached" || this.meta.status === "STALE") {
+      this.meta.isStale = true;
+      return "STALE";
     }
     const ageMs = this.meta.lastPriceArrivalMs ? (Date.now() - this.meta.lastPriceArrivalMs) : Infinity;
     const staleThresholdMs = Math.max(25000, this.timeframeSeconds(this.timeframe) * 1000 * 1.5);
@@ -4171,7 +5126,7 @@ const TvChart = {
         feedBadge.textContent = "STALE";
       } else {
         feedBadge.classList.add("lost");
-        feedBadge.textContent = "OFFLINE";
+        feedBadge.textContent = state === "AUTH REQUIRED" ? "AUTH 401" : "OFFLINE";
       }
     }
   },
@@ -4434,10 +5389,10 @@ const TvChart = {
     ctx.font = "10.5px -apple-system, sans-serif";
 
     if (!bars.length) {
-      ctx.fillStyle = "#64748b";
+      ctx.fillStyle = this.meta.authRequired ? "#b45309" : "#64748b";
       const msg = this.meta.status === "Loading"
         ? "Loading candles..."
-        : (this.meta.error ? `Chart offline: ${this.meta.error}` : "No candle data available.");
+        : (this.meta.error || "No candle data available.");
       ctx.fillText(msg, 12, Math.round(plotH / 2));
       return;
     }
@@ -4731,240 +5686,241 @@ const TvChart = {
           const dy = pos.y - this.drag.startY;
           this.rightOffset = Math.min(280, Math.max(-220, this.drag.origOffset - dx));
 
-          const bStart = this.drag.boundsAtStart || this.getPriceBounds(this.bars);
-          const pH = Math.max(1, (this.drag.plotHAtStart || 300) - 16);
-          const pricePerPx = (bStart.max - bStart.min) / pH;
+          const startSpan = (this.drag.boundsAtStart && Number.isFinite(this.drag.boundsAtStart.max - this.drag.boundsAtStart.min))
+            ? (this.drag.boundsAtStart.max - this.drag.boundsAtStart.min)
+            : 1;
+          const effPlotH = Math.max(120, this.drag.plotHAtStart || 300);
+          const pricePerPx = startSpan / Math.max(1, effPlotH - 16);
           this.priceVerticalShift = (this.drag.origVerticalShift || 0) + (dy * pricePerPx);
         } else if (this.drag.mode === "priceScale") {
           const dy = pos.y - this.drag.startY;
-          this.priceScaleFactor = Math.min(2.5, Math.max(0.45, this.drag.origPriceScale * (1 + dy * 0.006)));
+          this.priceScaleFactor = Math.min(2.5, Math.max(0.45, this.drag.origPriceScale * (1 - dy * 0.004)));
         }
       }
       this.render();
     });
 
-    canvas.addEventListener("pointerup", e => {
+    const releasePointer = e => {
       this.activePointers.delete(e.pointerId);
-      if (this.activePointers.size < 2) {
+      if (this.activePointers.size < 2 && this.pinch.active) {
         this.pinch.active = false;
         this.savePreferences();
       }
-      if (this.activePointers.size === 0) {
+      if (this.drag.active) {
         this.drag.active = false;
         this.savePreferences();
       }
-    });
-
-    canvas.addEventListener("pointercancel", e => {
-      this.activePointers.delete(e.pointerId);
-      if (this.activePointers.size < 2) {
-        this.pinch.active = false;
+      if (e.type === "pointerleave" || e.type === "pointercancel") {
+        this.pointer.inside = false;
       }
-      this.drag.active = false;
-    });
-
-    canvas.addEventListener("pointerleave", () => {
-      this.drag.active = false;
-      this.pointer.inside = false;
       this.render();
-    });
+    };
+
+    canvas.addEventListener("pointerup", releasePointer);
+    canvas.addEventListener("pointercancel", releasePointer);
+    canvas.addEventListener("pointerleave", releasePointer);
 
     canvas.addEventListener("wheel", e => {
       e.preventDefault();
-      this.zoomStep(e.deltaY < 0 ? 1.12 : 0.89);
+      this.zoomStep(e.deltaY < 0 ? 1.15 : 0.87);
     }, { passive: false });
+
+    window.addEventListener("resize", () => this.render());
   }
 };
 
 /* SIGNALS ENGINE */
 const SignalsEngine = {
   mode: "ACTIVE",
-  symbol: "ALL",
-  tf: "ALL",
-  selectedHistoryDate: null,
-  historyMonth: null,
-  calendarOpen: false,
+  symbolFilter: "ALL",
+  tfFilter: "ALL",
+  historyDateIso: null,
+  historyMonthYear: null,
+  historyCalendarOpen: false,
 
-  ensureDateState() {
+  ensureHistoryDateInit() {
     const todayIso = getPktDatePartsFromMs(Date.now()).iso;
-    if (!this.selectedHistoryDate) {
-      this.selectedHistoryDate = todayIso;
+    if (!this.historyDateIso) {
+      this.historyDateIso = todayIso;
     }
-    if (!this.historyMonth) {
-      const [yStr, mStr] = this.selectedHistoryDate.split("-");
-      this.historyMonth = { year: Number(yStr), month: Number(mStr) };
+    if (!this.historyMonthYear) {
+      const [y, m] = this.historyDateIso.split("-").map(Number);
+      this.historyMonthYear = { year: y, month: m };
     }
   },
 
-  setMode(m) {
-    this.mode = m;
-    document.querySelectorAll("#signalsModeTabs .tm-tab").forEach(b => b.classList.toggle("active", b.dataset.mode === m));
+  setMode(mode) {
+    this.mode = mode;
+    document.querySelectorAll("#signalsModeTabs .tm-tab").forEach(t => t.classList.toggle("active", t.dataset.mode === mode));
+    const datePanel = document.getElementById("signalsHistoryDatePanel");
+    if (datePanel) {
+      datePanel.style.display = mode === "HISTORY" ? "block" : "none";
+    }
     this.render();
   },
 
-  setSymbol(s) {
-    this.symbol = s;
-    document.querySelectorAll("#signalsSymbolStrip .tm-chip").forEach(c => c.classList.toggle("active", c.dataset.val === s));
+  setSymbol(val) {
+    this.symbolFilter = val;
+    document.querySelectorAll("#signalsSymbolStrip .tm-chip").forEach(c => c.classList.toggle("active", c.dataset.val === val));
     this.render();
   },
 
-  setTimeframe(t) {
-    if (isExcludedOneMinuteTf(t)) return;
-    this.tf = t;
-    document.querySelectorAll("#signalsTfStrip .tm-chip").forEach(c => c.classList.toggle("active", c.dataset.val === t));
+  setTimeframe(val) {
+    this.tfFilter = val;
+    document.querySelectorAll("#signalsTfStrip .tm-chip").forEach(c => c.classList.toggle("active", c.dataset.val === val));
     this.render();
   },
 
-  setHistoryDate(isoDate) {
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(isoDate || ""))) return;
-    this.selectedHistoryDate = isoDate;
-    const [yStr, mStr] = isoDate.split("-");
-    this.historyMonth = { year: Number(yStr), month: Number(mStr) };
+  setHistoryDate(isoVal) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(isoVal || "").trim())) return;
+    this.historyDateIso = String(isoVal).trim();
+    const [y, m] = this.historyDateIso.split("-").map(Number);
+    this.historyMonthYear = { year: y, month: m };
     this.render();
   },
 
   shiftHistoryDate(deltaDays) {
-    this.ensureDateState();
-    this.setHistoryDate(shiftIsoDate(this.selectedHistoryDate, deltaDays));
+    this.ensureHistoryDateInit();
+    this.setHistoryDate(shiftIsoDate(this.historyDateIso, deltaDays));
   },
 
   selectHistoryShortcut(which) {
-    const nowMs = Date.now();
-    const targetMs = which === "today" ? nowMs : (nowMs - 86400000);
-    const iso = getPktDatePartsFromMs(targetMs).iso;
-    this.setHistoryDate(iso);
+    const todayIso = getPktDatePartsFromMs(Date.now()).iso;
+    this.setHistoryDate(which === "yesterday" ? shiftIsoDate(todayIso, -1) : todayIso);
   },
 
   toggleHistoryCalendar() {
-    this.calendarOpen = !this.calendarOpen;
+    this.historyCalendarOpen = !this.historyCalendarOpen;
     this.render();
   },
 
   shiftHistoryMonth(delta) {
-    this.ensureDateState();
-    let m = this.historyMonth.month + delta;
-    let y = this.historyMonth.year;
-    while (m < 1) { m += 12; y -= 1; }
-    while (m > 12) { m -= 12; y += 1; }
-    this.historyMonth = { year: y, month: m };
-    this.renderHistoryCalendar();
+    this.ensureHistoryDateInit();
+    let { year, month } = this.historyMonthYear;
+    month += delta;
+    if (month < 1) { month = 12; year -= 1; }
+    if (month > 12) { month = 1; year += 1; }
+    this.historyMonthYear = { year, month };
+    this.render();
   },
 
-  getSignalCompletionDateKey(sig) {
-    const rawCompletion = sig.completedRaw || sig.completedPkt || null;
-    if (!rawCompletion) return null;
-    return toPktDateKey(rawCompletion);
+  getFilteredHistoryForSelectedDate() {
+    this.ensureHistoryDateInit();
+    const selectedDate = this.historyDateIso;
+    return (TradeMindState.historySignals || []).filter(s => {
+      if (isExcludedOneMinuteTf(s.tf)) return false;
+      if (this.symbolFilter !== "ALL" && s.symbol !== this.symbolFilter) return false;
+      if (this.tfFilter !== "ALL" && s.tf !== this.tfFilter) return false;
+      const compDate = toPktDateKey(s.completedRaw || s.completedPkt);
+      return compDate === selectedDate;
+    });
   },
 
-  classifyHistoryOutcome(sig) {
-    const o = String(sig.outcome || "").toUpperCase();
-    const st = String(sig.status || "").toUpperCase();
-    if (o.includes("TP") || o === "WIN" || st === "TP HIT" || st === "TP_HIT" || st === "WIN") return "WIN";
-    if (o.includes("SL") || o === "LOSS" || st === "SL HIT" || st === "SL_HIT" || st === "LOSS") return "LOSS";
-    return "OTHER";
-  },
+  renderHistoryDateControlsAndCalendar() {
+    this.ensureHistoryDateInit();
+    const selectedDate = this.historyDateIso;
 
-  renderHistoryCalendar() {
+    const badge = document.getElementById("sigHistSelectedDateBadge");
+    if (badge) badge.textContent = CalendarHistoryEngine.formatDisplayDate(selectedDate);
+
+    const inputEl = document.getElementById("sigHistDateInput");
+    if (inputEl && inputEl.value !== selectedDate) {
+      inputEl.value = selectedDate;
+    }
+
     const calBox = document.getElementById("sigHistCalendarBox");
-    const toggleBtn = document.getElementById("sigHistCalToggleBtn");
-    if (calBox) calBox.style.display = this.calendarOpen ? "block" : "none";
-    if (toggleBtn) toggleBtn.classList.toggle("active", this.calendarOpen);
-    if (!this.calendarOpen) return;
+    const calBtn = document.getElementById("sigHistCalToggleBtn");
+    if (calBox) calBox.style.display = this.historyCalendarOpen ? "block" : "none";
+    if (calBtn) calBtn.classList.toggle("active", this.historyCalendarOpen);
+
+    const dayRows = this.getFilteredHistoryForSelectedDate();
+    let wins = 0;
+    let losses = 0;
+    dayRows.forEach(s => {
+      const cls = CalendarHistoryEngine.classifyOutcome(s);
+      if (cls === "TP WIN") wins += 1;
+      else if (cls === "SL LOSS") losses += 1;
+    });
+
+    const totalEl = document.getElementById("sigHistDailyTotal");
+    const winsEl = document.getElementById("sigHistDailyWins");
+    const lossesEl = document.getElementById("sigHistDailyLosses");
+    if (totalEl) totalEl.textContent = String(wins + losses);
+    if (winsEl) winsEl.textContent = String(wins);
+    if (lossesEl) lossesEl.textContent = String(losses);
+
+    if (!this.historyCalendarOpen) return;
 
     const monthLabel = document.getElementById("sigHistCalMonthLabel");
     const gridEl = document.getElementById("sigHistCalGrid");
     if (!monthLabel || !gridEl) return;
 
-    const d = new Date(Date.UTC(this.historyMonth.year, this.historyMonth.month - 1, 15));
-    monthLabel.textContent = new Intl.DateTimeFormat("en-US", {
-      timeZone: TradeMindConfig.timezone,
-      month: "long",
-      year: "numeric"
-    }).format(d) + " (PKT)";
-
-    const cells = CalendarHistoryEngine.buildMonthCells(this.historyMonth.year, this.historyMonth.month);
+    const { year, month } = this.historyMonthYear;
     const todayIso = getPktDatePartsFromMs(Date.now()).iso;
+    monthLabel.textContent = CalendarHistoryEngine.getMonthTitle(year, month);
 
-    const pairTfFiltered = (TradeMindState.historySignals || []).filter(s =>
-      !isExcludedOneMinuteTf(s.tf) &&
-      (this.symbol === "ALL" || s.symbol === this.symbol) &&
-      (this.tf === "ALL" || s.tf === this.tf)
-    );
+    const countsByDate = new Map();
+    (TradeMindState.historySignals || []).forEach(s => {
+      if (isExcludedOneMinuteTf(s.tf)) return;
+      if (this.symbolFilter !== "ALL" && s.symbol !== this.symbolFilter) return;
+      if (this.tfFilter !== "ALL" && s.tf !== this.tfFilter) return;
+      const dKey = toPktDateKey(s.completedRaw || s.completedPkt);
+      if (!dKey) return;
+      if (!countsByDate.has(dKey)) countsByDate.set(dKey, { w: 0, l: 0 });
+      const entry = countsByDate.get(dKey);
+      const cls = CalendarHistoryEngine.classifyOutcome(s);
+      if (cls === "TP WIN") entry.w += 1;
+      else if (cls === "SL LOSS") entry.l += 1;
+    });
 
-    gridEl.innerHTML = cells.map(c => {
-      const daySigs = pairTfFiltered.filter(s => this.getSignalCompletionDateKey(s) === c.iso);
-      const wins = daySigs.filter(s => this.classifyHistoryOutcome(s) === "WIN").length;
-      const losses = daySigs.filter(s => this.classifyHistoryOutcome(s) === "LOSS").length;
-      const cls = [
-        "tm-cal-day",
-        c.inMonth ? "" : "muted",
-        c.iso === todayIso ? "today" : "",
-        c.iso === this.selectedHistoryDate ? "selected" : ""
-      ].filter(Boolean).join(" ");
-
-      const pills = [];
-      if (wins > 0) pills.push(`<span class="tm-cal-pill win">W:${wins}</span>`);
-      if (losses > 0) pills.push(`<span class="tm-cal-pill loss">L:${losses}</span>`);
-
+    const cells = CalendarHistoryEngine.buildMonthCells(year, month);
+    gridEl.innerHTML = cells.map(cell => {
+      const st = countsByDate.get(cell.iso) || { w: 0, l: 0 };
+      const isToday = cell.iso === todayIso;
+      const isSelected = cell.iso === selectedDate;
       return `
-        <button type="button" class="${cls}" onclick="SignalsEngine.setHistoryDate('${escapeHtml(c.iso)}')">
-          <span>${c.day}</span>
-          <span class="tm-cal-dots">${pills.join("")}</span>
+        <button type="button"
+                class="tm-cal-day ${cell.inMonth ? "" : "muted"} ${isToday ? "today" : ""} ${isSelected ? "selected" : ""}"
+                onclick="SignalsEngine.setHistoryDate('${cell.iso}')">
+          <span>${cell.day}</span>
+          <span class="tm-cal-dots">
+            ${st.w > 0 ? `<span class="tm-cal-pill win">${st.w}W</span>` : ""}
+            ${st.l > 0 ? `<span class="tm-cal-pill loss">${st.l}L</span>` : ""}
+          </span>
         </button>
       `;
     }).join("");
   },
 
   render() {
-    this.ensureDateState();
-    const panel = document.getElementById("signalsHistoryDatePanel");
-    const listContainer = document.getElementById("signalsListContainer");
+    if (this.mode === "HISTORY") {
+      this.renderHistoryDateControlsAndCalendar();
+    }
 
-    if (this.mode === "ACTIVE") {
-      if (panel) panel.style.display = "none";
-      const rows = (TradeMindState.activeSignals || []).filter(s =>
-        !isExcludedOneMinuteTf(s.tf) &&
-        (this.symbol === "ALL" || s.symbol === this.symbol) &&
-        (this.tf === "ALL" || s.tf === this.tf)
-      );
-      listContainer.innerHTML = rows.length
-        ? rows.map(renderSignalCard).join("")
-        : `<div class="tm-empty">${TradeMindState.backendOnline ? "No active signals for selected filter." : "Backend offline. Unable to load signals."}</div>`;
+    const baseList = this.mode === "ACTIVE"
+      ? TradeMindState.activeSignals.filter(s => {
+          if (isExcludedOneMinuteTf(s.tf)) return false;
+          if (this.symbolFilter !== "ALL" && s.symbol !== this.symbolFilter) return false;
+          if (this.tfFilter !== "ALL" && s.tf !== this.tfFilter) return false;
+          return true;
+        })
+      : this.getFilteredHistoryForSelectedDate();
+
+    const container = document.getElementById("signalsListContainer");
+    if (!baseList.length) {
+      if (!TradeMindState.backendOnline) {
+        container.innerHTML = TradeMindState.authRequired
+          ? `<div class="tm-empty">Device authentication required (401). Pair device in Settings to view signals.</div>`
+          : `<div class="tm-empty">Backend offline. Signals data unavailable.</div>`;
+      } else if (this.mode === "HISTORY") {
+        container.innerHTML = `<div class="tm-empty">No completed signals on ${escapeHtml(CalendarHistoryEngine.formatDisplayDate(this.historyDateIso))} for current filters.</div>`;
+      } else {
+        container.innerHTML = `<div class="tm-empty">No active signals match the current filter.</div>`;
+      }
       return;
     }
 
-    if (panel) panel.style.display = "block";
-    const dateInput = document.getElementById("sigHistDateInput");
-    if (dateInput && dateInput.value !== this.selectedHistoryDate) {
-      dateInput.value = this.selectedHistoryDate;
-    }
-    const badgeEl = document.getElementById("sigHistSelectedDateBadge");
-    if (badgeEl) badgeEl.textContent = `${this.selectedHistoryDate} PKT`;
-
-    const pairTfFiltered = (TradeMindState.historySignals || []).filter(s =>
-      !isExcludedOneMinuteTf(s.tf) &&
-      (this.symbol === "ALL" || s.symbol === this.symbol) &&
-      (this.tf === "ALL" || s.tf === this.tf)
-    );
-
-    const exactDateRows = pairTfFiltered.filter(s => {
-      const compDate = this.getSignalCompletionDateKey(s);
-      return compDate !== null && compDate === this.selectedHistoryDate;
-    });
-
-    const winsCount = exactDateRows.filter(s => this.classifyHistoryOutcome(s) === "WIN").length;
-    const lossesCount = exactDateRows.filter(s => this.classifyHistoryOutcome(s) === "LOSS").length;
-    const totalCompletedCount = exactDateRows.length;
-
-    document.getElementById("sigHistDailyTotal").textContent = String(totalCompletedCount);
-    document.getElementById("sigHistDailyWins").textContent = String(winsCount);
-    document.getElementById("sigHistDailyLosses").textContent = String(lossesCount);
-
-    this.renderHistoryCalendar();
-
-    listContainer.innerHTML = exactDateRows.length
-      ? exactDateRows.map(renderSignalCard).join("")
-      : `<div class="tm-empty">${TradeMindState.backendOnline ? `No completed signals on ${escapeHtml(this.selectedHistoryDate)} PKT.` : "Backend offline. Unable to load signal history."}</div>`;
+    container.innerHTML = baseList.map(renderSignalCard).join("");
   },
 
   openDetail(id) {
@@ -4972,66 +5928,62 @@ const SignalsEngine = {
     const s = all.find(x => String(x.id) === String(id));
     if (!s) return;
     const isBuy = s.direction.includes("BUY") || s.direction === "LONG";
+    const createdDisplay = s.createdRaw ? formatPktDateTime(s.createdRaw) : s.pktTime;
+    const completedDisplay = s.completedRaw ? formatPktDateTime(s.completedRaw) : null;
     const isActive = isSignalActiveStatus(s);
     const liveNum = isActive ? getLiveMarketPriceForSymbol(s.symbol) : null;
     const liveDisplay = liveNum !== null ? formatPriceValue(liveNum, s.symbol) : "--";
-    const createdDisplay = s.createdRaw ? formatPktDateTime(s.createdRaw) : s.pktTime;
-    const completedDisplay = s.completedRaw ? formatPktDateTime(s.completedRaw) : null;
     const q = evaluateSignalQuality(s);
 
-    document.getElementById("tmDetailPanel").innerHTML = `
-      <div class="row-between" style="margin-bottom:8px;">
+    const panel = document.getElementById("tmDetailPanel");
+    panel.innerHTML = `
+      <div class="row-between" style="margin-bottom:10px;">
         <div class="row-inline">
-          <strong style="font-size:15px;">${escapeHtml(s.symbol)}</strong>
+          <strong style="font-size:16px;">${escapeHtml(s.symbol)}</strong>
           <span class="tm-badge ${isBuy ? "badge-buy" : "badge-sell"}">${escapeHtml(s.direction)}</span>
           <span class="tm-badge badge-closed">${escapeHtml(s.tf)}</span>
         </div>
-        <span class="tm-badge ${badgeClass(s.status)}">${escapeHtml(s.status)}</span>
+        <button class="tm-btn" onclick="SignalsEngine.closeDetail()">Close</button>
       </div>
-      <div class="tm-meta-box" style="margin-bottom:10px;">
-        ${isActive ? `
-          <div class="tm-meta-line">
-            <span class="tm-meta-lbl">Live Price:</span>
-            <span class="tm-meta-val" style="color:var(--accent-dark);">${escapeHtml(liveDisplay)}</span>
-          </div>
-        ` : ""}
-        <div class="tm-meta-line">
-          <span class="tm-meta-lbl">Created:</span>
-          <span class="tm-meta-val">${escapeHtml(createdDisplay)}</span>
-        </div>
-        ${completedDisplay ? `
-          <div class="tm-meta-line">
-            <span class="tm-meta-lbl">Completed:</span>
-            <span class="tm-meta-val">${escapeHtml(completedDisplay)}</span>
-          </div>
-        ` : ""}
-      </div>
-      <div class="tm-levels-grid" style="margin-bottom:12px;">
+
+      <div class="tm-levels-grid">
         <div><div class="tm-lvl-key">Entry</div><div class="tm-lvl-val">${escapeHtml(s.entry)}</div></div>
         <div><div class="tm-lvl-key">SL</div><div class="tm-lvl-val" style="color:var(--bear);">${escapeHtml(s.sl)}</div></div>
         <div><div class="tm-lvl-key">TP</div><div class="tm-lvl-val" style="color:var(--bull);">${escapeHtml(s.tp)}</div></div>
         <div><div class="tm-lvl-key">R:R</div><div class="tm-lvl-val" style="color:var(--accent-dark);">${escapeHtml(s.rr)}</div></div>
       </div>
 
-      <div class="tm-card" style="margin-bottom:12px;padding:10px 12px;">
+      <div class="tm-card" style="margin-top:10px;background:var(--bg-subtle);">
+        <div class="row-between" style="font-size:12px;padding:3px 0;"><span style="color:var(--text-secondary);">Status</span><strong>${escapeHtml(s.status)}</strong></div>
+        ${isActive ? `<div class="row-between" style="font-size:12px;padding:3px 0;"><span style="color:var(--text-secondary);">Live Price</span><strong style="color:var(--accent-dark);">${escapeHtml(liveDisplay)}</strong></div>` : ""}
+        <div class="row-between" style="font-size:12px;padding:3px 0;"><span style="color:var(--text-secondary);">Strategy</span><strong>${escapeHtml(s.strategy)}${s.strategyVersion ? ` (${escapeHtml(s.strategyVersion)})` : ""}</strong></div>
+        <div class="row-between" style="font-size:12px;padding:3px 0;"><span style="color:var(--text-secondary);">Signal Type</span><strong>${escapeHtml(s.signalType)}</strong></div>
+        <div class="row-between" style="font-size:12px;padding:3px 0;"><span style="color:var(--text-secondary);">Created</span><strong>${escapeHtml(createdDisplay)}</strong></div>
+        ${completedDisplay ? `<div class="row-between" style="font-size:12px;padding:3px 0;"><span style="color:var(--text-secondary);">Completed</span><strong>${escapeHtml(completedDisplay)}</strong></div>` : ""}
+        ${s.outcome ? `<div class="row-between" style="font-size:12px;padding:3px 0;"><span style="color:var(--text-secondary);">Outcome</span><strong>${escapeHtml(s.outcome)}</strong></div>` : ""}
+        ${s.confirmationTimeframes ? `<div class="row-between" style="font-size:12px;padding:3px 0;"><span style="color:var(--text-secondary);">Confirmations</span><strong>${escapeHtml(s.confirmationTimeframes)}</strong></div>` : ""}
+      </div>
+
+      <div class="tm-card" style="margin-top:8px;background:var(--bg-subtle);">
         <div class="row-between">
-          <span class="tm-metric-label">Signal Quality</span>
+          <span class="tm-metric-label">Signal Quality Checklist</span>
           <span class="tm-badge badge-active">${escapeHtml(q.scoreText)}</span>
         </div>
         <div class="tm-qual-list">
-          ${q.available.map(c => `<div class="tm-meta-line"><span class="tm-meta-lbl">${escapeHtml(c.label)}:</span><span class="tm-meta-val" style="color:var(--bull);">Passed${c.detail ? ` (${escapeHtml(c.detail)})` : ""}</span></div>`).join("")}
-          ${q.missing.map(c => `<div class="tm-meta-line"><span class="tm-meta-lbl">${escapeHtml(c.label)}:</span><span class="tm-meta-val" style="color:var(--text-muted);">${escapeHtml(c.status)}${c.detail ? ` (${escapeHtml(c.detail)})` : ""}</span></div>`).join("")}
+          ${q.available.map(c => `<div style="color:var(--bull);">✓ <strong>${escapeHtml(c.label)}:</strong> ${escapeHtml(c.detail || "Passed")}</div>`).join("")}
+          ${q.missing.map(c => `<div style="color:var(--text-secondary);">• <strong>${escapeHtml(c.label)}:</strong> ${escapeHtml(c.status)}${c.detail ? ` (${escapeHtml(c.detail)})` : ""}</div>`).join("")}
         </div>
       </div>
 
-      <div style="font-size:12.5px;font-weight:700;margin-bottom:4px;">${escapeHtml(s.signalType)} (${escapeHtml(s.strategy)})</div>
-      <div style="font-size:12px;color:var(--text-secondary);margin-bottom:12px;">${s.confirmationTimeframes ? "Confirmations: " + escapeHtml(s.confirmationTimeframes) : "Signal setup"}</div>
       ${isActive ? `
-        <button class="tm-btn" style="width:100%;margin-bottom:8px;padding:9px;" onclick="SignalsEngine.closeDetail(); TvChart.monitorSignal('${escapeHtml(s.id)}')">
-          Monitor Active Levels on Chart
+        <button class="tm-btn-primary" style="width:100%;margin-top:8px;" onclick="SignalsEngine.closeDetail(); TvChart.monitorSignal('${escapeHtml(s.id)}')">
+          Monitor Active Trade on Chart
         </button>
-      ` : ""}
-      <button class="tm-btn-primary" style="width:100%;" onclick="SignalsEngine.closeDetail()">Close</button>
+      ` : `
+        <button class="tm-btn-primary" style="width:100%;margin-top:8px;" onclick="SignalsEngine.closeDetail(); TvChart.openPair('${escapeHtml(s.symbol)}')">
+          Open ${escapeHtml(s.symbol)} on Chart
+        </button>
+      `}
     `;
     document.getElementById("tmDetailSheet").classList.add("open");
   },
@@ -5041,72 +5993,74 @@ const SignalsEngine = {
   }
 };
 
-/* LIMITS ENGINE */
+/* LIMIT ORDERS ENGINE */
 const LimitsEngine = {
   mode: "PENDING",
-  symbol: "ALL",
-  tf: "ALL",
-  selectedPendingDate: null,
-  pendingMonth: null,
+  symbolFilter: "ALL",
+  tfFilter: "ALL",
+  pendingDateIso: null,
+  pendingMonthYear: null,
   pendingCalendarOpen: false,
-  selectedHistoryDate: null,
-  historyMonth: null,
+  historyDateIso: null,
+  historyMonthYear: null,
   historyCalendarOpen: false,
 
-  ensureDates() {
+  ensureDatesInit() {
     const todayIso = getPktDatePartsFromMs(Date.now()).iso;
-    if (!this.selectedPendingDate) {
-      this.selectedPendingDate = todayIso;
+    if (!this.pendingDateIso) {
+      this.pendingDateIso = todayIso;
     }
-    if (!this.pendingMonth) {
-      const [yStr, mStr] = this.selectedPendingDate.split("-");
-      this.pendingMonth = { year: Number(yStr), month: Number(mStr) };
+    if (!this.pendingMonthYear) {
+      const [py, pm] = this.pendingDateIso.split("-").map(Number);
+      this.pendingMonthYear = { year: py, month: pm };
     }
-    if (!this.selectedHistoryDate) {
-      this.selectedHistoryDate = todayIso;
+    if (!this.historyDateIso) {
+      this.historyDateIso = todayIso;
     }
-    if (!this.historyMonth) {
-      const [yStr, mStr] = this.selectedHistoryDate.split("-");
-      this.historyMonth = { year: Number(yStr), month: Number(mStr) };
+    if (!this.historyMonthYear) {
+      const [hy, hm] = this.historyDateIso.split("-").map(Number);
+      this.historyMonthYear = { year: hy, month: hm };
     }
   },
 
-  setMode(m) {
-    this.mode = m;
-    document.querySelectorAll("#limitsModeTabs .tm-tab").forEach(b => b.classList.toggle("active", b.dataset.mode === m));
+  setMode(mode) {
+    this.mode = mode;
+    document.querySelectorAll("#limitsModeTabs .tm-tab").forEach(t => t.classList.toggle("active", t.dataset.mode === mode));
+    const pendPanel = document.getElementById("limitsPendingPanel");
+    const histPanel = document.getElementById("limitsHistoryPanel");
+    if (pendPanel) pendPanel.style.display = mode === "PENDING" ? "block" : "none";
+    if (histPanel) histPanel.style.display = mode === "HISTORY" ? "block" : "none";
     this.render();
   },
 
-  setSymbol(s) {
-    this.symbol = s;
-    document.querySelectorAll("#limitsSymbolStrip .tm-chip").forEach(c => c.classList.toggle("active", c.dataset.val === s));
+  setSymbol(val) {
+    this.symbolFilter = val;
+    document.querySelectorAll("#limitsSymbolStrip .tm-chip").forEach(c => c.classList.toggle("active", c.dataset.val === val));
     this.render();
   },
 
-  setTimeframe(t) {
-    if (isExcludedOneMinuteTf(t)) return;
-    this.tf = t;
-    document.querySelectorAll("#limitsTfStrip .tm-chip").forEach(c => c.classList.toggle("active", c.dataset.val === t));
+  setTimeframe(val) {
+    this.tfFilter = val;
+    document.querySelectorAll("#limitsTfStrip .tm-chip").forEach(c => c.classList.toggle("active", c.dataset.val === val));
     this.render();
   },
 
-  setPendingDate(isoDate) {
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(isoDate || ""))) return;
-    this.selectedPendingDate = isoDate;
-    const [yStr, mStr] = isoDate.split("-");
-    this.pendingMonth = { year: Number(yStr), month: Number(mStr) };
+  setPendingDate(isoVal) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(isoVal || "").trim())) return;
+    this.pendingDateIso = String(isoVal).trim();
+    const [y, m] = this.pendingDateIso.split("-").map(Number);
+    this.pendingMonthYear = { year: y, month: m };
     this.render();
   },
 
   shiftPendingDate(deltaDays) {
-    this.ensureDates();
-    this.setPendingDate(shiftIsoDate(this.selectedPendingDate, deltaDays));
+    this.ensureDatesInit();
+    this.setPendingDate(shiftIsoDate(this.pendingDateIso, deltaDays));
   },
 
   selectPendingShortcut(which) {
-    const nowMs = Date.now();
-    const iso = getPktDatePartsFromMs(which === "today" ? nowMs : (nowMs - 86400000)).iso;
-    this.setPendingDate(iso);
+    const todayIso = getPktDatePartsFromMs(Date.now()).iso;
+    this.setPendingDate(which === "yesterday" ? shiftIsoDate(todayIso, -1) : todayIso);
   },
 
   togglePendingCalendar() {
@@ -5115,32 +6069,31 @@ const LimitsEngine = {
   },
 
   shiftPendingMonth(delta) {
-    this.ensureDates();
-    let m = this.pendingMonth.month + delta;
-    let y = this.pendingMonth.year;
-    while (m < 1) { m += 12; y -= 1; }
-    while (m > 12) { m -= 12; y += 1; }
-    this.pendingMonth = { year: y, month: m };
-    this.renderPendingCalendar();
+    this.ensureDatesInit();
+    let { year, month } = this.pendingMonthYear;
+    month += delta;
+    if (month < 1) { month = 12; year -= 1; }
+    if (month > 12) { month = 1; year += 1; }
+    this.pendingMonthYear = { year, month };
+    this.render();
   },
 
-  setHistoryDate(isoDate) {
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(isoDate || ""))) return;
-    this.selectedHistoryDate = isoDate;
-    const [yStr, mStr] = isoDate.split("-");
-    this.historyMonth = { year: Number(yStr), month: Number(mStr) };
+  setHistoryDate(isoVal) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(isoVal || "").trim())) return;
+    this.historyDateIso = String(isoVal).trim();
+    const [y, m] = this.historyDateIso.split("-").map(Number);
+    this.historyMonthYear = { year: y, month: m };
     this.render();
   },
 
   shiftHistoryDate(deltaDays) {
-    this.ensureDates();
-    this.setHistoryDate(shiftIsoDate(this.selectedHistoryDate, deltaDays));
+    this.ensureDatesInit();
+    this.setHistoryDate(shiftIsoDate(this.historyDateIso, deltaDays));
   },
 
   selectHistoryShortcut(which) {
-    const nowMs = Date.now();
-    const iso = getPktDatePartsFromMs(which === "today" ? nowMs : (nowMs - 86400000)).iso;
-    this.setHistoryDate(iso);
+    const todayIso = getPktDatePartsFromMs(Date.now()).iso;
+    this.setHistoryDate(which === "yesterday" ? shiftIsoDate(todayIso, -1) : todayIso);
   },
 
   toggleHistoryCalendar() {
@@ -5149,655 +6102,697 @@ const LimitsEngine = {
   },
 
   shiftHistoryMonth(delta) {
-    this.ensureDates();
-    let m = this.historyMonth.month + delta;
-    let y = this.historyMonth.year;
-    while (m < 1) { m += 12; y -= 1; }
-    while (m > 12) { m -= 12; y += 1; }
-    this.historyMonth = { year: y, month: m };
-    this.renderHistoryCalendar();
+    this.ensureDatesInit();
+    let { year, month } = this.historyMonthYear;
+    month += delta;
+    if (month < 1) { month = 12; year -= 1; }
+    if (month > 12) { month = 1; year += 1; }
+    this.historyMonthYear = { year, month };
+    this.render();
   },
 
-  getPendingExpiryDateKey(ord) {
-    const rawExp = ord.expiredRaw || null;
-    if (!rawExp) return null;
-    return toPktDateKey(rawExp);
+  getCombinedUniqueOrders() {
+    const map = new Map();
+    [...(TradeMindState.pendingLimits || []), ...(TradeMindState.historyLimits || [])].forEach(o => {
+      if (!o || isExcludedOneMinuteTf(o.tf)) return;
+      map.set(String(o.id), o);
+    });
+    return Array.from(map.values());
   },
 
-  classifyOrderBucket(ord) {
-    const raw = String(ord.status || "").toUpperCase().trim();
-    if (raw === "TP HIT" || raw === "TP_HIT" || raw === "TP COMPLETED" || raw === "TP_COMPLETED" || raw === "WIN") return "TP_HIT";
-    if (raw === "SL HIT" || raw === "SL_HIT" || raw === "SL COMPLETED" || raw === "SL_COMPLETED" || raw === "LOSS") return "SL_HIT";
-    if (raw === "EXPIRED") return "EXPIRED";
-    if (raw === "ACTIVATED" || raw === "TRIGGERED" || raw === "ACTIVE" || raw === "OPEN" || raw === "FILLED") return "ACTIVATED";
-    if (raw === "PENDING" || raw === "NEW" || raw === "PLACED" || raw === "WAITING") return "PENDING";
-    return "OTHER";
+  getFilteredPendingOrders() {
+    return (TradeMindState.pendingLimits || []).filter(o => {
+      if (!o || isExcludedOneMinuteTf(o.tf)) return false;
+      if (this.symbolFilter !== "ALL" && o.symbol !== this.symbolFilter) return false;
+      if (this.tfFilter !== "ALL" && o.tf !== this.tfFilter) return false;
+      return true;
+    });
   },
 
-  getOrderPrimaryDateKey(ord) {
-    const bucket = this.classifyOrderBucket(ord);
-    if (bucket === "TP_HIT" || bucket === "SL_HIT") {
-      const compRaw = ord.completedRaw || ord.activatedRaw || ord.createdRaw || null;
-      return compRaw ? toPktDateKey(compRaw) : getPktDatePartsFromMs(Date.now()).iso;
-    }
-    if (bucket === "EXPIRED") {
-      const expRaw = ord.expiredRaw || ord.completedRaw || ord.createdRaw || null;
-      return expRaw ? toPktDateKey(expRaw) : getPktDatePartsFromMs(Date.now()).iso;
-    }
-    if (bucket === "ACTIVATED") {
-      const actRaw = ord.activatedRaw || ord.completedRaw || ord.createdRaw || null;
-      return actRaw ? toPktDateKey(actRaw) : getPktDatePartsFromMs(Date.now()).iso;
-    }
-    if (bucket === "PENDING") {
-      const expRaw = ord.expiredRaw || ord.createdRaw || null;
-      return expRaw ? toPktDateKey(expRaw) : null;
-    }
-    const fallbackRaw = ord.completedRaw || ord.expiredRaw || ord.activatedRaw || ord.createdRaw || null;
-    return fallbackRaw ? toPktDateKey(fallbackRaw) : getPktDatePartsFromMs(Date.now()).iso;
+  getFilteredHistoryForSelectedDate() {
+    this.ensureDatesInit();
+    const targetIso = this.historyDateIso;
+    const allOrders = this.getCombinedUniqueOrders();
+
+    return allOrders.filter(o => {
+      if (this.symbolFilter !== "ALL" && o.symbol !== this.symbolFilter) return false;
+      if (this.tfFilter !== "ALL" && o.tf !== this.tfFilter) return false;
+      const st = String(o.status || "").toUpperCase();
+      if (st === "PENDING") {
+        return toPktDateKey(o.createdRaw || o.createdPkt) === targetIso;
+      }
+      return (
+        toPktDateKey(o.activatedRaw || o.activatedPkt) === targetIso ||
+        toPktDateKey(o.completedRaw || o.completedPkt) === targetIso ||
+        toPktDateKey(o.expiredRaw || o.expiredPkt) === targetIso ||
+        toPktDateKey(o.invalidatedRaw || o.invalidatedPkt) === targetIso
+      );
+    });
   },
 
-  renderPendingCalendar() {
+  renderPendingControlsAndCalendar() {
+    this.ensureDatesInit();
+    const selectedDate = this.pendingDateIso;
+    const allOrders = this.getCombinedUniqueOrders();
+
+    const overallPending = (TradeMindState.pendingLimits || []).filter(o => {
+      if (!o || isExcludedOneMinuteTf(o.tf)) return false;
+      if (this.symbolFilter !== "ALL" && o.symbol !== this.symbolFilter) return false;
+      if (this.tfFilter !== "ALL" && o.tf !== this.tfFilter) return false;
+      return true;
+    });
+
+    const overallActivated = allOrders.filter(o => {
+      if (this.symbolFilter !== "ALL" && o.symbol !== this.symbolFilter) return false;
+      if (this.tfFilter !== "ALL" && o.tf !== this.tfFilter) return false;
+      const st = String(o.status || "").toUpperCase();
+      return Boolean(o.activatedRaw || o.activatedPkt) || st === "ACTIVATED" || st === "TRIGGERED" || st.includes("TP") || st.includes("SL");
+    });
+
+    const pendCountEl = document.getElementById("limOverallPendingCount");
+    const actCountEl = document.getElementById("limOverallActivatedCount");
+    if (pendCountEl) pendCountEl.textContent = String(overallPending.length);
+    if (actCountEl) actCountEl.textContent = String(overallActivated.length);
+
+    const badge = document.getElementById("limPendSelectedDateBadge");
+    if (badge) badge.textContent = CalendarHistoryEngine.formatDisplayDate(selectedDate);
+
+    const inputEl = document.getElementById("limPendDateInput");
+    if (inputEl && inputEl.value !== selectedDate) {
+      inputEl.value = selectedDate;
+    }
+
+    const expiringOnDate = overallPending.filter(o => toPktDateKey(o.expiredRaw || o.expiresPkt) === selectedDate);
+    const dateCountEl = document.getElementById("limPendDateCountBadge");
+    if (dateCountEl) dateCountEl.textContent = String(expiringOnDate.length);
+
     const calBox = document.getElementById("limPendCalendarBox");
-    const toggleBtn = document.getElementById("limPendCalToggleBtn");
+    const calBtn = document.getElementById("limPendCalToggleBtn");
     if (calBox) calBox.style.display = this.pendingCalendarOpen ? "block" : "none";
-    if (toggleBtn) toggleBtn.classList.toggle("active", this.pendingCalendarOpen);
+    if (calBtn) calBtn.classList.toggle("active", this.pendingCalendarOpen);
+
     if (!this.pendingCalendarOpen) return;
 
     const monthLabel = document.getElementById("limPendCalMonthLabel");
     const gridEl = document.getElementById("limPendCalGrid");
     if (!monthLabel || !gridEl) return;
 
-    const d = new Date(Date.UTC(this.pendingMonth.year, this.pendingMonth.month - 1, 15));
-    monthLabel.textContent = new Intl.DateTimeFormat("en-US", {
-      timeZone: TradeMindConfig.timezone,
-      month: "long",
-      year: "numeric"
-    }).format(d) + " (PKT)";
-
-    const cells = CalendarHistoryEngine.buildMonthCells(this.pendingMonth.year, this.pendingMonth.month);
+    const { year, month } = this.pendingMonthYear;
     const todayIso = getPktDatePartsFromMs(Date.now()).iso;
+    monthLabel.textContent = CalendarHistoryEngine.getMonthTitle(year, month);
 
-    const filteredPending = (TradeMindState.pendingLimits || []).filter(o =>
-      !isExcludedOneMinuteTf(o.tf) &&
-      this.classifyOrderBucket(o) === "PENDING" &&
-      (this.symbol === "ALL" || o.symbol === this.symbol) &&
-      (this.tf === "ALL" || o.tf === this.tf)
-    );
+    const expByDate = new Map();
+    overallPending.forEach(o => {
+      const expIso = toPktDateKey(o.expiredRaw || o.expiresPkt);
+      if (!expIso) return;
+      expByDate.set(expIso, (expByDate.get(expIso) || 0) + 1);
+    });
 
-    gridEl.innerHTML = cells.map(c => {
-      const expCount = filteredPending.filter(o => this.getPendingExpiryDateKey(o) === c.iso).length;
-      const cls = [
-        "tm-cal-day",
-        c.inMonth ? "" : "muted",
-        c.iso === todayIso ? "today" : "",
-        c.iso === this.selectedPendingDate ? "selected" : ""
-      ].filter(Boolean).join(" ");
-
+    const cells = CalendarHistoryEngine.buildMonthCells(year, month);
+    gridEl.innerHTML = cells.map(cell => {
+      const cnt = expByDate.get(cell.iso) || 0;
+      const isToday = cell.iso === todayIso;
+      const isSelected = cell.iso === selectedDate;
       return `
-        <button type="button" class="${cls}" onclick="LimitsEngine.setPendingDate('${escapeHtml(c.iso)}')">
-          <span>${c.day}</span>
-          <span class="tm-cal-dots">${expCount > 0 ? `<span class="tm-cal-pill pend">E:${expCount}</span>` : ""}</span>
+        <button type="button"
+                class="tm-cal-day ${cell.inMonth ? "" : "muted"} ${isToday ? "today" : ""} ${isSelected ? "selected" : ""}"
+                onclick="LimitsEngine.setPendingDate('${cell.iso}')">
+          <span>${cell.day}</span>
+          <span class="tm-cal-dots">
+            ${cnt > 0 ? `<span class="tm-cal-pill pend">${cnt}P</span>` : ""}
+          </span>
         </button>
       `;
     }).join("");
   },
 
-  renderHistoryCalendar() {
+  renderHistoryControlsAndCalendar() {
+    this.ensureDatesInit();
+    const selectedDate = this.historyDateIso;
+
+    const badge = document.getElementById("limHistSelectedDateBadge");
+    if (badge) badge.textContent = CalendarHistoryEngine.formatDisplayDate(selectedDate);
+
+    const inputEl = document.getElementById("limHistDateInput");
+    if (inputEl && inputEl.value !== selectedDate) {
+      inputEl.value = selectedDate;
+    }
+
     const calBox = document.getElementById("limHistCalendarBox");
-    const toggleBtn = document.getElementById("limHistCalToggleBtn");
+    const calBtn = document.getElementById("limHistCalToggleBtn");
     if (calBox) calBox.style.display = this.historyCalendarOpen ? "block" : "none";
-    if (toggleBtn) toggleBtn.classList.toggle("active", this.historyCalendarOpen);
+    if (calBtn) calBtn.classList.toggle("active", this.historyCalendarOpen);
+
+    const dayOrders = this.getFilteredHistoryForSelectedDate();
+    let actCnt = 0;
+    let tpCnt = 0;
+    let slCnt = 0;
+    let expCnt = 0;
+    let pendCnt = 0;
+
+    dayOrders.forEach(o => {
+      const st = String(o.status || "").toUpperCase();
+      if (toPktDateKey(o.activatedRaw || o.activatedPkt) === selectedDate || st === "ACTIVATED" || st === "TRIGGERED") {
+        actCnt += 1;
+      }
+      if (st.includes("TP") && toPktDateKey(o.completedRaw || o.completedPkt) === selectedDate) {
+        tpCnt += 1;
+      } else if (st.includes("SL") && toPktDateKey(o.completedRaw || o.completedPkt) === selectedDate) {
+        slCnt += 1;
+      } else if (st === "EXPIRED" && toPktDateKey(o.expiredRaw || o.expiredPkt) === selectedDate) {
+        expCnt += 1;
+      } else if (st === "PENDING" && toPktDateKey(o.createdRaw || o.createdPkt) === selectedDate) {
+        pendCnt += 1;
+      }
+    });
+
+    const elAct = document.getElementById("limHistCountActivated");
+    const elTp = document.getElementById("limHistCountTp");
+    const elSl = document.getElementById("limHistCountSl");
+    const elExp = document.getElementById("limHistCountExpired");
+    const elPend = document.getElementById("limHistCountPending");
+    if (elAct) elAct.textContent = String(actCnt);
+    if (elTp) elTp.textContent = String(tpCnt);
+    if (elSl) elSl.textContent = String(slCnt);
+    if (elExp) elExp.textContent = String(expCnt);
+    if (elPend) elPend.textContent = String(pendCnt);
+
     if (!this.historyCalendarOpen) return;
 
     const monthLabel = document.getElementById("limHistCalMonthLabel");
     const gridEl = document.getElementById("limHistCalGrid");
     if (!monthLabel || !gridEl) return;
 
-    const d = new Date(Date.UTC(this.historyMonth.year, this.historyMonth.month - 1, 15));
-    monthLabel.textContent = new Intl.DateTimeFormat("en-US", {
-      timeZone: TradeMindConfig.timezone,
-      month: "long",
-      year: "numeric"
-    }).format(d) + " (PKT)";
-
-    const cells = CalendarHistoryEngine.buildMonthCells(this.historyMonth.year, this.historyMonth.month);
+    const { year, month } = this.historyMonthYear;
     const todayIso = getPktDatePartsFromMs(Date.now()).iso;
+    monthLabel.textContent = CalendarHistoryEngine.getMonthTitle(year, month);
 
-    const filteredHist = (TradeMindState.historyLimits || []).filter(o =>
-      !isExcludedOneMinuteTf(o.tf) &&
-      (this.symbol === "ALL" || o.symbol === this.symbol) &&
-      (this.tf === "ALL" || o.tf === this.tf)
-    );
+    const allOrders = this.getCombinedUniqueOrders().filter(o => {
+      if (this.symbolFilter !== "ALL" && o.symbol !== this.symbolFilter) return false;
+      if (this.tfFilter !== "ALL" && o.tf !== this.tfFilter) return false;
+      return true;
+    });
 
-    gridEl.innerHTML = cells.map(c => {
-      const dayItems = filteredHist.filter(o => this.getOrderPrimaryDateKey(o) === c.iso);
-      const tp = dayItems.filter(o => this.classifyOrderBucket(o) === "TP_HIT").length;
-      const sl = dayItems.filter(o => this.classifyOrderBucket(o) === "SL_HIT").length;
-      const exp = dayItems.filter(o => this.classifyOrderBucket(o) === "EXPIRED").length;
-      const cls = [
-        "tm-cal-day",
-        c.inMonth ? "" : "muted",
-        c.iso === todayIso ? "today" : "",
-        c.iso === this.selectedHistoryDate ? "selected" : ""
-      ].filter(Boolean).join(" ");
+    const summaryByDate = new Map();
+    const ensureDay = iso => {
+      if (!iso) return null;
+      if (!summaryByDate.has(iso)) summaryByDate.set(iso, { act: 0, done: 0 });
+      return summaryByDate.get(iso);
+    };
 
-      const pills = [];
-      if (tp > 0) pills.push(`<span class="tm-cal-pill win">TP:${tp}</span>`);
-      if (sl > 0) pills.push(`<span class="tm-cal-pill loss">SL:${sl}</span>`);
-      if (exp > 0) pills.push(`<span class="tm-cal-pill pend">EX:${exp}</span>`);
+    allOrders.forEach(o => {
+      const actIso = toPktDateKey(o.activatedRaw || o.activatedPkt);
+      if (actIso) ensureDay(actIso).act += 1;
 
+      const compIso = toPktDateKey(o.completedRaw || o.completedPkt);
+      if (compIso) ensureDay(compIso).done += 1;
+
+      const expIso = toPktDateKey(o.expiredRaw || o.expiredPkt);
+      if (expIso && String(o.status || "").toUpperCase() === "EXPIRED") {
+        ensureDay(expIso).done += 1;
+      }
+    });
+
+    const cells = CalendarHistoryEngine.buildMonthCells(year, month);
+    gridEl.innerHTML = cells.map(cell => {
+      const st = summaryByDate.get(cell.iso) || { act: 0, done: 0 };
+      const isToday = cell.iso === todayIso;
+      const isSelected = cell.iso === selectedDate;
       return `
-        <button type="button" class="${cls}" onclick="LimitsEngine.setHistoryDate('${escapeHtml(c.iso)}')">
-          <span>${c.day}</span>
-          <span class="tm-cal-dots">${pills.join("")}</span>
+        <button type="button"
+                class="tm-cal-day ${cell.inMonth ? "" : "muted"} ${isToday ? "today" : ""} ${isSelected ? "selected" : ""}"
+                onclick="LimitsEngine.setHistoryDate('${cell.iso}')">
+          <span>${cell.day}</span>
+          <span class="tm-cal-dots">
+            ${st.act > 0 ? `<span class="tm-cal-pill act">${st.act}A</span>` : ""}
+            ${st.done > 0 ? `<span class="tm-cal-pill win">${st.done}D</span>` : ""}
+          </span>
         </button>
       `;
     }).join("");
   },
 
-  renderOrderCard(o, isPendingTab) {
-    const isBuy = o.orderType.includes("BUY");
-    const createdText = o.createdRaw ? formatPktDateTime(o.createdRaw) : "--";
-    const expiresText = o.expiredRaw ? formatPktDateTime(o.expiredRaw) : "--";
-    const expiryCountdown = o.expiredRaw ? formatExpiryRemaining(o.expiredRaw, Date.now()) : "--";
-    const completedText = o.completedRaw ? formatPktDateTime(o.completedRaw) : null;
-    const activatedText = o.activatedRaw ? formatPktDateTime(o.activatedRaw) : null;
-
-    return `
-      <div class="tm-card">
-        <div class="row-between">
-          <div class="row-inline">
-            <strong style="font-size:13px;">${escapeHtml(o.symbol)}</strong>
-            <span class="tm-badge ${isBuy ? "badge-buy" : "badge-sell"}">${escapeHtml(o.orderType)}</span>
-            <span class="tm-badge badge-closed">${escapeHtml(o.tf)}</span>
-          </div>
-          <span class="tm-badge ${badgeClass(o.status)}">${escapeHtml(o.status)}</span>
-        </div>
-        <div class="tm-levels-grid">
-          <div><div class="tm-lvl-key">Entry</div><div class="tm-lvl-val">${escapeHtml(o.entry)}</div></div>
-          <div><div class="tm-lvl-key">SL</div><div class="tm-lvl-val" style="color:var(--bear);">${escapeHtml(o.sl)}</div></div>
-          <div><div class="tm-lvl-key">TP</div><div class="tm-lvl-val" style="color:var(--bull);">${escapeHtml(o.tp)}</div></div>
-          <div><div class="tm-lvl-key">R:R</div><div class="tm-lvl-val" style="color:var(--accent-dark);">${escapeHtml(o.rr)}</div></div>
-        </div>
-        <div class="tm-meta-box">
-          <div class="tm-meta-line">
-            <span class="tm-meta-lbl">Created:</span>
-            <span class="tm-meta-val">${escapeHtml(createdText)}</span>
-          </div>
-          <div class="tm-meta-line">
-            <span class="tm-meta-lbl">Expires:</span>
-            <span class="tm-meta-val">${escapeHtml(expiresText)}</span>
-          </div>
-          ${isPendingTab ? `
-            <div class="tm-meta-line">
-              <span class="tm-meta-lbl">Expiry:</span>
-              <span class="tm-meta-val" style="color:var(--warn);">${escapeHtml(expiryCountdown)}</span>
-            </div>
-          ` : `
-            ${activatedText ? `
-              <div class="tm-meta-line">
-                <span class="tm-meta-lbl">Activated:</span>
-                <span class="tm-meta-val">${escapeHtml(activatedText)}</span>
-              </div>
-            ` : ""}
-            ${completedText ? `
-              <div class="tm-meta-line">
-                <span class="tm-meta-lbl">Completed:</span>
-                <span class="tm-meta-val">${escapeHtml(completedText)}</span>
-              </div>
-            ` : ""}
-          `}
-        </div>
-        <div class="tm-card-foot">
-          <span>${escapeHtml(o.strategy)}</span>
-          <span>${o.brokerOrderPlaced ? "Broker Order" : "Tracked"}</span>
-        </div>
-      </div>
-    `;
-  },
-
   render() {
-    this.ensureDates();
-    const pendingPanel = document.getElementById("limitsPendingPanel");
-    const historyPanel = document.getElementById("limitsHistoryPanel");
-    const listContainer = document.getElementById("limitsListContainer");
-
-    const allKnownOrders = [...(TradeMindState.pendingLimits || []), ...(TradeMindState.historyLimits || [])]
-      .filter(o => !isExcludedOneMinuteTf(o.tf));
-    const uniqueByIdMap = new Map();
-    allKnownOrders.forEach(o => {
-      if (!o || !o.id) return;
-      if (!uniqueByIdMap.has(String(o.id))) {
-        uniqueByIdMap.set(String(o.id), o);
-      }
-    });
-    const dedupedAll = Array.from(uniqueByIdMap.values());
-
-    const overallPendingOrders = dedupedAll.filter(o =>
-      this.classifyOrderBucket(o) === "PENDING" &&
-      (this.symbol === "ALL" || o.symbol === this.symbol) &&
-      (this.tf === "ALL" || o.tf === this.tf)
-    );
-
-    const overallActivatedOrders = dedupedAll.filter(o => {
-      const b = this.classifyOrderBucket(o);
-      return (b === "ACTIVATED" || b === "TP_HIT" || b === "SL_HIT" || Boolean(o.activatedRaw)) &&
-        (this.symbol === "ALL" || o.symbol === this.symbol) &&
-        (this.tf === "ALL" || o.tf === this.tf);
-    });
-
-    const ovPendEl = document.getElementById("limOverallPendingCount");
-    const ovActEl = document.getElementById("limOverallActivatedCount");
-    if (ovPendEl) ovPendEl.textContent = String(overallPendingOrders.length);
-    if (ovActEl) ovActEl.textContent = String(overallActivatedOrders.length);
-
     if (this.mode === "PENDING") {
-      if (pendingPanel) pendingPanel.style.display = "block";
-      if (historyPanel) historyPanel.style.display = "none";
+      this.renderPendingControlsAndCalendar();
+    } else {
+      this.renderHistoryControlsAndCalendar();
+    }
 
-      const pendInput = document.getElementById("limPendDateInput");
-      if (pendInput && pendInput.value !== this.selectedPendingDate) {
-        pendInput.value = this.selectedPendingDate;
+    const list = this.mode === "PENDING"
+      ? this.getFilteredPendingOrders()
+      : this.getFilteredHistoryForSelectedDate();
+
+    const container = document.getElementById("limitsListContainer");
+    if (!list.length) {
+      if (!TradeMindState.backendOnline) {
+        container.innerHTML = TradeMindState.authRequired
+          ? `<div class="tm-empty">Device authentication required (401). Pair device in Settings to view limit orders.</div>`
+          : `<div class="tm-empty">Backend offline. Limit orders data unavailable.</div>`;
+      } else if (this.mode === "HISTORY") {
+        container.innerHTML = `<div class="tm-empty">No limit order activity on ${escapeHtml(CalendarHistoryEngine.formatDisplayDate(this.historyDateIso))} for current filters.</div>`;
+      } else {
+        container.innerHTML = `<div class="tm-empty">No pending limit orders match the current filter.</div>`;
       }
-      const pendBadge = document.getElementById("limPendSelectedDateBadge");
-      if (pendBadge) pendBadge.textContent = `Expiry: ${this.selectedPendingDate} PKT`;
-
-      const expiringOnSelectedDate = overallPendingOrders.filter(o => {
-        const expKey = this.getPendingExpiryDateKey(o);
-        return expKey !== null && expKey === this.selectedPendingDate;
-      });
-
-      const dateCntEl = document.getElementById("limPendDateCountBadge");
-      const dateSumLbl = document.getElementById("limPendDateSummaryLabel");
-      if (dateCntEl) dateCntEl.textContent = String(expiringOnSelectedDate.length);
-      if (dateSumLbl) dateSumLbl.textContent = `Pending Expiring on ${this.selectedPendingDate} PKT:`;
-
-      this.renderPendingCalendar();
-
-      listContainer.innerHTML = expiringOnSelectedDate.length
-        ? expiringOnSelectedDate.map(o => this.renderOrderCard(o, true)).join("")
-        : `<div class="tm-empty">${TradeMindState.backendOnline ? `No pending limit orders expiring on ${escapeHtml(this.selectedPendingDate)} PKT.` : "Backend offline. Unable to load pending limits."}</div>`;
       return;
     }
 
-    if (pendingPanel) pendingPanel.style.display = "none";
-    if (historyPanel) historyPanel.style.display = "block";
+    const nowMs = Date.now();
+    container.innerHTML = list.map(o => {
+      const isBuy = o.orderType.includes("BUY");
+      const createdDisplay = o.createdRaw ? formatPktDateTime(o.createdRaw) : o.createdPkt;
+      const expiresDisplay = o.expiredRaw ? formatPktDateTime(o.expiredRaw) : (o.expiresPkt || "--");
+      const activatedDisplay = o.activatedRaw ? formatPktDateTime(o.activatedRaw) : o.activatedPkt;
+      const completedDisplay = o.completedRaw ? formatPktDateTime(o.completedRaw) : o.completedPkt;
+      const invalidatedDisplay = o.invalidatedRaw ? formatPktDateTime(o.invalidatedRaw) : o.invalidatedPkt;
+      const remainingText = this.mode === "PENDING" && o.expiredRaw
+        ? formatExpiryRemaining(o.expiredRaw, nowMs)
+        : (o.expiryBars !== null ? `${o.expiryBars} bars` : "--");
 
-    const histInput = document.getElementById("limHistDateInput");
-    if (histInput && histInput.value !== this.selectedHistoryDate) {
-      histInput.value = this.selectedHistoryDate;
-    }
-    const histBadge = document.getElementById("limHistSelectedDateBadge");
-    if (histBadge) histBadge.textContent = `${this.selectedHistoryDate} PKT`;
-
-    const nonPendingOrders = dedupedAll.filter(o =>
-      this.classifyOrderBucket(o) !== "PENDING" &&
-      (this.symbol === "ALL" || o.symbol === this.symbol) &&
-      (this.tf === "ALL" || o.tf === this.tf)
-    );
-
-    const matchingOrders = nonPendingOrders.filter(o => {
-      const primaryDate = this.getOrderPrimaryDateKey(o);
-      return primaryDate !== null && primaryDate === this.selectedHistoryDate;
-    });
-
-    const cntActivated = matchingOrders.filter(o => this.classifyOrderBucket(o) === "ACTIVATED").length;
-    const cntTp = matchingOrders.filter(o => this.classifyOrderBucket(o) === "TP_HIT").length;
-    const cntSl = matchingOrders.filter(o => this.classifyOrderBucket(o) === "SL_HIT").length;
-    const cntExpired = matchingOrders.filter(o => this.classifyOrderBucket(o) === "EXPIRED").length;
-    const cntPending = matchingOrders.filter(o => this.classifyOrderBucket(o) === "PENDING").length;
-
-    document.getElementById("limHistCountActivated").textContent = String(cntActivated);
-    document.getElementById("limHistCountTp").textContent = String(cntTp);
-    document.getElementById("limHistCountSl").textContent = String(cntSl);
-    document.getElementById("limHistCountExpired").textContent = String(cntExpired);
-    document.getElementById("limHistCountPending").textContent = String(cntPending);
-
-    this.renderHistoryCalendar();
-
-    listContainer.innerHTML = matchingOrders.length
-      ? matchingOrders.map(o => this.renderOrderCard(o, false)).join("")
-      : `<div class="tm-empty">${TradeMindState.backendOnline ? `No limit order records for ${escapeHtml(this.selectedHistoryDate)} PKT.` : "Backend offline. Unable to load limit history."}</div>`;
+      return `
+        <div class="tm-card">
+          <div class="row-between">
+            <div class="row-inline">
+              <strong style="font-size:13px;">${escapeHtml(o.symbol)}</strong>
+              <span class="tm-badge ${isBuy ? "badge-buy" : "badge-sell"}">${escapeHtml(o.orderType)}</span>
+              <span class="tm-badge badge-closed">${escapeHtml(o.tf)}</span>
+            </div>
+            <span class="tm-badge ${badgeClass(o.status)}">${escapeHtml(o.status)}</span>
+          </div>
+          <div class="tm-levels-grid">
+            <div><div class="tm-lvl-key">Entry</div><div class="tm-lvl-val">${escapeHtml(o.entry)}</div></div>
+            <div><div class="tm-lvl-key">SL</div><div class="tm-lvl-val" style="color:var(--bear);">${escapeHtml(o.sl)}</div></div>
+            <div><div class="tm-lvl-key">TP</div><div class="tm-lvl-val" style="color:var(--bull);">${escapeHtml(o.tp)}</div></div>
+            <div><div class="tm-lvl-key">R:R</div><div class="tm-lvl-val" style="color:var(--accent-dark);">${escapeHtml(o.rr)}</div></div>
+          </div>
+          <div class="tm-meta-box">
+            <div class="tm-meta-line">
+              <span class="tm-meta-lbl">Created:</span>
+              <span class="tm-meta-val">${escapeHtml(createdDisplay)}</span>
+            </div>
+            ${this.mode === "PENDING" ? `
+              <div class="tm-meta-line">
+                <span class="tm-meta-lbl">Expires:</span>
+                <span class="tm-meta-val">${escapeHtml(expiresDisplay)}</span>
+              </div>
+              <div class="tm-meta-line">
+                <span class="tm-meta-lbl">Remaining:</span>
+                <span class="tm-meta-val" style="color:var(--warn);">${escapeHtml(remainingText)}</span>
+              </div>
+            ` : `
+              ${activatedDisplay ? `<div class="tm-meta-line"><span class="tm-meta-lbl">Activated:</span><span class="tm-meta-val">${escapeHtml(activatedDisplay)}</span></div>` : ""}
+              ${completedDisplay ? `<div class="tm-meta-line"><span class="tm-meta-lbl">Completed:</span><span class="tm-meta-val">${escapeHtml(completedDisplay)}</span></div>` : ""}
+              ${o.status === "EXPIRED" && o.expiredPkt ? `<div class="tm-meta-line"><span class="tm-meta-lbl">Expired:</span><span class="tm-meta-val">${escapeHtml(o.expiredPkt)}</span></div>` : ""}
+              ${invalidatedDisplay ? `<div class="tm-meta-line"><span class="tm-meta-lbl">Invalidated:</span><span class="tm-meta-val">${escapeHtml(invalidatedDisplay)}</span></div>` : ""}
+            `}
+          </div>
+          <div class="tm-card-foot">
+            <span>${escapeHtml(o.strategy)}</span>
+            <button class="tm-btn" onclick="TvChart.openPair('${escapeHtml(o.symbol)}')">Chart</button>
+          </div>
+        </div>
+      `;
+    }).join("");
   }
 };
 
 /* CALENDAR HISTORY ENGINE */
 const CalendarHistoryEngine = {
   activeTab: "signals",
-  signalsMonth: null,
-  signalsSelectedDate: null,
-  limitsMonth: null,
-  limitsSelectedDate: null,
+  monthYear: {
+    signals: null,
+    limits: null
+  },
+  selectedDate: {
+    signals: null,
+    limits: null
+  },
 
   ensureInitialized() {
-    const nowPkt = getPktDatePartsFromMs(Date.now());
-    if (!this.signalsMonth) {
-      this.signalsMonth = { year: nowPkt.year, month: nowPkt.month };
-    }
-    if (!this.signalsSelectedDate) {
-      this.signalsSelectedDate = nowPkt.iso;
-    }
-    if (!this.limitsMonth) {
-      this.limitsMonth = { year: nowPkt.year, month: nowPkt.month };
-    }
-    if (!this.limitsSelectedDate) {
-      this.limitsSelectedDate = nowPkt.iso;
-    }
+    const todayIso = getPktDatePartsFromMs(Date.now()).iso;
+    const [y, m] = todayIso.split("-").map(Number);
+    if (!this.selectedDate.signals) this.selectedDate.signals = todayIso;
+    if (!this.selectedDate.limits) this.selectedDate.limits = todayIso;
+    if (!this.monthYear.signals) this.monthYear.signals = { year: y, month: m };
+    if (!this.monthYear.limits) this.monthYear.limits = { year: y, month: m };
   },
 
   setTab(tab) {
     this.activeTab = tab;
-    document.querySelectorAll("#perfCalendarTabs .tm-cal-tab").forEach(b => {
-      b.classList.toggle("active", b.dataset.caltab === tab);
+    document.querySelectorAll("#perfCalendarTabs .tm-cal-tab").forEach(btn => {
+      btn.classList.toggle("active", btn.dataset.caltab === tab);
     });
-    document.getElementById("calPanelSignals").classList.toggle("active", tab === "signals");
-    document.getElementById("calPanelLimits").classList.toggle("active", tab === "limits");
+    const sigPanel = document.getElementById("calPanelSignals");
+    const limPanel = document.getElementById("calPanelLimits");
+    if (sigPanel) sigPanel.classList.toggle("active", tab === "signals");
+    if (limPanel) limPanel.classList.toggle("active", tab === "limits");
     this.render();
   },
 
-  shiftMonth(which, delta) {
+  shiftMonth(tab, delta) {
     this.ensureInitialized();
-    const target = which === "signals" ? this.signalsMonth : this.limitsMonth;
-    let m = target.month + delta;
-    let y = target.year;
-    while (m < 1) { m += 12; y -= 1; }
-    while (m > 12) { m -= 12; y += 1; }
-    if (which === "signals") {
-      this.signalsMonth = { year: y, month: m };
-    } else {
-      this.limitsMonth = { year: y, month: m };
+    const cur = this.monthYear[tab];
+    let nextMonth = cur.month + delta;
+    let nextYear = cur.year;
+    if (nextMonth < 1) {
+      nextMonth = 12;
+      nextYear -= 1;
+    } else if (nextMonth > 12) {
+      nextMonth = 1;
+      nextYear += 1;
     }
+    this.monthYear[tab] = { year: nextYear, month: nextMonth };
     this.render();
   },
 
-  selectDate(which, isoDate) {
+  selectDate(tab, isoDate) {
     this.ensureInitialized();
-    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(isoDate);
-    if (which === "signals") {
-      this.signalsSelectedDate = isoDate;
-      if (match) this.signalsMonth = { year: Number(match[1]), month: Number(match[2]) };
-    } else {
-      this.limitsSelectedDate = isoDate;
-      if (match) this.limitsMonth = { year: Number(match[1]), month: Number(match[2]) };
-    }
+    this.selectedDate[tab] = isoDate;
+    const [y, m] = isoDate.split("-").map(Number);
+    this.monthYear[tab] = { year: y, month: m };
     this.render();
   },
 
-  selectShortcut(which, shortcut) {
-    const nowMs = Date.now();
-    const targetMs = shortcut === "today" ? nowMs : (nowMs - 86400000);
-    const pkt = getPktDatePartsFromMs(targetMs);
-    this.selectDate(which, pkt.iso);
+  selectShortcut(tab, which) {
+    const todayIso = getPktDatePartsFromMs(Date.now()).iso;
+    const targetIso = which === "yesterday" ? shiftIsoDate(todayIso, -1) : todayIso;
+    this.selectDate(tab, targetIso);
+  },
+
+  classifyOutcome(rec) {
+    const out = String(rec.outcome || "").toUpperCase();
+    const st = String(rec.status || "").toUpperCase();
+    if (out.includes("TP") || out === "WIN" || st === "TP HIT" || st === "TP_HIT" || st === "TP COMPLETED") {
+      return "TP WIN";
+    }
+    if (out.includes("SL") || out === "LOSS" || st === "SL HIT" || st === "SL_HIT" || st === "SL COMPLETED") {
+      return "SL LOSS";
+    }
+    return st || "OTHER";
   },
 
   buildMonthCells(year, month) {
-    const firstDayUtc = new Date(Date.UTC(year, month - 1, 1));
-    const startWeekday = firstDayUtc.getUTCDay();
+    const firstDow = new Date(Date.UTC(year, month - 1, 1)).getUTCDay();
     const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
     const prevMonthDays = new Date(Date.UTC(year, month - 1, 0)).getUTCDate();
 
     const cells = [];
-    for (let i = startWeekday - 1; i >= 0; i--) {
-      const dNum = prevMonthDays - i;
-      let pm = month - 1;
-      let py = year;
-      if (pm < 1) { pm = 12; py -= 1; }
-      cells.push({
-        year: py,
-        month: pm,
-        day: dNum,
-        iso: `${py}-${String(pm).padStart(2, "0")}-${String(dNum).padStart(2, "0")}`,
-        inMonth: false
-      });
+    for (let i = firstDow - 1; i >= 0; i--) {
+      const dayNum = prevMonthDays - i;
+      const d = new Date(Date.UTC(year, month - 2, dayNum));
+      const iso = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(dayNum).padStart(2, "0")}`;
+      cells.push({ iso, day: dayNum, inMonth: false });
     }
-
     for (let d = 1; d <= daysInMonth; d++) {
-      cells.push({
-        year,
-        month,
-        day: d,
-        iso: `${year}-${String(month).padStart(2, "0")}-${String(d).padStart(2, "0")}`,
-        inMonth: true
-      });
+      const iso = `${year}-${String(month).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+      cells.push({ iso, day: d, inMonth: true });
     }
-
-    let nextDay = 1;
-    while (cells.length % 7 !== 0 || cells.length < 35) {
-      let nm = month + 1;
-      let ny = year;
-      if (nm > 12) { nm = 1; ny += 1; }
-      cells.push({
-        year: ny,
-        month: nm,
-        day: nextDay,
-        iso: `${ny}-${String(nm).padStart(2, "0")}-${String(nextDay).padStart(2, "0")}`,
-        inMonth: false
-      });
-      nextDay++;
+    while (cells.length % 7 !== 0) {
+      const idx = cells.length - (firstDow + daysInMonth) + 1;
+      const d = new Date(Date.UTC(year, month, idx));
+      const iso = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`;
+      cells.push({ iso, day: d.getUTCDate(), inMonth: false });
     }
-
     return cells;
   },
 
-  classifyOutcome(sig) {
-    const o = String(sig.outcome || "").toUpperCase();
-    const st = String(sig.status || "").toUpperCase();
-    if (o.includes("TP") || o === "WIN" || st === "TP HIT" || st === "TP_HIT" || st === "WIN") return "TP WIN";
-    if (o.includes("SL") || o === "LOSS" || st === "SL HIT" || st === "SL_HIT" || st === "LOSS") return "SL LOSS";
-    return "OTHER";
+  formatDisplayDate(isoDate) {
+    const [y, m, d] = String(isoDate).split("-").map(Number);
+    const utcMs = Date.UTC(y, m - 1, d, 12, 0, 0);
+    return new Intl.DateTimeFormat("en-GB", {
+      timeZone: TradeMindConfig.timezone,
+      day: "2-digit",
+      month: "short",
+      year: "numeric"
+    }).format(new Date(utcMs)) + " (PKT)";
   },
 
-  getSignalDateKey(sig) {
-    const raw = sig.completedRaw || sig.completedPkt || sig.createdRaw || sig.pktTime || null;
-    return raw ? toPktDateKey(raw) : null;
-  },
-
-  getLimitDateKey(ord) {
-    const raw = ord.completedRaw || ord.expiredRaw || ord.activatedRaw || ord.createdRaw || null;
-    return raw ? toPktDateKey(raw) : null;
-  },
-
-  classifyLimitEvent(ord) {
-    const raw = String(ord.status || "").toUpperCase().trim();
-    if (raw === "TP HIT" || raw === "TP_HIT" || raw === "TP COMPLETED" || raw === "TP_COMPLETED" || raw === "WIN") return "TP_DONE";
-    if (raw === "SL HIT" || raw === "SL_HIT" || raw === "SL COMPLETED" || raw === "SL_COMPLETED" || raw === "LOSS") return "SL_DONE";
-    if (raw === "EXPIRED") return "EXPIRED";
-    if (raw === "INVALIDATED" || raw === "CANCELLED" || raw === "CANCELED") return "INVALIDATED";
-    if (raw === "PENDING" || raw === "NEW" || raw === "PLACED" || raw === "WAITING") return "PENDING";
-    if (raw === "ACTIVATED" || raw === "TRIGGERED" || raw === "ACTIVE" || raw === "OPEN" || raw === "FILLED") return "ACTIVATED";
-    return ord.activatedRaw ? "ACTIVATED" : "PENDING";
-  },
-
-  renderSignalsCalendar() {
-    const { year, month } = this.signalsMonth;
-    const monthLabelEl = document.getElementById("sigCalMonthLabel");
-    const gridEl = document.getElementById("sigCalGrid");
-    const todayIso = getPktDatePartsFromMs(Date.now()).iso;
-
-    const sampleDate = new Date(Date.UTC(year, month - 1, 15));
-    monthLabelEl.textContent = new Intl.DateTimeFormat("en-US", {
+  getMonthTitle(year, month) {
+    const utcMs = Date.UTC(year, month - 1, 15, 12, 0, 0);
+    return new Intl.DateTimeFormat("en-US", {
       timeZone: TradeMindConfig.timezone,
       month: "long",
       year: "numeric"
-    }).format(sampleDate) + " (PKT)";
+    }).format(new Date(utcMs));
+  },
 
-    const history = (TradeMindState.historySignals || []).filter(s => !isExcludedOneMinuteTf(s.tf));
-    const cells = this.buildMonthCells(year, month);
+  renderSignalsCalendar() {
+    this.ensureInitialized();
+    const { year, month } = this.monthYear.signals;
+    const selectedIso = this.selectedDate.signals;
+    const todayIso = getPktDatePartsFromMs(Date.now()).iso;
 
-    gridEl.innerHTML = cells.map(c => {
-      const dayItems = history.filter(s => this.getSignalDateKey(s) === c.iso);
-      const wins = dayItems.filter(s => this.classifyOutcome(s) === "TP WIN").length;
-      const losses = dayItems.filter(s => this.classifyOutcome(s) === "SL LOSS").length;
+    const monthLabel = document.getElementById("sigCalMonthLabel");
+    if (monthLabel) monthLabel.textContent = this.getMonthTitle(year, month);
 
-      const classes = [
-        "tm-cal-day",
-        c.inMonth ? "" : "muted",
-        c.iso === todayIso ? "today" : "",
-        c.iso === this.signalsSelectedDate ? "selected" : ""
-      ].filter(Boolean).join(" ");
+    const completedSignals = (TradeMindState.historySignals || []).filter(s => {
+      if (isExcludedOneMinuteTf(s.tf)) return false;
+      const cls = this.classifyOutcome(s);
+      return cls === "TP WIN" || cls === "SL LOSS";
+    });
 
-      const pills = [];
-      if (wins > 0) pills.push(`<span class="tm-cal-pill win">W:${wins}</span>`);
-      if (losses > 0) pills.push(`<span class="tm-cal-pill loss">L:${losses}</span>`);
+    const byDate = new Map();
+    completedSignals.forEach(s => {
+      const dateKey = toPktDateKey(s.completedRaw || s.completedPkt);
+      if (!dateKey) return;
+      if (!byDate.has(dateKey)) byDate.set(dateKey, []);
+      byDate.get(dateKey).push(s);
+    });
 
-      return `
-        <button type="button" class="${classes}" onclick="CalendarHistoryEngine.selectDate('signals', '${escapeHtml(c.iso)}')">
-          <span>${c.day}</span>
-          <span class="tm-cal-dots">${pills.join("")}</span>
-        </button>
-      `;
-    }).join("");
-
-    const selItems = history.filter(s => this.getSignalDateKey(s) === this.signalsSelectedDate);
-    const selWins = selItems.filter(s => this.classifyOutcome(s) === "TP WIN").length;
-    const selLosses = selItems.filter(s => this.classifyOutcome(s) === "SL LOSS").length;
-    const selDone = selWins + selLosses;
-    const selWr = selDone > 0 ? `${Math.round((selWins / selDone) * 100)}%` : "0%";
-
-    document.getElementById("sigDayWins").textContent = String(selWins);
-    document.getElementById("sigDayLosses").textContent = String(selLosses);
-    document.getElementById("sigDaySummary").textContent = `${selDone} · ${selWr}`;
-    document.getElementById("sigDayListTitle").textContent = `Signals on ${this.signalsSelectedDate}`;
-    document.getElementById("sigDayDateBadge").textContent = `${selItems.length} record${selItems.length === 1 ? "" : "s"} (PKT)`;
-
-    const listEl = document.getElementById("sigDayListContainer");
-    if (!selItems.length) {
-      listEl.innerHTML = `<div class="tm-empty">No closed signals recorded on ${escapeHtml(this.signalsSelectedDate)} (PKT).</div>`;
-    } else {
-      listEl.innerHTML = selItems.map(s => {
-        const cls = this.classifyOutcome(s);
-        const clsBadge = cls === "TP WIN" ? "badge-active" : (cls === "SL LOSS" ? "badge-sell" : "badge-closed");
-        const completedText = s.completedRaw ? formatPktDateTime(s.completedRaw) : (s.completedPkt || "--");
+    const gridEl = document.getElementById("sigCalGrid");
+    if (gridEl) {
+      const cells = this.buildMonthCells(year, month);
+      gridEl.innerHTML = cells.map(cell => {
+        const list = byDate.get(cell.iso) || [];
+        let wins = 0;
+        let losses = 0;
+        list.forEach(item => {
+          const cls = this.classifyOutcome(item);
+          if (cls === "TP WIN") wins += 1;
+          else if (cls === "SL LOSS") losses += 1;
+        });
+        const isToday = cell.iso === todayIso;
+        const isSelected = cell.iso === selectedIso;
         return `
-          <div class="tm-card" style="margin-bottom:8px;">
-            <div class="row-between">
-              <div class="row-inline">
-                <strong style="font-size:12.5px;">${escapeHtml(s.symbol)}</strong>
-                <span class="tm-badge ${s.direction.includes("BUY") || s.direction === "LONG" ? "badge-buy" : "badge-sell"}">${escapeHtml(s.direction)}</span>
-                <span class="tm-badge badge-closed">${escapeHtml(s.tf)}</span>
-              </div>
-              <span class="tm-badge ${clsBadge}">${escapeHtml(cls)}</span>
-            </div>
-            <div class="tm-meta-box">
-              <div class="tm-meta-line"><span class="tm-meta-lbl">Entry / SL / TP:</span><span class="tm-meta-val">${escapeHtml(s.entry)} / ${escapeHtml(s.sl)} / ${escapeHtml(s.tp)}</span></div>
-              <div class="tm-meta-line"><span class="tm-meta-lbl">Completed (PKT):</span><span class="tm-meta-val">${escapeHtml(completedText)}</span></div>
-            </div>
-          </div>
+          <button type="button"
+                  class="tm-cal-day ${cell.inMonth ? "" : "muted"} ${isToday ? "today" : ""} ${isSelected ? "selected" : ""}"
+                  onclick="CalendarHistoryEngine.selectDate('signals', '${cell.iso}')">
+            <span>${cell.day}</span>
+            <span class="tm-cal-dots">
+              ${wins > 0 ? `<span class="tm-cal-pill win">${wins}W</span>` : ""}
+              ${losses > 0 ? `<span class="tm-cal-pill loss">${losses}L</span>` : ""}
+            </span>
+          </button>
         `;
       }).join("");
+    }
+
+    const dayList = byDate.get(selectedIso) || [];
+    let dayWins = 0;
+    let dayLosses = 0;
+    dayList.forEach(s => {
+      const cls = this.classifyOutcome(s);
+      if (cls === "TP WIN") dayWins += 1;
+      else if (cls === "SL LOSS") dayLosses += 1;
+    });
+    const completedCount = dayWins + dayLosses;
+    const dayWr = completedCount > 0 ? Math.round((dayWins / completedCount) * 100) : 0;
+
+    const winsEl = document.getElementById("sigDayWins");
+    const lossesEl = document.getElementById("sigDayLosses");
+    const sumEl = document.getElementById("sigDaySummary");
+    const dateBadge = document.getElementById("sigDayDateBadge");
+    const listEl = document.getElementById("sigDayListContainer");
+
+    if (winsEl) winsEl.textContent = String(dayWins);
+    if (lossesEl) lossesEl.textContent = String(dayLosses);
+    if (sumEl) sumEl.textContent = `${completedCount} · ${dayWr}%`;
+    if (dateBadge) dateBadge.textContent = this.formatDisplayDate(selectedIso);
+
+    if (listEl) {
+      if (!dayList.length) {
+        listEl.innerHTML = `<div class="tm-empty">No completed signals recorded on ${escapeHtml(this.formatDisplayDate(selectedIso))}.</div>`;
+      } else {
+        listEl.innerHTML = dayList.map(s => {
+          const isBuy = s.direction.includes("BUY") || s.direction === "LONG";
+          const cls = this.classifyOutcome(s);
+          const createdDisp = s.createdRaw ? formatPktDateTime(s.createdRaw) : s.pktTime;
+          const completedDisp = s.completedRaw ? formatPktDateTime(s.completedRaw) : "--";
+          return `
+            <div class="tm-card" style="cursor:pointer;" onclick="SignalsEngine.openDetail('${escapeHtml(s.id)}')">
+              <div class="row-between">
+                <div class="row-inline">
+                  <strong style="font-size:13px;">${escapeHtml(s.symbol)}</strong>
+                  <span class="tm-badge ${isBuy ? "badge-buy" : "badge-sell"}">${escapeHtml(s.direction)}</span>
+                  <span class="tm-badge badge-closed">${escapeHtml(s.tf)}</span>
+                </div>
+                <span class="tm-badge ${cls === "TP WIN" ? "badge-active" : "badge-sell"}">${escapeHtml(cls)}</span>
+              </div>
+              <div class="tm-levels-grid">
+                <div><div class="tm-lvl-key">Entry</div><div class="tm-lvl-val">${escapeHtml(s.entry)}</div></div>
+                <div><div class="tm-lvl-key">SL</div><div class="tm-lvl-val" style="color:var(--bear);">${escapeHtml(s.sl)}</div></div>
+                <div><div class="tm-lvl-key">TP</div><div class="tm-lvl-val" style="color:var(--bull);">${escapeHtml(s.tp)}</div></div>
+                <div><div class="tm-lvl-key">R:R</div><div class="tm-lvl-val" style="color:var(--accent-dark);">${escapeHtml(s.rr)}</div></div>
+              </div>
+              <div class="tm-meta-box">
+                <div class="tm-meta-line"><span class="tm-meta-lbl">Created:</span><span class="tm-meta-val">${escapeHtml(createdDisp)}</span></div>
+                <div class="tm-meta-line"><span class="tm-meta-lbl">Completed:</span><span class="tm-meta-val">${escapeHtml(completedDisp)}</span></div>
+              </div>
+            </div>
+          `;
+        }).join("");
+      }
     }
   },
 
   renderLimitsCalendar() {
-    const { year, month } = this.limitsMonth;
-    const monthLabelEl = document.getElementById("limCalMonthLabel");
-    const gridEl = document.getElementById("limCalGrid");
+    this.ensureInitialized();
+    const { year, month } = this.monthYear.limits;
+    const selectedIso = this.selectedDate.limits;
     const todayIso = getPktDatePartsFromMs(Date.now()).iso;
 
-    const sampleDate = new Date(Date.UTC(year, month - 1, 15));
-    monthLabelEl.textContent = new Intl.DateTimeFormat("en-US", {
-      timeZone: TradeMindConfig.timezone,
-      month: "long",
-      year: "numeric"
-    }).format(sampleDate) + " (PKT)";
+    const monthLabel = document.getElementById("limCalMonthLabel");
+    if (monthLabel) monthLabel.textContent = this.getMonthTitle(year, month);
 
-    const allLimits = [...(TradeMindState.pendingLimits || []), ...(TradeMindState.historyLimits || [])]
-      .filter(o => !isExcludedOneMinuteTf(o.tf));
-    const uniqueLimits = [];
-    const seenIds = new Set();
-    allLimits.forEach(o => {
-      if (!o || !o.id) return;
-      if (!seenIds.has(String(o.id))) {
-        seenIds.add(String(o.id));
-        uniqueLimits.push(o);
+    const orderMap = new Map();
+    [...(TradeMindState.pendingLimits || []), ...(TradeMindState.historyLimits || [])].forEach(o => {
+      if (!o || isExcludedOneMinuteTf(o.tf)) return;
+      orderMap.set(String(o.id), o);
+    });
+    const allOrders = Array.from(orderMap.values());
+
+    const daySummary = new Map();
+    const ensureDay = iso => {
+      if (!iso) return null;
+      if (!daySummary.has(iso)) {
+        daySummary.set(iso, { activated: 0, tp: 0, sl: 0, pending: 0, expired: 0, invalidated: 0, orders: [] });
       }
+      return daySummary.get(iso);
+    };
+
+    allOrders.forEach(o => {
+      const st = String(o.status || "").toUpperCase();
+      const actIso = toPktDateKey(o.activatedRaw || o.activatedPkt);
+      const compIso = toPktDateKey(o.completedRaw || o.completedPkt);
+      const expIso = toPktDateKey(o.expiredRaw || o.expiredPkt);
+      const invIso = toPktDateKey(o.invalidatedRaw || o.invalidatedPkt);
+      const createdIso = toPktDateKey(o.createdRaw || o.createdPkt);
+
+      const touchedDates = new Set();
+
+      if (actIso) {
+        const d = ensureDay(actIso);
+        d.activated += 1;
+        touchedDates.add(actIso);
+      }
+
+      if (st.includes("TP") && compIso) {
+        const d = ensureDay(compIso);
+        d.tp += 1;
+        touchedDates.add(compIso);
+      } else if (st.includes("SL") && compIso) {
+        const d = ensureDay(compIso);
+        d.sl += 1;
+        touchedDates.add(compIso);
+      } else if (st === "EXPIRED" && expIso) {
+        const d = ensureDay(expIso);
+        d.expired += 1;
+        touchedDates.add(expIso);
+      } else if ((st === "INVALIDATED" || st === "CANCELLED") && (invIso || compIso)) {
+        const key = invIso || compIso;
+        const d = ensureDay(key);
+        d.invalidated += 1;
+        touchedDates.add(key);
+      } else if (st === "PENDING" && createdIso) {
+        const d = ensureDay(createdIso);
+        d.pending += 1;
+        touchedDates.add(createdIso);
+      }
+
+      touchedDates.forEach(iso => {
+        ensureDay(iso).orders.push(o);
+      });
     });
 
-    const cells = this.buildMonthCells(year, month);
-
-    gridEl.innerHTML = cells.map(c => {
-      const dayItems = uniqueLimits.filter(o => this.getLimitDateKey(o) === c.iso);
-      const actCount = dayItems.filter(o => this.classifyLimitEvent(o) === "ACTIVATED").length;
-      const tpSlCount = dayItems.filter(o => {
-        const ev = this.classifyLimitEvent(o);
-        return ev === "TP_DONE" || ev === "SL_DONE";
-      }).length;
-      const pendExpCount = dayItems.filter(o => {
-        const ev = this.classifyLimitEvent(o);
-        return ev === "PENDING" || ev === "EXPIRED" || ev === "INVALIDATED";
-      }).length;
-
-      const classes = [
-        "tm-cal-day",
-        c.inMonth ? "" : "muted",
-        c.iso === todayIso ? "today" : "",
-        c.iso === this.limitsSelectedDate ? "selected" : ""
-      ].filter(Boolean).join(" ");
-
-      const pills = [];
-      if (actCount > 0) pills.push(`<span class="tm-cal-pill act">A:${actCount}</span>`);
-      if (tpSlCount > 0) pills.push(`<span class="tm-cal-pill win">D:${tpSlCount}</span>`);
-      if (pendExpCount > 0) pills.push(`<span class="tm-cal-pill pend">P/E:${pendExpCount}</span>`);
-
-      return `
-        <button type="button" class="${classes}" onclick="CalendarHistoryEngine.selectDate('limits', '${escapeHtml(c.iso)}')">
-          <span>${c.day}</span>
-          <span class="tm-cal-dots">${pills.join("")}</span>
-        </button>
-      `;
-    }).join("");
-
-    const selItems = uniqueLimits.filter(o => this.getLimitDateKey(o) === this.limitsSelectedDate);
-    const selAct = selItems.filter(o => this.classifyLimitEvent(o) === "ACTIVATED").length;
-    const selTp = selItems.filter(o => this.classifyLimitEvent(o) === "TP_DONE").length;
-    const selSl = selItems.filter(o => this.classifyLimitEvent(o) === "SL_DONE").length;
-    const selPend = selItems.filter(o => this.classifyLimitEvent(o) === "PENDING").length;
-    const selExp = selItems.filter(o => this.classifyLimitEvent(o) === "EXPIRED").length;
-    const selInv = selItems.filter(o => this.classifyLimitEvent(o) === "INVALIDATED").length;
-
-    document.getElementById("limDayActivated").textContent = String(selAct);
-    document.getElementById("limDayTpSl").textContent = `${selTp} / ${selSl}`;
-    document.getElementById("limDayOther").textContent = `${selPend}/${selExp}/${selInv}`;
-    document.getElementById("limDayListTitle").textContent = `Limit Orders on ${this.limitsSelectedDate}`;
-    document.getElementById("limDayDateBadge").textContent = `${selItems.length} order${selItems.length === 1 ? "" : "s"} (PKT)`;
-
-    const listEl = document.getElementById("limDayListContainer");
-    if (!selItems.length) {
-      listEl.innerHTML = `<div class="tm-empty">No limit orders recorded on ${escapeHtml(this.limitsSelectedDate)} (PKT).</div>`;
-    } else {
-      listEl.innerHTML = selItems.map(o => {
-        const ev = this.classifyLimitEvent(o);
-        const createdText = o.createdRaw ? formatPktDateTime(o.createdRaw) : "--";
-        const activatedText = o.activatedRaw ? formatPktDateTime(o.activatedRaw) : "--";
-        const completedText = o.completedRaw ? formatPktDateTime(o.completedRaw) : "--";
-        const expiredText = o.expiredRaw ? formatPktDateTime(o.expiredRaw) : "--";
-        const invalidatedText = o.invalidatedRaw ? formatPktDateTime(o.invalidatedRaw) : "--";
+    const gridEl = document.getElementById("limCalGrid");
+    if (gridEl) {
+      const cells = this.buildMonthCells(year, month);
+      gridEl.innerHTML = cells.map(cell => {
+        const info = daySummary.get(cell.iso);
+        const isToday = cell.iso === todayIso;
+        const isSelected = cell.iso === selectedIso;
+        const doneCount = info ? (info.tp + info.sl) : 0;
+        const actCount = info ? info.activated : 0;
+        const pendCount = info ? info.pending : 0;
         return `
-          <div class="tm-card" style="margin-bottom:8px;">
-            <div class="row-between">
-              <div class="row-inline">
-                <strong style="font-size:12.5px;">${escapeHtml(o.symbol)}</strong>
-                <span class="tm-badge ${o.orderType.includes("BUY") ? "badge-buy" : "badge-sell"}">${escapeHtml(o.orderType)}</span>
-                <span class="tm-badge badge-closed">${escapeHtml(o.tf)}</span>
-              </div>
-              <span class="tm-badge ${badgeClass(o.status)}">${escapeHtml(ev)}</span>
-            </div>
-            <div class="tm-meta-box">
-              <div class="tm-meta-line"><span class="tm-meta-lbl">Entry / SL / TP:</span><span class="tm-meta-val">${escapeHtml(o.entry)} / ${escapeHtml(o.sl)} / ${escapeHtml(o.tp)}</span></div>
-              <div class="tm-meta-line"><span class="tm-meta-lbl">Created:</span><span class="tm-meta-val">${escapeHtml(createdText)}</span></div>
-              <div class="tm-meta-line"><span class="tm-meta-lbl">Activated:</span><span class="tm-meta-val">${escapeHtml(activatedText)}</span></div>
-              <div class="tm-meta-line"><span class="tm-meta-lbl">Completed:</span><span class="tm-meta-val">${escapeHtml(completedText)}</span></div>
-              <div class="tm-meta-line"><span class="tm-meta-lbl">Expired:</span><span class="tm-meta-val">${escapeHtml(expiredText)}</span></div>
-              <div class="tm-meta-line"><span class="tm-meta-lbl">Invalidated:</span><span class="tm-meta-val">${escapeHtml(invalidatedText)}</span></div>
-            </div>
-          </div>
+          <button type="button"
+                  class="tm-cal-day ${cell.inMonth ? "" : "muted"} ${isToday ? "today" : ""} ${isSelected ? "selected" : ""}"
+                  onclick="CalendarHistoryEngine.selectDate('limits', '${cell.iso}')">
+            <span>${cell.day}</span>
+            <span class="tm-cal-dots">
+              ${actCount > 0 ? `<span class="tm-cal-pill act">${actCount}A</span>` : ""}
+              ${doneCount > 0 ? `<span class="tm-cal-pill win">${doneCount}D</span>` : ""}
+              ${pendCount > 0 && !actCount && !doneCount ? `<span class="tm-cal-pill pend">${pendCount}P</span>` : ""}
+            </span>
+          </button>
         `;
       }).join("");
+    }
+
+    const sel = daySummary.get(selectedIso) || { activated: 0, tp: 0, sl: 0, pending: 0, expired: 0, invalidated: 0, orders: [] };
+    const actEl = document.getElementById("limDayActivated");
+    const tpSlEl = document.getElementById("limDayTpSl");
+    const otherEl = document.getElementById("limDayOther");
+    const dateBadge = document.getElementById("limDayDateBadge");
+    const listEl = document.getElementById("limDayListContainer");
+
+    if (actEl) actEl.textContent = String(sel.activated);
+    if (tpSlEl) tpSlEl.textContent = `${sel.tp} / ${sel.sl}`;
+    if (otherEl) otherEl.textContent = `${sel.pending}/${sel.expired}/${sel.invalidated}`;
+    if (dateBadge) dateBadge.textContent = this.formatDisplayDate(selectedIso);
+
+    if (listEl) {
+      if (!sel.orders.length) {
+        listEl.innerHTML = `<div class="tm-empty">No limit order activity recorded on ${escapeHtml(this.formatDisplayDate(selectedIso))}.</div>`;
+      } else {
+        listEl.innerHTML = sel.orders.map(o => {
+          const isBuy = o.orderType.includes("BUY");
+          const createdDisp = o.createdRaw ? formatPktDateTime(o.createdRaw) : o.createdPkt;
+          const activatedDisp = o.activatedRaw ? formatPktDateTime(o.activatedRaw) : o.activatedPkt;
+          const completedDisp = o.completedRaw ? formatPktDateTime(o.completedRaw) : o.completedPkt;
+          const expiredDisp = o.expiredRaw ? formatPktDateTime(o.expiredRaw) : o.expiresPkt;
+          const invalidatedDisp = o.invalidatedRaw ? formatPktDateTime(o.invalidatedRaw) : o.invalidatedPkt;
+          return `
+            <div class="tm-card">
+              <div class="row-between">
+                <div class="row-inline">
+                  <strong style="font-size:13px;">${escapeHtml(o.symbol)}</strong>
+                  <span class="tm-badge ${isBuy ? "badge-buy" : "badge-sell"}">${escapeHtml(o.orderType)}</span>
+                  <span class="tm-badge badge-closed">${escapeHtml(o.tf)}</span>
+                </div>
+                <span class="tm-badge ${badgeClass(o.status)}">${escapeHtml(o.status)}</span>
+              </div>
+              <div class="tm-levels-grid">
+                <div><div class="tm-lvl-key">Entry</div><div class="tm-lvl-val">${escapeHtml(o.entry)}</div></div>
+                <div><div class="tm-lvl-key">SL</div><div class="tm-lvl-val" style="color:var(--bear);">${escapeHtml(o.sl)}</div></div>
+                <div><div class="tm-lvl-key">TP</div><div class="tm-lvl-val" style="color:var(--bull);">${escapeHtml(o.tp)}</div></div>
+                <div><div class="tm-lvl-key">R:R</div><div class="tm-lvl-val" style="color:var(--accent-dark);">${escapeHtml(o.rr)}</div></div>
+              </div>
+              <div class="tm-meta-box">
+                <div class="tm-meta-line"><span class="tm-meta-lbl">Created:</span><span class="tm-meta-val">${escapeHtml(createdDisp)}</span></div>
+                ${activatedDisp ? `<div class="tm-meta-line"><span class="tm-meta-lbl">Activated:</span><span class="tm-meta-val">${escapeHtml(activatedDisp)}</span></div>` : ""}
+                ${completedDisp ? `<div class="tm-meta-line"><span class="tm-meta-lbl">Completed:</span><span class="tm-meta-val">${escapeHtml(completedDisp)}</span></div>` : ""}
+                ${expiredDisp ? `<div class="tm-meta-line"><span class="tm-meta-lbl">Expires / Expired:</span><span class="tm-meta-val">${escapeHtml(expiredDisp)}</span></div>` : ""}
+                ${invalidatedDisp ? `<div class="tm-meta-line"><span class="tm-meta-lbl">Invalidated:</span><span class="tm-meta-val">${escapeHtml(invalidatedDisp)}</span></div>` : ""}
+              </div>
+            </div>
+          `;
+        }).join("");
+      }
     }
   },
 
   render() {
-    this.ensureInitialized();
     this.renderSignalsCalendar();
     this.renderLimitsCalendar();
   }
@@ -5805,21 +6800,34 @@ const CalendarHistoryEngine = {
 
 /* PERFORMANCE ENGINE */
 const PerformanceEngine = {
+  async refresh(manual = false) {
+    if (manual) {
+      await TradeMindApp.refreshAll(true);
+    } else {
+      this.render();
+    }
+  },
+
   render() {
     const perf = TradeMindState.performance;
-    const total = perf && perf.total !== undefined ? perf.total : "--";
-    const winRate = perf && perf.win_rate !== undefined && perf.win_rate !== null
-      ? (typeof perf.win_rate === "number" ? `${perf.win_rate}%` : String(perf.win_rate))
-      : "--";
-    const wins = perf && perf.wins !== undefined ? perf.wins : "--";
-    const active = perf && perf.active !== undefined ? perf.active : "--";
-    const losses = perf && perf.losses !== undefined ? perf.losses : "--";
-    const closed = perf && perf.closed !== undefined ? perf.closed : "--";
+    const totalEl = document.getElementById("perfTotalCount");
+    const wrEl = document.getElementById("perfWinRate");
+    const waEl = document.getElementById("perfWinActiveCount");
+    const lcEl = document.getElementById("perfLossClosedCount");
 
-    document.getElementById("perfTotalCount").textContent = String(total);
-    document.getElementById("perfWinRate").textContent = winRate;
-    document.getElementById("perfWinActiveCount").textContent = `${wins} / ${active}`;
-    document.getElementById("perfLossClosedCount").textContent = `${losses} / ${closed}`;
+    if (!perf) {
+      totalEl.textContent = "--";
+      wrEl.textContent = "--";
+      waEl.textContent = "--";
+      lcEl.textContent = "--";
+    } else {
+      totalEl.textContent = String(perf.total ?? "--");
+      wrEl.textContent = perf.win_rate !== undefined && perf.win_rate !== null
+        ? (typeof perf.win_rate === "number" ? `${perf.win_rate}%` : String(perf.win_rate))
+        : "--";
+      waEl.textContent = `${perf.wins ?? "--"} / ${perf.active ?? "--"}`;
+      lcEl.textContent = `${perf.losses ?? "--"} / ${perf.closed ?? "--"}`;
+    }
 
     if (typeof AdvancedAnalyticsEngine !== "undefined") {
       AdvancedAnalyticsEngine.render();
@@ -5835,43 +6843,39 @@ const PerformanceEngine = {
     }
 
     const histEl = document.getElementById("perfHistoryContainer");
-    const visibleHistory = (TradeMindState.historySignals || []).filter(s => !isExcludedOneMinuteTf(s.tf));
-    if (!visibleHistory.length) {
+    const closedList = TradeMindState.historySignals || [];
+    if (!closedList.length) {
       histEl.innerHTML = TradeMindState.backendOnline
-        ? `<div class="tm-empty">No closed signals recorded yet.</div>`
-        : `<div class="tm-empty">Backend offline. Closed signal history unavailable.</div>`;
+        ? `<div class="tm-sec-meta">No closed signal history yet.</div>`
+        : `<div class="tm-sec-meta">Backend offline. History unavailable.</div>`;
     } else {
-      histEl.innerHTML = visibleHistory.map(renderSignalCard).join("");
+      histEl.innerHTML = closedList.map(s => {
+        const isBuy = s.direction.includes("BUY") || s.direction === "LONG";
+        const completedDisp = s.completedRaw ? formatPktDateTime(s.completedRaw) : s.pktTime;
+        return `
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-top:1px solid #eef2f6;">
+            <div>
+              <strong style="font-size:12.5px;">${escapeHtml(s.symbol)} · ${escapeHtml(s.tf)}</strong>
+              <div style="font-size:11px;color:var(--text-secondary);">Entry: ${escapeHtml(s.entry)} · SL: ${escapeHtml(s.sl)} · TP: ${escapeHtml(s.tp)}</div>
+              <div style="font-size:10.5px;color:var(--text-muted);">Completed: ${escapeHtml(completedDisp)}</div>
+            </div>
+            <div style="text-align:right;">
+              <span class="tm-badge ${isBuy ? "badge-buy" : "badge-sell"}">${escapeHtml(s.direction)}</span>
+              <div style="font-size:10.5px;font-weight:700;margin-top:3px;color:var(--text-secondary);">${escapeHtml(s.outcome || s.status)}</div>
+            </div>
+          </div>
+        `;
+      }).join("");
     }
-  },
-
-  async refresh(force = false) {
-    if (!TradeMindState.backendOnline) {
-      this.render();
-      return;
-    }
-    try {
-      const [perfData, histData] = await Promise.all([
-        TradeMindApi.getSignalPerformance(),
-        TradeMindApi.getSignalHistory()
-      ]);
-      TradeMindState.performance = perfData;
-      const list = Array.isArray(histData) ? histData : (histData.history || histData.signals || []);
-      TradeMindState.historySignals = list
-        .map(s => normalizeSignalRecord(s, "CLOSED"))
-        .filter(s => !isExcludedOneMinuteTf(s.tf));
-      TradeMindState.lastSyncPkt = getPktClock();
-      updateGlobalBanner();
-    } catch (_) {}
-    this.render();
   }
 };
 
 /* PREFERENCES ENGINE */
 const PreferencesEngine = {
-  defaultMarket: "XAUUSD",
-  defaultTimeframe: "15M",
-  riskPercent: 1.0,
+  _storageKey: "trademind_user_prefs_v1",
+  market: "XAUUSD",
+  timeframe: "15M",
+  riskPercent: "1.00%",
   pollIntervalMs: 20000,
   notificationsEnabled: false,
   eventToggles: {
@@ -5886,26 +6890,33 @@ const PreferencesEngine = {
     limit_expired: true,
     trade_completed: true
   },
-  _storageKey: "trademind_prefs_v1",
 
   load() {
     try {
       const raw = localStorage.getItem(this._storageKey);
       if (!raw) return;
-      const p = JSON.parse(raw);
-      if (p && typeof p === "object") {
-        if (p.apiBaseUrl) TradeMindConfig.apiBaseUrl = String(p.apiBaseUrl).replace(/\/+$/, "");
-        if (p.defaultMarket) this.defaultMarket = String(p.defaultMarket).toUpperCase();
-        if (p.defaultTimeframe && !isExcludedOneMinuteTf(p.defaultTimeframe)) {
-          this.defaultTimeframe = String(p.defaultTimeframe).toUpperCase();
+      const d = JSON.parse(raw);
+      if (d && typeof d === "object") {
+        if (d.apiBaseUrl && typeof d.apiBaseUrl === "string") {
+          TradeMindConfig.apiBaseUrl = d.apiBaseUrl.trim().replace(/\/+$/, "");
         }
-        if (typeof p.riskPercent === "number" && Number.isFinite(p.riskPercent)) this.riskPercent = p.riskPercent;
-        if (typeof p.pollIntervalMs === "number" && Number.isFinite(p.pollIntervalMs)) this.pollIntervalMs = p.pollIntervalMs;
-        if (typeof p.notificationsEnabled === "boolean") this.notificationsEnabled = p.notificationsEnabled;
-        if (p.eventToggles && typeof p.eventToggles === "object") {
+        if (d.market && TradeMindConfig.supportedMarkets.includes(d.market)) {
+          this.market = d.market;
+        }
+        if (d.timeframe && TradeMindConfig.supportedTimeframes.includes(d.timeframe) && !isExcludedOneMinuteTf(d.timeframe)) {
+          this.timeframe = d.timeframe;
+        }
+        if (d.riskPercent) this.riskPercent = d.riskPercent;
+        if (Number.isFinite(Number(d.pollIntervalMs)) && Number(d.pollIntervalMs) >= 5000) {
+          this.pollIntervalMs = Number(d.pollIntervalMs);
+        }
+        if (typeof d.notificationsEnabled === "boolean") {
+          this.notificationsEnabled = d.notificationsEnabled;
+        }
+        if (d.eventToggles && typeof d.eventToggles === "object") {
           EVENT_NOTIFICATION_DEFINITIONS.forEach(def => {
-            if (typeof p.eventToggles[def.key] === "boolean") {
-              this.eventToggles[def.key] = p.eventToggles[def.key];
+            if (typeof d.eventToggles[def.key] === "boolean") {
+              this.eventToggles[def.key] = d.eventToggles[def.key];
             }
           });
         }
@@ -5917,8 +6928,8 @@ const PreferencesEngine = {
     try {
       localStorage.setItem(this._storageKey, JSON.stringify({
         apiBaseUrl: TradeMindConfig.apiBaseUrl,
-        defaultMarket: this.defaultMarket,
-        defaultTimeframe: this.defaultTimeframe,
+        market: this.market,
+        timeframe: this.timeframe,
         riskPercent: this.riskPercent,
         pollIntervalMs: this.pollIntervalMs,
         notificationsEnabled: this.notificationsEnabled,
@@ -5928,371 +6939,395 @@ const PreferencesEngine = {
   },
 
   isEventEnabled(eventKey) {
-    if (!this.notificationsEnabled) return false;
     return this.eventToggles[eventKey] !== false;
   },
 
-  toggleEventNotification(eventKey) {
-    if (!eventKey) return;
-    const nextVal = !(this.eventToggles[eventKey] !== false);
-    this.eventToggles[eventKey] = nextVal;
+  toggleEventKey(eventKey) {
+    this.eventToggles[eventKey] = !this.isEventEnabled(eventKey);
     this.save();
-    if (nextVal && typeof SignalNotificationTracker !== "undefined") {
+    this.renderEventToggles();
+    if (this.eventToggles[eventKey]) {
       SignalNotificationTracker.unSuppressUserPrefEvents();
-      SignalNotificationTracker.evaluateAllEvents(true);
+      SignalNotificationTracker.evaluateAllEvents(TradeMindApp._initialSyncDone);
     }
-    this.syncUi();
-  },
-
-  applyInitialDefaults() {
-    TvChart.symbol = this.defaultMarket;
-    TvChart.timeframe = isExcludedOneMinuteTf(this.defaultTimeframe) ? "15M" : this.defaultTimeframe;
-    if (Array.isArray(TradeMindState.markets)) {
-      TradeMindState.markets.forEach(m => { m.selected = (m.symbol === TvChart.symbol); });
+    if (typeof NativeFcmManager !== "undefined" && NativeFcmManager.deviceAccessToken) {
+      NativeFcmManager.pushPreferencesToBackend();
     }
-    document.querySelectorAll("#chartSymbolStrip .tm-chip").forEach(c => c.classList.toggle("active", c.dataset.sym === TvChart.symbol));
-    document.querySelectorAll("#chartTimeframeStrip .tm-chip").forEach(c => c.classList.toggle("active", c.dataset.tf === TvChart.timeframe));
-    this.syncUi();
   },
 
-  setMarket(m) {
-    this.defaultMarket = m;
-    TvChart.setSymbol(m);
-    this.save();
-    this.syncUi();
+  renderEventToggles() {
+    const container = document.getElementById("prefEventTogglesContainer");
+    if (!container) return;
+    container.innerHTML = EVENT_NOTIFICATION_DEFINITIONS.map(def => {
+      const isOn = this.isEventEnabled(def.key);
+      return `
+        <div class="tm-event-row">
+          <div>
+            <div class="tm-event-title">${escapeHtml(def.label)}</div>
+            <div class="tm-event-sub">${escapeHtml(def.desc)}</div>
+          </div>
+          <button type="button"
+                  class="tm-mini-switch ${isOn ? "is-on" : "is-off"}"
+                  onclick="PreferencesEngine.toggleEventKey('${escapeHtml(def.key)}')">
+            ${isOn ? "ON" : "OFF"}
+          </button>
+        </div>
+      `;
+    }).join("");
   },
 
-  setTimeframe(tf) {
-    if (isExcludedOneMinuteTf(tf)) return;
-    this.defaultTimeframe = tf;
-    TvChart.setTimeframe(tf);
-    this.save();
-    this.syncUi();
-  },
+  syncUi() {
+    const urlInput = document.getElementById("prefApiUrlInput");
+    if (urlInput) urlInput.value = TradeMindConfig.apiBaseUrl;
+    const pollSel = document.getElementById("prefPollIntervalSelect");
+    if (pollSel) pollSel.value = String(this.pollIntervalMs);
+    document.querySelectorAll("#prefMarketStrip .tm-chip").forEach(c => c.classList.toggle("active", c.dataset.m === this.market));
+    document.querySelectorAll("#prefTfStrip .tm-chip").forEach(c => c.classList.toggle("active", c.dataset.tf === this.timeframe));
+    const riskDisp = document.getElementById("prefRiskDisplay");
+    if (riskDisp) riskDisp.textContent = this.riskPercent;
 
-  setRisk(val) {
-    const num = parseFloat(val);
-    if (!Number.isFinite(num)) return;
-    this.riskPercent = num;
-    this.save();
-    this.syncUi();
+    const btn = document.getElementById("prefEnableNotifBtn");
+    const statusText = document.getElementById("prefNotifStatusText");
+    if (btn && statusText) {
+      const nativeFcmReady = typeof NativeFcmManager !== "undefined" &&
+        NativeFcmManager.isCapacitorNativeAndroid() &&
+        NativeFcmManager.fcmRegistered;
+
+      if (nativeFcmReady) {
+        btn.textContent = this.notificationsEnabled ? "Enabled" : "Disabled";
+        btn.classList.toggle("active", this.notificationsEnabled);
+        statusText.textContent = this.notificationsEnabled
+          ? "Native Android FCM push active (works in background/closed)"
+          : "Notifications paused by master toggle";
+      } else if (!("Notification" in window)) {
+        btn.textContent = "Unsupported";
+        statusText.textContent = "Browser notifications unavailable; pair native Android app for background FCM";
+      } else if (Notification.permission === "denied") {
+        btn.textContent = "Blocked";
+        statusText.textContent = "Permission blocked in browser settings";
+      } else if (this.notificationsEnabled && Notification.permission === "granted") {
+        btn.textContent = "Enabled";
+        btn.classList.add("active");
+        statusText.textContent = "Active while app/browser is open (pair native Android app for background FCM)";
+      } else {
+        btn.textContent = "Enable";
+        btn.classList.remove("active");
+        statusText.textContent = "Foreground browser alerts only; pair Android APK for background FCM";
+      }
+    }
+    this.renderEventToggles();
   },
 
   saveApiUrl() {
     const input = document.getElementById("prefApiUrlInput");
     if (!input) return;
-    const clean = String(input.value || "").trim().replace(/\/+$/, "");
-    if (!clean) return;
-    TradeMindConfig.apiBaseUrl = clean;
+    const cleaned = input.value.trim().replace(/\/+$/, "");
+    if (!cleaned || !/^https?:\/\//i.test(cleaned)) {
+      alert("Please enter a valid http:// or https:// backend URL.");
+      return;
+    }
+    TradeMindConfig.apiBaseUrl = cleaned;
     this.save();
-    this.syncUi();
+    if (typeof NativeFcmManager !== "undefined" && NativeFcmManager.deviceAccessToken) {
+      NativeFcmManager.fcmRegistered = false;
+      NativeFcmManager.lastRegisteredBaseUrl = null;
+      NativeFcmManager.retryFcmRegistration();
+      NativeFcmManager.pullPreferencesFromBackend();
+    }
     TradeMindApp.refreshAll(true);
   },
 
   setPollInterval(val) {
-    const ms = Number(val);
-    if (!Number.isFinite(ms) || ms < 5000) return;
-    this.pollIntervalMs = ms;
+    const num = Number(val);
+    if (!Number.isFinite(num) || num < 5000) return;
+    this.pollIntervalMs = num;
     this.save();
     TradeMindApp.restartPolling();
-    this.syncUi();
   },
 
   async toggleNotifications() {
-    if (!("Notification" in window)) {
+    if (typeof NativeFcmManager !== "undefined" && NativeFcmManager.isCapacitorNativeAndroid()) {
+      if (!NativeFcmManager.fcmRegistered && NativeFcmManager.deviceAccessToken) {
+        await NativeFcmManager.retryFcmRegistration();
+      }
+      this.notificationsEnabled = !this.notificationsEnabled;
+      this.save();
       this.syncUi();
+      if (NativeFcmManager.deviceAccessToken) {
+        await NativeFcmManager.pushPreferencesToBackend();
+      }
       return;
     }
 
+    if (!("Notification" in window)) return;
     if (this.notificationsEnabled) {
       this.notificationsEnabled = false;
       this.save();
       this.syncUi();
+      if (typeof NativeFcmManager !== "undefined" && NativeFcmManager.deviceAccessToken) {
+        NativeFcmManager.pushPreferencesToBackend();
+      }
       return;
     }
-
-    if (Notification.permission === "granted") {
+    let perm = Notification.permission;
+    if (perm === "default") {
+      perm = await Notification.requestPermission();
+    }
+    if (perm === "granted") {
       this.notificationsEnabled = true;
       this.save();
-      if (typeof SignalNotificationTracker !== "undefined") {
-        SignalNotificationTracker.unSuppressUserPrefEvents();
-        SignalNotificationTracker.evaluateAllEvents(true);
+      SignalNotificationTracker.evaluateAllEvents(TradeMindApp._initialSyncDone);
+      if (typeof NativeFcmManager !== "undefined" && NativeFcmManager.deviceAccessToken) {
+        NativeFcmManager.pushPreferencesToBackend();
       }
-      this.syncUi();
-      return;
     }
-
-    if (Notification.permission === "denied") {
-      this.notificationsEnabled = false;
-      this.save();
-      this.syncUi();
-      return;
-    }
-
-    try {
-      const perm = await Notification.requestPermission();
-      this.notificationsEnabled = (perm === "granted");
-      this.save();
-      if (this.notificationsEnabled && typeof SignalNotificationTracker !== "undefined") {
-        SignalNotificationTracker.unSuppressUserPrefEvents();
-        SignalNotificationTracker.evaluateAllEvents(true);
-      }
-      this.syncUi();
-    } catch (_) {
-      this.syncUi();
-    }
+    this.syncUi();
   },
 
-  testNotification() {
+  async testNotification() {
     if (!("Notification" in window)) {
-      alert("Notifications are not supported in this browser.");
+      alert("Browser notifications are not supported on this device.");
       return;
     }
-    if (Notification.permission !== "granted") {
-      alert("Please enable notifications and allow permission first.");
+    let perm = Notification.permission;
+    if (perm === "default") {
+      perm = await Notification.requestPermission();
+    }
+    if (perm !== "granted") {
+      alert("Please allow notification permission first.");
+      this.syncUi();
       return;
     }
-    try {
-      new Notification("TradeMind Test Alert", {
-        body: `Active session notifications working · ${getPktClock()}`,
-        tag: "tm-test-alert"
-      });
-    } catch (_) {}
+    this.notificationsEnabled = true;
+    this.save();
+    this.syncUi();
+    new Notification("TradeMind — TEST NOTIFICATION", {
+      body: `XAUUSD · BUY · 15M\nNotifications active (${getPktClock()})`
+    });
+  },
+
+  setMarket(m) {
+    this.market = m;
+    this.save();
+    document.querySelectorAll("#prefMarketStrip .tm-chip").forEach(c => c.classList.toggle("active", c.dataset.m === m));
+    TvChart.setSymbol(m);
+  },
+
+  setTimeframe(tf) {
+    if (isExcludedOneMinuteTf(tf)) return;
+    this.timeframe = tf;
+    this.save();
+    document.querySelectorAll("#prefTfStrip .tm-chip").forEach(c => c.classList.toggle("active", c.dataset.tf === tf));
+    TvChart.setTimeframe(tf);
+  },
+
+  setRisk(val) {
+    this.riskPercent = `${Number(val).toFixed(2)}%`;
+    this.save();
+    document.getElementById("prefRiskDisplay").textContent = this.riskPercent;
   },
 
   resetLocalSettings() {
-    try {
-      localStorage.removeItem(this._storageKey);
-      localStorage.removeItem(TvChart._storageKey);
-      if (typeof SignalNotificationTracker !== "undefined") {
-        SignalNotificationTracker.resetBaseline();
-      }
-    } catch (_) {}
-    TradeMindConfig.apiBaseUrl = "http://127.0.0.1:8000";
-    this.defaultMarket = "XAUUSD";
-    this.defaultTimeframe = "15M";
-    this.riskPercent = 1.0;
+    localStorage.removeItem(this._storageKey);
+    localStorage.removeItem(TvChart._storageKey);
+    localStorage.removeItem(DailyRiskMonitor._storageKey);
+    SignalNotificationTracker.resetBaseline();
+    TradeMindConfig.apiBaseUrl = BACKEND_BASE_URL;
+    this.market = "XAUUSD";
+    this.timeframe = "15M";
+    this.riskPercent = "1.00%";
     this.pollIntervalMs = 20000;
     this.notificationsEnabled = false;
     EVENT_NOTIFICATION_DEFINITIONS.forEach(def => {
       this.eventToggles[def.key] = true;
     });
-    this.applyInitialDefaults();
+    this.syncUi();
+    TvChart.resetViewport();
+    TvChart.clearDrawings();
     TradeMindApp.restartPolling();
     TradeMindApp.refreshAll(true);
-  },
-
-  syncUi() {
-    document.querySelectorAll("#prefMarketStrip .tm-chip").forEach(c => {
-      c.classList.toggle("active", c.dataset.m === this.defaultMarket);
-    });
-    document.querySelectorAll("#prefTfStrip .tm-chip").forEach(c => {
-      c.classList.toggle("active", c.dataset.tf === this.defaultTimeframe);
-    });
-    const riskEl = document.getElementById("prefRiskDisplay");
-    if (riskEl) riskEl.textContent = `${this.riskPercent.toFixed(2)}%`;
-
-    const urlInput = document.getElementById("prefApiUrlInput");
-    if (urlInput) urlInput.value = TradeMindConfig.apiBaseUrl;
-
-    const pollSel = document.getElementById("prefPollIntervalSelect");
-    if (pollSel) pollSel.value = String(this.pollIntervalMs);
-
-    const btn = document.getElementById("prefEnableNotifBtn");
-    const statusText = document.getElementById("prefNotifStatusText");
-    if (btn && statusText) {
-      if (!("Notification" in window)) {
-        btn.textContent = "Unsupported";
-        statusText.textContent = "Browser does not support notifications";
-      } else if (Notification.permission === "denied") {
-        btn.textContent = "Blocked";
-        statusText.textContent = "Permission blocked in browser settings";
-      } else if (this.notificationsEnabled && Notification.permission === "granted") {
-        btn.textContent = "Disable";
-        statusText.textContent = "Enabled for active app session";
-      } else {
-        btn.textContent = "Enable";
-        statusText.textContent = "Disabled — tap Enable to allow alerts";
-      }
-    }
-
-    const togglesContainer = document.getElementById("prefEventTogglesContainer");
-    if (togglesContainer) {
-      togglesContainer.innerHTML = EVENT_NOTIFICATION_DEFINITIONS.map(def => {
-        const enabled = this.isEventEnabled(def.key);
-        return `
-          <div class="tm-event-row">
-            <div>
-              <div class="tm-event-title">${escapeHtml(def.label)}</div>
-              <div class="tm-event-sub">${escapeHtml(def.desc)}</div>
-            </div>
-            <button type="button"
-                    class="tm-mini-switch ${enabled ? "is-on" : "is-off"}"
-                    onclick="PreferencesEngine.toggleEventNotification('${escapeHtml(def.key)}')">
-              ${enabled ? "ON" : "OFF"}
-            </button>
-          </div>
-        `;
-      }).join("");
-    }
-
-    if (typeof SystemHealthMonitor !== "undefined") {
-      SystemHealthMonitor.render();
-    }
   }
 };
 
 /* ROUTER */
 const TradeMindRouter = {
-  go(viewName) {
+  go(viewId) {
     document.querySelectorAll(".tm-view").forEach(v => v.classList.remove("active"));
-    const target = document.getElementById(`view-${viewName}`);
+    document.querySelectorAll(".tm-nav-item").forEach(b => b.classList.remove("active"));
+    const target = document.getElementById(`view-${viewId}`);
     if (target) target.classList.add("active");
+    const btn = document.querySelector(`.tm-nav-item[data-view="${viewId}"]`);
+    if (btn) btn.classList.add("active");
 
-    document.querySelectorAll(".tm-nav-item").forEach(item => {
-      item.classList.toggle("active", item.dataset.view === viewName);
-    });
-
-    if (viewName === "home") HomeEngine.render();
-    if (viewName === "charts") {
-      TvChart.updateMonitoredBanner();
-      TvChart.updateCountdown();
+    if (viewId === "charts") {
+      TvChart.bindEvents();
       TvChart.render();
-      TvChart.loadCandles(true, false);
-    }
-    if (viewName === "signals") SignalsEngine.render();
-    if (viewName === "limits") LimitsEngine.render();
-    if (viewName === "performance") PerformanceEngine.refresh(false);
-    if (viewName === "settings") {
+      TvChart.loadCandles(false, false);
+    } else if (viewId === "signals") {
+      SignalsEngine.render();
+    } else if (viewId === "limits") {
+      LimitsEngine.render();
+    } else if (viewId === "performance") {
+      PerformanceEngine.render();
+    } else if (viewId === "settings") {
       PreferencesEngine.syncUi();
-      updateGlobalBanner();
+      if (typeof NativeFcmManager !== "undefined") NativeFcmManager.renderUi();
+      SystemHealthMonitor.render();
     }
   }
 };
 
-/* APP ORCHESTRATOR */
+/* MAIN APPLICATION CONTROLLER */
 const TradeMindApp = {
   _pollTimer: null,
   _clockTimer: null,
-  _hadInitialSync: false,
+  _initialSyncDone: false,
 
-  async refreshAll(force = false) {
-    let healthOk = false;
+  async refreshAll(includeCandles = false) {
+    document.getElementById("tmPktClock").textContent = getPktClock();
+
     try {
       await TradeMindApi.getHealth();
-      healthOk = true;
       TradeMindState.backendOnline = true;
+      TradeMindState.authRequired = false;
       TradeMindState.lastBackendError = null;
     } catch (err) {
       TradeMindState.backendOnline = false;
-      TradeMindState.lastBackendError = err && err.message ? err.message : "Backend unreachable";
+      if (err && err.status === 401) {
+        TradeMindState.authRequired = true;
+        TradeMindState.lastBackendError = TradeMindApi.getDeviceToken()
+          ? "Device token rejected (401). Re-pair device in Settings."
+          : "Device authentication required (401). Pair device in Settings.";
+      } else {
+        TradeMindState.authRequired = false;
+        TradeMindState.lastBackendError = err && err.message ? err.message : "Health check failed";
+      }
     }
 
-    if (!healthOk) {
-      updateGlobalBanner();
-      HomeEngine.render();
-      SignalsEngine.render();
-      LimitsEngine.render();
-      PerformanceEngine.render();
-      TvChart.updateCountdown();
-      TvChart.updateHeader();
-      TvChart.render();
-      return;
-    }
-
-    const results = await Promise.allSettled([
+    const [marketsRes, tfRes, activeRes, historyRes, perfRes, pendingLimRes, historyLimRes] = await Promise.allSettled([
       TradeMindApi.getMarkets(),
       TradeMindApi.getTimeframes(),
       TradeMindApi.getActiveSignals(),
       TradeMindApi.getSignalHistory(),
+      TradeMindApi.getSignalPerformance(),
       TradeMindApi.getPendingLimits(),
-      TradeMindApi.getLimitHistory(),
-      TradeMindApi.getSignalPerformance()
+      TradeMindApi.getLimitHistory()
     ]);
 
-    if (results[0].status === "fulfilled") {
-      const mList = normalizeMarketList(results[0].value);
-      if (mList.length) {
-        const activeSym = TvChart.symbol || PreferencesEngine.defaultMarket;
-        mList.forEach(m => { m.selected = (m.symbol === activeSym); });
-        TradeMindState.markets = mList;
-        document.getElementById("tmHeaderSubtitle").textContent = mList.map(m => m.symbol).join(" · ");
-        mList.forEach(m => {
-          if (m.price !== null && m.price !== undefined && m.price !== "") {
-            const pNum = Number(m.price);
-            if (Number.isFinite(pNum) && TvChart.symbol === m.symbol) {
-              TvChart.applyRealPriceTick(pNum, getPktClock());
-            }
-          }
-        });
+    const anyUnauthorized = [marketsRes, tfRes, activeRes, historyRes, perfRes, pendingLimRes, historyLimRes]
+      .some(r => r.status === "rejected" && r.reason && r.reason.status === 401);
+
+    if (anyUnauthorized) {
+      TradeMindState.backendOnline = false;
+      TradeMindState.authRequired = true;
+      TradeMindState.lastBackendError = TradeMindApi.getDeviceToken()
+        ? "Device token rejected (401). Re-pair device in Settings."
+        : "Device authentication required (401). Pair device in Settings.";
+    }
+
+    let anySuccess = false;
+
+    if (marketsRes.status === "fulfilled") {
+      anySuccess = true;
+      const rawM = marketsRes.value.markets ?? marketsRes.value.symbols ?? marketsRes.value;
+      const normalized = normalizeMarketList(rawM).filter(m => TradeMindConfig.supportedMarkets.includes(m.symbol));
+      normalized.forEach(m => { m.selected = (m.symbol === TvChart.symbol); });
+      TradeMindState.markets = normalized;
+      if (normalized.length) {
+        document.getElementById("tmHeaderSubtitle").textContent = normalized.map(m => m.symbol).join(" · ");
+      }
+      const activeChartMarket = normalized.find(m => m.symbol === TvChart.symbol);
+      if (activeChartMarket && activeChartMarket.price) {
+        TvChart.applyRealPriceTick(activeChartMarket.price, getPktClock());
+      }
+    } else if (!TradeMindState.backendOnline) {
+      TradeMindState.markets = [];
+    }
+
+    if (tfRes.status === "fulfilled") {
+      anySuccess = true;
+      const rawTf = tfRes.value.timeframes ?? tfRes.value;
+      if (Array.isArray(rawTf)) {
+        const filtered = rawTf
+          .map(t => String(t).toUpperCase())
+          .filter(t => TradeMindConfig.supportedTimeframes.includes(t) && !isExcludedOneMinuteTf(t));
+        if (filtered.length) TradeMindState.timeframes = filtered;
       }
     }
 
-    if (results[1].status === "fulfilled") {
-      const tfPayload = results[1].value;
-      const tfs = Array.isArray(tfPayload) ? tfPayload : (tfPayload.timeframes || []);
-      const cleanTfs = tfs
-        .map(t => String(t).toUpperCase())
-        .filter(t => TradeMindConfig.supportedTimeframes.includes(t) && !isExcludedOneMinuteTf(t));
-      if (cleanTfs.length) TradeMindState.timeframes = cleanTfs;
+    if (activeRes.status === "fulfilled") {
+      anySuccess = true;
+      const rawAct = activeRes.value.signals ?? activeRes.value.items ?? activeRes.value;
+      const normalizedActive = Array.isArray(rawAct)
+        ? rawAct.map(r => normalizeSignalRecord(r, "ACTIVE")).filter(s => !isExcludedOneMinuteTf(s.tf))
+        : [];
+      TradeMindState.activeSignals = normalizedActive;
+    } else if (!TradeMindState.backendOnline) {
+      TradeMindState.activeSignals = [];
     }
 
-    if (results[2].status === "fulfilled") {
-      const sPayload = results[2].value;
-      const list = Array.isArray(sPayload) ? sPayload : (sPayload.signals || sPayload.active || []);
-      TradeMindState.activeSignals = list
-        .map(s => normalizeSignalRecord(s, "ACTIVE"))
-        .filter(s => !isExcludedOneMinuteTf(s.tf));
+    if (historyRes.status === "fulfilled") {
+      anySuccess = true;
+      const rawHist = historyRes.value.history ?? historyRes.value.signals ?? historyRes.value.items ?? historyRes.value;
+      TradeMindState.historySignals = Array.isArray(rawHist)
+        ? rawHist.map(r => normalizeSignalRecord(r, "CLOSED")).filter(s => !isExcludedOneMinuteTf(s.tf))
+        : [];
+    } else if (!TradeMindState.backendOnline) {
+      TradeMindState.historySignals = [];
     }
 
-    if (results[3].status === "fulfilled") {
-      const hPayload = results[3].value;
-      const list = Array.isArray(hPayload) ? hPayload : (hPayload.history || hPayload.signals || []);
-      TradeMindState.historySignals = list
-        .map(s => normalizeSignalRecord(s, "CLOSED"))
-        .filter(s => !isExcludedOneMinuteTf(s.tf));
+    if (perfRes.status === "fulfilled") {
+      anySuccess = true;
+      TradeMindState.performance = perfRes.value.performance ?? perfRes.value;
+    } else if (!TradeMindState.backendOnline) {
+      TradeMindState.performance = null;
     }
 
-    if (results[4].status === "fulfilled") {
-      const pPayload = results[4].value;
-      const list = Array.isArray(pPayload) ? pPayload : (pPayload.pending || pPayload.orders || pPayload.limit_orders || []);
-      TradeMindState.pendingLimits = list
-        .map(o => normalizeLimitOrder(o, "PENDING"))
-        .filter(o => !isExcludedOneMinuteTf(o.tf));
+    if (pendingLimRes.status === "fulfilled") {
+      anySuccess = true;
+      const rawPend = pendingLimRes.value.orders ?? pendingLimRes.value.limit_orders ?? pendingLimRes.value.items ?? pendingLimRes.value;
+      TradeMindState.pendingLimits = Array.isArray(rawPend)
+        ? rawPend.map(r => normalizeLimitOrder(r, "PENDING")).filter(o => !isExcludedOneMinuteTf(o.tf))
+        : [];
+    } else if (!TradeMindState.backendOnline) {
+      TradeMindState.pendingLimits = [];
     }
 
-    if (results[5].status === "fulfilled") {
-      const lhPayload = results[5].value;
-      const list = Array.isArray(lhPayload) ? lhPayload : (lhPayload.history || lhPayload.orders || lhPayload.limit_orders || []);
-      TradeMindState.historyLimits = list
-        .map(o => normalizeLimitOrder(o, "CLOSED"))
-        .filter(o => !isExcludedOneMinuteTf(o.tf));
+    if (historyLimRes.status === "fulfilled") {
+      anySuccess = true;
+      const rawLimH = historyLimRes.value.history ?? historyLimRes.value.orders ?? historyLimRes.value.items ?? historyLimRes.value;
+      TradeMindState.historyLimits = Array.isArray(rawLimH)
+        ? rawLimH.map(r => normalizeLimitOrder(r, "CLOSED")).filter(o => !isExcludedOneMinuteTf(o.tf))
+        : [];
+    } else if (!TradeMindState.backendOnline) {
+      TradeMindState.historyLimits = [];
     }
 
-    if (results[6].status === "fulfilled") {
-      TradeMindState.performance = results[6].value;
+    if (anySuccess) {
+      TradeMindState.backendOnline = true;
+      TradeMindState.authRequired = false;
+      TradeMindState.lastSyncPkt = getPktClock();
+      SignalNotificationTracker.processActiveSignals(TradeMindState.activeSignals, this._initialSyncDone);
+      this._initialSyncDone = true;
     }
-
-    TradeMindState.lastSyncPkt = getPktClock();
-    updateGlobalBanner();
-
-    SignalNotificationTracker.processActiveSignals(TradeMindState.activeSignals, this._hadInitialSync);
-    this._hadInitialSync = true;
 
     TvChart.syncMonitoredTradeWithActiveList();
+    updateGlobalBanner();
     HomeEngine.render();
     SignalsEngine.render();
     LimitsEngine.render();
     PerformanceEngine.render();
 
-    const activeView = document.querySelector(".tm-view.active");
-    if (activeView && activeView.id === "view-charts") {
-      TvChart.loadCandles(force, false);
+    if (includeCandles || document.getElementById("view-charts").classList.contains("active")) {
+      await TvChart.loadCandles(includeCandles, includeCandles);
+    } else {
+      TvChart.evaluateLiveFeedHealth();
+      TvChart.updateHeader();
     }
   },
 
-  startPolling() {
-    this.stopPolling();
+  restartPolling() {
+    if (this._pollTimer) clearInterval(this._pollTimer);
     this._pollTimer = setInterval(() => {
       if (!document.hidden) {
         this.refreshAll(false);
@@ -6300,49 +7335,44 @@ const TradeMindApp = {
     }, PreferencesEngine.pollIntervalMs);
   },
 
-  stopPolling() {
-    if (this._pollTimer) {
-      clearInterval(this._pollTimer);
-      this._pollTimer = null;
-    }
-  },
-
-  restartPolling() {
-    this.startPolling();
-  },
-
-  init() {
+  async init() {
     PreferencesEngine.load();
+    PreferencesEngine.syncUi();
     DailyRiskMonitor.loadInputs();
     RiskLotCalculator.onSymbolChange();
-    SignalNotificationTracker.loadState();
-    PreferencesEngine.applyInitialDefaults();
+
+    await NativeFcmManager.init();
+
+    TvChart.symbol = PreferencesEngine.market;
+    TvChart.timeframe = PreferencesEngine.timeframe;
+    document.querySelectorAll("#chartSymbolStrip .tm-chip").forEach(c => c.classList.toggle("active", c.dataset.sym === TvChart.symbol));
+    document.querySelectorAll("#chartTimeframeStrip .tm-chip").forEach(c => c.classList.toggle("active", c.dataset.tf === TvChart.timeframe));
     TvChart.bindEvents();
     TvChart.startTimers();
-    updateGlobalBanner();
-    HomeEngine.render();
+    TvChart.updateCountdown();
 
     this._clockTimer = setInterval(() => {
-      if (!document.hidden) {
-        document.getElementById("tmPktClock").textContent = getPktClock();
+      document.getElementById("tmPktClock").textContent = getPktClock();
+      if (!document.hidden && document.getElementById("view-home").classList.contains("active")) {
         MarketSessionsClock.render();
       }
-    }, 1000);
+    }, 10000);
+
+    await this.refreshAll(true);
+    this.restartPolling();
 
     document.addEventListener("visibilitychange", () => {
       if (!document.hidden) {
-        document.getElementById("tmPktClock").textContent = getPktClock();
-        TvChart.updateCountdown();
-        TvChart.updateHeader();
-        TvChart.startSmoothLoop();
         this.refreshAll(false);
+        TvChart.updateCountdown();
+        TvChart.startSmoothLoop();
+        if (NativeFcmManager.deviceAccessToken) {
+          NativeFcmManager.pullPreferencesFromBackend();
+        }
       } else {
         TvChart.stopSmoothLoop();
       }
     });
-
-    this.refreshAll(true);
-    this.startPolling();
   }
 };
 
