@@ -1124,7 +1124,7 @@
     <div id="homeSignalsContainer"></div>
   </section>
 
-  <!-- 2. CHARTS (1M REMOVED + FREE MOVEABLE CHART) -->
+  <!-- 2. CHARTS -->
   <section id="view-charts" class="tm-view">
     <div id="chartSymbolStrip" class="tm-chip-strip" style="margin-bottom:5px;">
       <button class="tm-chip active" data-sym="XAUUSD" onclick="TvChart.setSymbol('XAUUSD')">XAUUSD</button>
@@ -1182,7 +1182,7 @@
     </div>
   </section>
 
-  <!-- 3. SIGNALS (1M REMOVED) -->
+  <!-- 3. SIGNALS -->
   <section id="view-signals" class="tm-view">
     <div class="tm-tabs" id="signalsModeTabs">
       <button class="tm-tab active" data-mode="ACTIVE" onclick="SignalsEngine.setMode('ACTIVE')">Active</button>
@@ -1260,7 +1260,7 @@
     <div id="signalsListContainer"></div>
   </section>
 
-  <!-- 4. LIMIT ORDERS (1M REMOVED + TRIGGERED/ACTIVATED VISIBILITY FIX) -->
+  <!-- 4. LIMIT ORDERS -->
   <section id="view-limits" class="tm-view">
     <div class="tm-tabs" id="limitsModeTabs">
       <button class="tm-tab active" data-mode="PENDING" onclick="LimitsEngine.setMode('PENDING')">Pending</button>
@@ -1481,13 +1481,13 @@
 
     <div class="tm-card" id="dailyRiskMonitorCard">
       <div class="row-between" style="margin-bottom:6px;">
-        <span class="tm-metric-label">Daily Risk Monitor (PKT)</span>
+        <span class="tm-metric-label">Daily Risk Monitor (PKT · Signal Stats Only)</span>
         <span id="drmStatusBadge" class="tm-badge badge-closed">Normal</span>
       </div>
 
       <div class="tm-field-grid">
         <div class="tm-field-group">
-          <label class="tm-lvl-key" for="drmBalanceInput">Account Balance</label>
+          <label class="tm-lvl-key" for="drmBalanceInput">Reference Balance</label>
           <input id="drmBalanceInput" type="number" step="any" class="tm-input" placeholder="e.g. 5000" oninput="DailyRiskMonitor.onChange()" />
         </div>
         <div class="tm-field-group">
@@ -1495,11 +1495,11 @@
           <input id="drmDailyLimitInput" type="number" step="any" class="tm-input" placeholder="e.g. 150" oninput="DailyRiskMonitor.onChange()" />
         </div>
         <div class="tm-field-group">
-          <label class="tm-lvl-key" for="drmRiskPctInput">Risk % (Per Trade)</label>
+          <label class="tm-lvl-key" for="drmRiskPctInput">Risk % (Per Signal)</label>
           <input id="drmRiskPctInput" type="number" step="any" class="tm-input" placeholder="e.g. 1.0" oninput="DailyRiskMonitor.onChange()" />
         </div>
         <div class="tm-field-group">
-          <label class="tm-lvl-key" for="drmMaxTradesInput">Daily Max Trades</label>
+          <label class="tm-lvl-key" for="drmMaxTradesInput">Daily Max Signals</label>
           <input id="drmMaxTradesInput" type="number" step="1" min="0" class="tm-input" placeholder="e.g. 5" oninput="DailyRiskMonitor.onChange()" />
         </div>
       </div>
@@ -1508,11 +1508,11 @@
         <div><div class="tm-lvl-key">Today TP/SL</div><div id="drmTodayTpSl" class="tm-lvl-val">0 / 0</div></div>
         <div><div class="tm-lvl-key">Daily Perf</div><div id="drmDailyPerf" class="tm-lvl-val">0 Wins</div></div>
         <div><div class="tm-lvl-key">Rem. Risk</div><div id="drmRemRisk" class="tm-lvl-val" style="color:var(--accent-dark);">--</div></div>
-        <div><div class="tm-lvl-key">Trades Used</div><div id="drmTradesUsed" class="tm-lvl-val">0</div></div>
+        <div><div class="tm-lvl-key">Signals Used</div><div id="drmTradesUsed" class="tm-lvl-val">0</div></div>
       </div>
 
       <div id="drmWarningBox" class="tm-info-box">
-        Signal stats only. Enter Daily Risk Limit, Account Balance, and Risk % to track remaining risk.
+        Signal outcome statistics only (not actual broker balance, realized PnL, or live floating PnL). Enter Daily Risk Limit, Reference Balance, and Risk % to track remaining signal risk budget.
       </div>
     </div>
 
@@ -1546,7 +1546,7 @@
     <div class="tm-card" style="margin-top:10px;">
       <div class="tm-metric-label" style="margin-bottom:6px;">Signal Statistics Note</div>
       <div style="font-size:11.5px;color:var(--text-secondary);">
-        Statistics reflect signal results only and do not represent live broker balance or equity.
+        Statistics reflect completed signal outcomes only and do not represent actual broker balance, realized PnL, or live equity.
       </div>
     </div>
 
@@ -1666,7 +1666,7 @@
     </div>
   </section>
 
-  <!-- 6. SETTINGS (1M REMOVED) -->
+  <!-- 6. SETTINGS -->
   <section id="view-settings" class="tm-view">
     <div class="tm-card" id="prefBackendStatusCard">
       <div class="row-between" style="padding:4px 0;">
@@ -2038,24 +2038,71 @@ function evaluateSignalQuality(sig) {
       : (sig.tpNum < sig.entryNum && sig.entryNum < sig.slNum);
   }
 
-  const hasValidTf = TradeMindConfig.supportedTimeframes.includes(String(sig.tf || "").toUpperCase());
-  const stUpper = String(sig.status || "").toUpperCase();
-  const isActiveOrCompleted = ["ACTIVE", "OPEN", "RUNNING", "TP HIT", "TP_HIT", "SL HIT", "SL_HIT", "WIN", "LOSS", "CLOSED"].includes(stUpper);
-  const stratUpper = String(sig.strategy || sig.signalType || "").toUpperCase();
-  const isValidStrategy = Boolean(stratUpper && stratUpper !== "--");
+  const tfUpper = String(sig.tf || "").toUpperCase();
+  const hasValidTf = TradeMindConfig.supportedTimeframes.includes(tfUpper) && !isExcludedOneMinuteTf(tfUpper);
+  const hasTfConfirmation = Boolean(sig.confirmationTimeframes && String(sig.confirmationTimeframes).trim());
 
-  const trendOk = levelGeometryValid && (isActiveOrCompleted || isValidStrategy);
-  const structureOk = levelGeometryValid && hasDir && (isActiveOrCompleted || stratUpper.includes("SNIPER") || stratUpper.includes("CRT") || stratUpper.includes("MSNR") || isValidStrategy);
-  const tfDetail = sig.confirmationTimeframes
-    ? sig.confirmationTimeframes
-    : (hasValidTf ? `${sig.tf} active` : null);
-  const tfOk = hasValidTf && (isActiveOrCompleted || Boolean(sig.confirmationTimeframes));
+  let tfCheck = { status: "Pending", detail: null };
+  if (!hasValidTf) {
+    tfCheck = { status: "Data N/A", detail: "Unsupported TF" };
+  } else if (hasTfConfirmation) {
+    tfCheck = { status: "Passed", detail: String(sig.confirmationTimeframes).trim() };
+  } else {
+    tfCheck = { status: "Pending", detail: `${tfUpper} (no multi-TF confirmation)` };
+  }
+
+  const hasMatchingChartBars =
+    typeof TvChart !== "undefined" &&
+    String(TvChart.symbol || "").toUpperCase() === String(sig.symbol || "").toUpperCase() &&
+    String(TvChart.timeframe || "").toUpperCase() === tfUpper &&
+    Array.isArray(TvChart.bars) &&
+    TvChart.bars.length >= 20;
+
+  let trendCheck = { status: "Data N/A", detail: "No candle/trend data" };
+  if (sig.rawTrend && typeof sig.rawTrend === "string" && sig.rawTrend.trim()) {
+    const tStr = sig.rawTrend.trim().toUpperCase();
+    const aligns = (isBuy && (tStr.includes("BULL") || tStr.includes("UP") || tStr.includes("BUY"))) ||
+                   (isSell && (tStr.includes("BEAR") || tStr.includes("DOWN") || tStr.includes("SELL")));
+    trendCheck = aligns
+      ? { status: "Passed", detail: sig.rawTrend.trim() }
+      : { status: "Pending", detail: `Mismatch (${sig.rawTrend.trim()})` };
+  } else if (hasMatchingChartBars && hasDir) {
+    const recent = TvChart.bars.slice(-20);
+    const firstClose = recent[0].close;
+    const lastClose = recent[recent.length - 1].close;
+    const bullMove = lastClose > firstClose;
+    const bearMove = lastClose < firstClose;
+    if ((isBuy && bullMove) || (isSell && bearMove)) {
+      trendCheck = { status: "Passed", detail: `${tfUpper} 20-bar ${isBuy ? "bullish" : "bearish"}` };
+    } else {
+      trendCheck = { status: "Pending", detail: `${tfUpper} 20-bar counter/flat` };
+    }
+  }
+
+  let structureCheck = { status: "Data N/A", detail: "No structure data" };
+  if (sig.rawStructure && typeof sig.rawStructure === "string" && sig.rawStructure.trim()) {
+    structureCheck = { status: "Passed", detail: sig.rawStructure.trim() };
+  } else if (hasMatchingChartBars && hasDir && levelGeometryValid) {
+    const recent = TvChart.bars.slice(-15);
+    const highs = recent.map(b => b.high);
+    const lows = recent.map(b => b.low);
+    const prevHigh = Math.max(...highs.slice(0, -1));
+    const prevLow = Math.min(...lows.slice(0, -1));
+    const lastBar = recent[recent.length - 1];
+    if (isBuy && lastBar.high > prevHigh && lastBar.low >= Math.min(...lows.slice(-5))) {
+      structureCheck = { status: "Passed", detail: `${tfUpper} higher-high break` };
+    } else if (isSell && lastBar.low < prevLow && lastBar.high <= Math.max(...highs.slice(-5))) {
+      structureCheck = { status: "Passed", detail: `${tfUpper} lower-low break` };
+    } else {
+      structureCheck = { status: "Pending", detail: `${tfUpper} structure unconfirmed` };
+    }
+  }
 
   const checks = [
-    { label: "Entry / SL / TP levels", status: levelGeometryValid ? "Passed" : "Pending" },
-    { label: "Trend alignment", status: trendOk ? "Passed" : "Pending", detail: trendOk ? dirUpper : null },
-    { label: "Structure check", status: structureOk ? "Passed" : "Pending", detail: structureOk ? (sig.strategy || sig.signalType) : null },
-    { label: "Timeframe check", status: tfOk ? "Passed" : "Pending", detail: tfOk ? tfDetail : null }
+    { label: "Entry / SL / TP levels", status: levelGeometryValid ? "Passed" : "Pending", detail: levelGeometryValid ? dirUpper : "Invalid/missing geometry" },
+    { label: "Trend alignment", status: trendCheck.status, detail: trendCheck.detail },
+    { label: "Structure check", status: structureCheck.status, detail: structureCheck.detail },
+    { label: "Timeframe check", status: tfCheck.status, detail: tfCheck.detail }
   ];
 
   const available = checks.filter(c => c.status === "Passed");
@@ -2064,7 +2111,7 @@ function evaluateSignalQuality(sig) {
   return {
     available,
     missing,
-    scoreText: `${available.length} / ${checks.length} Checks`
+    scoreText: `${available.length} / ${checks.length} Passed`
   };
 }
 
@@ -2228,6 +2275,8 @@ function normalizeSignalRecord(rec, fallbackStatus) {
     strategy: sig.strategy || rec.strategy || "--",
     strategyVersion: sig.strategy_version || rec.strategy_version || "",
     isComplete: sig.is_complete ?? rec.is_complete ?? null,
+    rawTrend: sig.trend || rec.trend || sig.trend_bias || rec.trend_bias || null,
+    rawStructure: sig.market_structure || rec.market_structure || sig.structure || rec.structure || null,
     confirmationTimeframes: Array.isArray(sig.confirmation_timeframes)
       ? sig.confirmation_timeframes.filter(t => !isExcludedOneMinuteTf(t)).join(", ")
       : ""
@@ -2345,7 +2394,7 @@ function renderSignalCard(s) {
           </div>
         ` : ""}
         <div class="tm-meta-line">
-          <span class="tm-meta-lbl">Checklist:</span>
+          <span class="tm-meta-lbl">Quality:</span>
           <span class="tm-meta-val">${escapeHtml(q.scoreText)}</span>
         </div>
         <div class="tm-meta-line">
@@ -2872,19 +2921,19 @@ const DailyRiskMonitor = {
     const badge = document.getElementById("drmStatusBadge");
 
     let remText = "--";
-    const warnings = [];
+    const warnings = ["Signal stats only (not actual broker PnL)."];
 
     if (Number.isFinite(dailyLimit) && dailyLimit > 0 && perTradeRiskAmt !== null) {
       const estimatedUsedRisk = slToday * perTradeRiskAmt;
       const rem = dailyLimit - estimatedUsedRisk;
       remText = rem.toFixed(2);
-      if (rem <= 0) warnings.push("Daily risk limit reached.");
+      if (rem <= 0) warnings.push("Daily signal risk limit reached.");
     } else {
-      warnings.push("Enter Daily Risk Limit, Balance, and Risk % to calculate remaining risk.");
+      warnings.push("Enter Daily Risk Limit, Reference Balance, and Risk % to track remaining signal risk.");
     }
 
     if (Number.isFinite(maxTrades) && maxTrades > 0 && tradesUsed >= maxTrades) {
-      warnings.push(`Daily max trades (${maxTrades}) reached for ${todayIso} PKT.`);
+      warnings.push(`Daily max signals (${maxTrades}) reached for ${todayIso} PKT.`);
     }
 
     if (remEl) {
@@ -3295,18 +3344,18 @@ const EVENT_NOTIFICATION_DEFINITIONS = [
 ];
 
 const SignalNotificationTracker = {
-  _seenStorageKey: "trademind_seen_event_keys_v2",
-  _baselineStorageKey: "trademind_baseline_ready_v2",
+  _statesStorageKey: "trademind_event_states_v3",
+  _baselineStorageKey: "trademind_baseline_ready_v3",
   initializedBaseline: false,
-  seenEventKeys: new Set(),
+  eventStates: {},
 
   loadState() {
     try {
-      const raw = localStorage.getItem(this._seenStorageKey);
+      const raw = localStorage.getItem(this._statesStorageKey);
       if (raw) {
-        const arr = JSON.parse(raw);
-        if (Array.isArray(arr)) {
-          arr.slice(-1000).forEach(k => this.seenEventKeys.add(String(k)));
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+          this.eventStates = parsed;
         }
       }
       if (localStorage.getItem(this._baselineStorageKey) === "1") {
@@ -3315,31 +3364,80 @@ const SignalNotificationTracker = {
     } catch (_) {}
   },
 
-  saveSeen() {
+  saveStates() {
     try {
-      const arr = Array.from(this.seenEventKeys).slice(-1000);
-      localStorage.setItem(this._seenStorageKey, JSON.stringify(arr));
+      const entries = Object.entries(this.eventStates);
+      const bounded = entries.slice(-1000);
+      const nextObj = {};
+      bounded.forEach(([k, v]) => { nextObj[k] = v; });
+      this.eventStates = nextObj;
+      localStorage.setItem(this._statesStorageKey, JSON.stringify(nextObj));
       if (this.initializedBaseline) {
         localStorage.setItem(this._baselineStorageKey, "1");
       }
     } catch (_) {}
   },
 
+  setEventState(uniqueKey, status, meta = {}) {
+    if (!uniqueKey) return;
+    const prev = this.eventStates[uniqueKey] || {};
+    this.eventStates[uniqueKey] = {
+      status,
+      eventPrefKey: meta.eventPrefKey ?? prev.eventPrefKey ?? null,
+      reason: meta.reason ?? null,
+      updatedAtMs: Date.now(),
+      deliveredAtMs: status === "delivered" ? (prev.deliveredAtMs || Date.now()) : (prev.deliveredAtMs || null)
+    };
+    this.saveStates();
+  },
+
+  unSuppressUserPrefEvents() {
+    this.loadState();
+    let changed = false;
+    Object.entries(this.eventStates).forEach(([key, entry]) => {
+      if (entry && entry.status === "suppressed" && entry.reason === "user_pref") {
+        const prefKey = entry.eventPrefKey;
+        if (!prefKey || PreferencesEngine.isEventEnabled(prefKey)) {
+          this.eventStates[key] = {
+            ...entry,
+            status: "pending",
+            reason: "pref_reenabled",
+            updatedAtMs: Date.now()
+          };
+          changed = true;
+        }
+      }
+    });
+    if (changed) {
+      this.saveStates();
+    }
+  },
+
   resetBaseline() {
-    this.seenEventKeys.clear();
+    this.eventStates = {};
     this.initializedBaseline = false;
     try {
-      localStorage.removeItem(this._seenStorageKey);
+      localStorage.removeItem(this._statesStorageKey);
       localStorage.removeItem(this._baselineStorageKey);
+      localStorage.removeItem("trademind_seen_event_keys_v2");
+      localStorage.removeItem("trademind_baseline_ready_v2");
     } catch (_) {}
   },
 
   captureExistingKeys() {
+    const markBaseline = (uniqueKey, eventPrefKey) => {
+      if (!uniqueKey) return;
+      const existing = this.eventStates[uniqueKey];
+      if (!existing || existing.status !== "delivered") {
+        this.setEventState(uniqueKey, "suppressed", { eventPrefKey, reason: "baseline" });
+      }
+    };
+
     (TradeMindState.activeSignals || []).forEach(s => {
       if (!s || !s.id || isExcludedOneMinuteTf(s.tf)) return;
       const isBuy = s.direction.includes("BUY") || s.direction === "LONG";
       const evtKey = isBuy ? "new_buy_signal" : "new_sell_signal";
-      this.seenEventKeys.add(`${evtKey}:${s.id}:${s.createdRaw || s.pktTime || ""}`);
+      markBaseline(`${evtKey}:${s.id}:${s.createdRaw || s.pktTime || ""}|${s.status || ""}`, evtKey);
     });
 
     (TradeMindState.historySignals || []).forEach(s => {
@@ -3347,51 +3445,86 @@ const SignalNotificationTracker = {
       const out = String(s.outcome || "").toUpperCase();
       const st = String(s.status || "").toUpperCase();
       if (out.includes("TP") || out === "WIN" || st === "TP HIT" || st === "TP_HIT") {
-        this.seenEventKeys.add(`signal_tp_hit:${s.id}:${s.completedRaw || s.completedPkt || ""}`);
+        markBaseline(`signal_tp_hit:${s.id}:${s.completedRaw || s.completedPkt || ""}`, "signal_tp_hit");
       } else if (out.includes("SL") || out === "LOSS" || st === "SL HIT" || st === "SL_HIT") {
-        this.seenEventKeys.add(`signal_sl_hit:${s.id}:${s.completedRaw || s.completedPkt || ""}`);
+        markBaseline(`signal_sl_hit:${s.id}:${s.completedRaw || s.completedPkt || ""}`, "signal_sl_hit");
       }
-      this.seenEventKeys.add(`trade_completed:${s.id}:${st}:${s.completedRaw || s.completedPkt || ""}`);
+      if (st && st !== "ACTIVE" && st !== "OPEN") {
+        markBaseline(`trade_completed:${s.id}:${st}:${s.completedRaw || s.completedPkt || ""}`, "trade_completed");
+      }
     });
 
     (TradeMindState.pendingLimits || []).forEach(o => {
       if (!o || !o.id || isExcludedOneMinuteTf(o.tf)) return;
-      this.seenEventKeys.add(`limit_created:${o.id}:${o.createdRaw || o.createdPkt || ""}`);
+      markBaseline(`limit_created:${o.id}:${o.createdRaw || o.createdPkt || ""}`, "limit_created");
     });
 
     (TradeMindState.historyLimits || []).forEach(o => {
       if (!o || !o.id || isExcludedOneMinuteTf(o.tf)) return;
       const st = String(o.status || "").toUpperCase();
       if (st.includes("TP")) {
-        this.seenEventKeys.add(`limit_tp_hit:${o.id}:${o.completedRaw || o.completedPkt || ""}`);
+        markBaseline(`limit_tp_hit:${o.id}:${o.completedRaw || o.completedPkt || ""}`, "limit_tp_hit");
       } else if (st.includes("SL")) {
-        this.seenEventKeys.add(`limit_sl_hit:${o.id}:${o.completedRaw || o.completedPkt || ""}`);
+        markBaseline(`limit_sl_hit:${o.id}:${o.completedRaw || o.completedPkt || ""}`, "limit_sl_hit");
       } else if (st === "EXPIRED") {
-        this.seenEventKeys.add(`limit_expired:${o.id}:${o.expiredRaw || o.expiresPkt || ""}`);
+        markBaseline(`limit_expired:${o.id}:${o.expiredRaw || o.expiresPkt || ""}`, "limit_expired");
       } else if (st === "ACTIVATED" || st === "TRIGGERED") {
-        this.seenEventKeys.add(`limit_activated:${o.id}:${o.activatedRaw || o.activatedPkt || ""}`);
+        markBaseline(`limit_activated:${o.id}:${o.activatedRaw || o.activatedPkt || ""}`, "limit_activated");
       }
     });
   },
 
   dispatchEvent({ uniqueKey, eventPrefKey, title, lines }) {
     if (!uniqueKey || !eventPrefKey) return;
-    if (this.seenEventKeys.has(uniqueKey)) return;
-    this.seenEventKeys.add(uniqueKey);
-    this.saveSeen();
+    const current = this.eventStates[uniqueKey];
 
-    if (!this.initializedBaseline) return;
-    if (!PreferencesEngine.notificationsEnabled) return;
-    if (!PreferencesEngine.isEventEnabled(eventPrefKey)) return;
-    if (!("Notification" in window)) return;
-    if (Notification.permission !== "granted") return;
+    if (current && current.status === "delivered") {
+      return;
+    }
+
+    if (!this.initializedBaseline) {
+      this.setEventState(uniqueKey, "suppressed", { eventPrefKey, reason: "baseline" });
+      return;
+    }
+
+    if (!current) {
+      this.setEventState(uniqueKey, "pending", { eventPrefKey, reason: "queued" });
+    }
+
+    if (!PreferencesEngine.notificationsEnabled) {
+      this.setEventState(uniqueKey, "suppressed", { eventPrefKey, reason: "master_off" });
+      return;
+    }
+
+    if (!PreferencesEngine.isEventEnabled(eventPrefKey)) {
+      this.setEventState(uniqueKey, "suppressed", { eventPrefKey, reason: "user_pref" });
+      return;
+    }
+
+    if (!("Notification" in window)) {
+      this.setEventState(uniqueKey, "suppressed", { eventPrefKey, reason: "unsupported" });
+      return;
+    }
+
+    if (Notification.permission === "denied") {
+      this.setEventState(uniqueKey, "suppressed", { eventPrefKey, reason: "permission_denied" });
+      return;
+    }
+
+    if (Notification.permission !== "granted") {
+      this.setEventState(uniqueKey, "pending", { eventPrefKey, reason: "permission_default" });
+      return;
+    }
 
     try {
       new Notification(title, {
         body: lines.filter(Boolean).join("\n"),
         tag: `tm-${uniqueKey.slice(0, 64)}`
       });
-    } catch (_) {}
+      this.setEventState(uniqueKey, "delivered", { eventPrefKey, reason: "displayed" });
+    } catch (_) {
+      this.setEventState(uniqueKey, "pending", { eventPrefKey, reason: "dispatch_error" });
+    }
   },
 
   evaluateAllEvents(hadInitialSync) {
@@ -3402,7 +3535,7 @@ const SignalNotificationTracker = {
       if (hadInitialSync || TradeMindState.backendOnline) {
         this.initializedBaseline = true;
       }
-      this.saveSeen();
+      this.saveStates();
       return;
     }
 
@@ -3631,7 +3764,7 @@ const HomeEngine = {
   }
 };
 
-/* TRADINGVIEW-STYLE INTERACTIVE CANDLESTICK & DRAWING ENGINE (1M REMOVED + FREE MOVEABLE) */
+/* TRADINGVIEW-STYLE INTERACTIVE CANDLESTICK & DRAWING ENGINE */
 const TvChart = {
   symbol: "XAUUSD",
   timeframe: "15M",
@@ -4882,12 +5015,12 @@ const SignalsEngine = {
 
       <div class="tm-card" style="margin-bottom:12px;padding:10px 12px;">
         <div class="row-between">
-          <span class="tm-metric-label">Signal Checklist</span>
+          <span class="tm-metric-label">Signal Quality</span>
           <span class="tm-badge badge-active">${escapeHtml(q.scoreText)}</span>
         </div>
         <div class="tm-qual-list">
           ${q.available.map(c => `<div class="tm-meta-line"><span class="tm-meta-lbl">${escapeHtml(c.label)}:</span><span class="tm-meta-val" style="color:var(--bull);">Passed${c.detail ? ` (${escapeHtml(c.detail)})` : ""}</span></div>`).join("")}
-          ${q.missing.map(c => `<div class="tm-meta-line"><span class="tm-meta-lbl">${escapeHtml(c.label)}:</span><span class="tm-meta-val" style="color:var(--text-muted);">Pending</span></div>`).join("")}
+          ${q.missing.map(c => `<div class="tm-meta-line"><span class="tm-meta-lbl">${escapeHtml(c.label)}:</span><span class="tm-meta-val" style="color:var(--text-muted);">${escapeHtml(c.status)}${c.detail ? ` (${escapeHtml(c.detail)})` : ""}</span></div>`).join("")}
         </div>
       </div>
 
@@ -4908,7 +5041,7 @@ const SignalsEngine = {
   }
 };
 
-/* LIMITS ENGINE (FIXED TRIGGERED/ACTIVATED VISIBILITY + 1M REMOVED) */
+/* LIMITS ENGINE */
 const LimitsEngine = {
   mode: "PENDING",
   symbol: "ALL",
@@ -5217,7 +5350,7 @@ const LimitsEngine = {
         </div>
         <div class="tm-card-foot">
           <span>${escapeHtml(o.strategy)}</span>
-          <span>${escapeHtml(o.status)}</span>
+          <span>${o.brokerOrderPlaced ? "Broker Order" : "Tracked"}</span>
         </div>
       </div>
     `;
@@ -5227,30 +5360,36 @@ const LimitsEngine = {
     this.ensureDates();
     const pendingPanel = document.getElementById("limitsPendingPanel");
     const historyPanel = document.getElementById("limitsHistoryPanel");
-    const listEl = document.getElementById("limitsListContainer");
+    const listContainer = document.getElementById("limitsListContainer");
 
     const allKnownOrders = [...(TradeMindState.pendingLimits || []), ...(TradeMindState.historyLimits || [])]
-      .filter(o => o && !isExcludedOneMinuteTf(o.tf));
-    const uniqueOrdersMap = new Map();
+      .filter(o => !isExcludedOneMinuteTf(o.tf));
+    const uniqueByIdMap = new Map();
     allKnownOrders.forEach(o => {
-      if (o.id && !uniqueOrdersMap.has(String(o.id))) {
-        uniqueOrdersMap.set(String(o.id), o);
+      if (!o || !o.id) return;
+      if (!uniqueByIdMap.has(String(o.id))) {
+        uniqueByIdMap.set(String(o.id), o);
       }
     });
-    const uniqueOrders = Array.from(uniqueOrdersMap.values());
+    const dedupedAll = Array.from(uniqueByIdMap.values());
 
-    const filteredAllOrders = uniqueOrders.filter(o =>
+    const overallPendingOrders = dedupedAll.filter(o =>
+      this.classifyOrderBucket(o) === "PENDING" &&
       (this.symbol === "ALL" || o.symbol === this.symbol) &&
       (this.tf === "ALL" || o.tf === this.tf)
     );
 
-    const overallPendingTotal = filteredAllOrders.filter(o => this.classifyOrderBucket(o) === "PENDING").length;
-    const overallActivatedTotal = filteredAllOrders.filter(o => this.classifyOrderBucket(o) === "ACTIVATED").length;
+    const overallActivatedOrders = dedupedAll.filter(o => {
+      const b = this.classifyOrderBucket(o);
+      return (b === "ACTIVATED" || b === "TP_HIT" || b === "SL_HIT" || Boolean(o.activatedRaw)) &&
+        (this.symbol === "ALL" || o.symbol === this.symbol) &&
+        (this.tf === "ALL" || o.tf === this.tf);
+    });
 
-    const pendCountEl = document.getElementById("limOverallPendingCount");
-    const actCountEl = document.getElementById("limOverallActivatedCount");
-    if (pendCountEl) pendCountEl.textContent = String(overallPendingTotal);
-    if (actCountEl) actCountEl.textContent = String(overallActivatedTotal);
+    const ovPendEl = document.getElementById("limOverallPendingCount");
+    const ovActEl = document.getElementById("limOverallActivatedCount");
+    if (ovPendEl) ovPendEl.textContent = String(overallPendingOrders.length);
+    if (ovActEl) ovActEl.textContent = String(overallActivatedOrders.length);
 
     if (this.mode === "PENDING") {
       if (pendingPanel) pendingPanel.style.display = "block";
@@ -5261,22 +5400,23 @@ const LimitsEngine = {
         pendInput.value = this.selectedPendingDate;
       }
       const pendBadge = document.getElementById("limPendSelectedDateBadge");
-      if (pendBadge) pendBadge.textContent = `${this.selectedPendingDate} PKT`;
+      if (pendBadge) pendBadge.textContent = `Expiry: ${this.selectedPendingDate} PKT`;
 
-      const expiringOnSelectedDate = filteredAllOrders.filter(o => {
-        if (this.classifyOrderBucket(o) !== "PENDING") return false;
+      const expiringOnSelectedDate = overallPendingOrders.filter(o => {
         const expKey = this.getPendingExpiryDateKey(o);
         return expKey !== null && expKey === this.selectedPendingDate;
       });
 
-      const dateCountEl = document.getElementById("limPendDateCountBadge");
-      if (dateCountEl) dateCountEl.textContent = String(expiringOnSelectedDate.length);
+      const dateCntEl = document.getElementById("limPendDateCountBadge");
+      const dateSumLbl = document.getElementById("limPendDateSummaryLabel");
+      if (dateCntEl) dateCntEl.textContent = String(expiringOnSelectedDate.length);
+      if (dateSumLbl) dateSumLbl.textContent = `Pending Expiring on ${this.selectedPendingDate} PKT:`;
 
       this.renderPendingCalendar();
 
-      listEl.innerHTML = expiringOnSelectedDate.length
+      listContainer.innerHTML = expiringOnSelectedDate.length
         ? expiringOnSelectedDate.map(o => this.renderOrderCard(o, true)).join("")
-        : `<div class="tm-empty">${TradeMindState.backendOnline ? `No pending orders expiring on ${escapeHtml(this.selectedPendingDate)} PKT.` : "Backend offline. Unable to load pending limit orders."}</div>`;
+        : `<div class="tm-empty">${TradeMindState.backendOnline ? `No pending limit orders expiring on ${escapeHtml(this.selectedPendingDate)} PKT.` : "Backend offline. Unable to load pending limits."}</div>`;
       return;
     }
 
@@ -5290,172 +5430,65 @@ const LimitsEngine = {
     const histBadge = document.getElementById("limHistSelectedDateBadge");
     if (histBadge) histBadge.textContent = `${this.selectedHistoryDate} PKT`;
 
-    const nonPendingOrders = filteredAllOrders.filter(o => this.classifyOrderBucket(o) !== "PENDING");
+    const nonPendingOrders = dedupedAll.filter(o =>
+      this.classifyOrderBucket(o) !== "PENDING" &&
+      (this.symbol === "ALL" || o.symbol === this.symbol) &&
+      (this.tf === "ALL" || o.tf === this.tf)
+    );
 
-    let matchingOrders = nonPendingOrders.filter(o => {
+    const matchingOrders = nonPendingOrders.filter(o => {
       const primaryDate = this.getOrderPrimaryDateKey(o);
       return primaryDate !== null && primaryDate === this.selectedHistoryDate;
     });
 
-    if (!matchingOrders.length && nonPendingOrders.length) {
-      matchingOrders = nonPendingOrders;
-    }
+    const cntActivated = matchingOrders.filter(o => this.classifyOrderBucket(o) === "ACTIVATED").length;
+    const cntTp = matchingOrders.filter(o => this.classifyOrderBucket(o) === "TP_HIT").length;
+    const cntSl = matchingOrders.filter(o => this.classifyOrderBucket(o) === "SL_HIT").length;
+    const cntExpired = matchingOrders.filter(o => this.classifyOrderBucket(o) === "EXPIRED").length;
+    const cntPending = matchingOrders.filter(o => this.classifyOrderBucket(o) === "PENDING").length;
 
-    let countActivated = 0;
-    let countTp = 0;
-    let countSl = 0;
-    let countExpired = 0;
-    let countPending = 0;
-
-    matchingOrders.forEach(o => {
-      const bucket = this.classifyOrderBucket(o);
-      if (bucket === "ACTIVATED") countActivated += 1;
-      else if (bucket === "TP_HIT") countTp += 1;
-      else if (bucket === "SL_HIT") countSl += 1;
-      else if (bucket === "EXPIRED") countExpired += 1;
-      else if (bucket === "PENDING") countPending += 1;
-    });
-
-    document.getElementById("limHistCountActivated").textContent = String(countActivated);
-    document.getElementById("limHistCountTp").textContent = String(countTp);
-    document.getElementById("limHistCountSl").textContent = String(countSl);
-    document.getElementById("limHistCountExpired").textContent = String(countExpired);
-    document.getElementById("limHistCountPending").textContent = String(countPending);
+    document.getElementById("limHistCountActivated").textContent = String(cntActivated);
+    document.getElementById("limHistCountTp").textContent = String(cntTp);
+    document.getElementById("limHistCountSl").textContent = String(cntSl);
+    document.getElementById("limHistCountExpired").textContent = String(cntExpired);
+    document.getElementById("limHistCountPending").textContent = String(cntPending);
 
     this.renderHistoryCalendar();
 
-    listEl.innerHTML = matchingOrders.length
+    listContainer.innerHTML = matchingOrders.length
       ? matchingOrders.map(o => this.renderOrderCard(o, false)).join("")
-      : `<div class="tm-empty">${TradeMindState.backendOnline ? `No limit order records for ${escapeHtml(this.selectedHistoryDate)} PKT.` : "Backend offline. Unable to load limit order history."}</div>`;
+      : `<div class="tm-empty">${TradeMindState.backendOnline ? `No limit order records for ${escapeHtml(this.selectedHistoryDate)} PKT.` : "Backend offline. Unable to load limit history."}</div>`;
   }
 };
 
-/* CALENDAR HISTORY UI ENGINE */
+/* CALENDAR HISTORY ENGINE */
 const CalendarHistoryEngine = {
   activeTab: "signals",
   signalsMonth: null,
+  signalsSelectedDate: null,
   limitsMonth: null,
-  selectedSignalDate: null,
-  selectedLimitDate: null,
-  signalRecords: [],
-  limitOrderRecords: [],
+  limitsSelectedDate: null,
 
-  extractPktDateIso(rawStamp) {
-    return toPktDateKey(rawStamp);
-  },
-
-  classifyOutcome(sig) {
-    const o = String(sig.outcome || "").toUpperCase();
-    const st = String(sig.status || "").toUpperCase();
-    if (o.includes("TP") || o === "WIN" || st === "TP HIT" || st === "TP_HIT" || st === "WIN") return "TP WIN";
-    if (o.includes("SL") || o === "LOSS" || st === "SL HIT" || st === "SL_HIT" || st === "LOSS") return "SL LOSS";
-    return null;
-  },
-
-  classifyLimitStatus(ord) {
-    const raw = String(ord.status || "").toUpperCase().trim();
-    if (raw === "TP COMPLETED" || raw === "TP_COMPLETED" || raw === "TP HIT" || raw === "TP_HIT" || raw === "WIN") return "TP COMPLETED";
-    if (raw === "SL COMPLETED" || raw === "SL_COMPLETED" || raw === "SL HIT" || raw === "SL_HIT" || raw === "LOSS") return "SL COMPLETED";
-    if (raw === "ACTIVATED" || raw === "TRIGGERED" || raw === "ACTIVE" || raw === "OPEN" || raw === "FILLED") return "ACTIVATED";
-    if (raw === "EXPIRED") return "EXPIRED";
-    if (raw === "INVALIDATED" || raw === "CANCELLED" || raw === "CANCELED") return "INVALIDATED";
-    if (raw === "PENDING" || raw === "NEW" || raw === "PLACED" || raw === "WAITING") return "PENDING";
-    return "UNKNOWN";
-  },
-
-  syncFromState() {
-    const completedSignals = [];
-    const seenSig = new Set();
-    (TradeMindState.historySignals || []).forEach(s => {
-      if (isExcludedOneMinuteTf(s.tf)) return;
-      const outcome = this.classifyOutcome(s);
-      if (!outcome) return;
-      const completionStamp = s.completedRaw || s.completedPkt || null;
-      const completionDatePkt = this.extractPktDateIso(completionStamp);
-      if (!completionDatePkt) return;
-      const key = `${s.id}_${outcome}_${completionDatePkt}`;
-      if (seenSig.has(key)) return;
-      seenSig.add(key);
-      completedSignals.push({
-        id: s.id,
-        symbol: s.symbol,
-        timeframe: s.tf,
-        direction: s.direction,
-        entry: s.entry,
-        sl: s.sl,
-        tp: s.tp,
-        outcome,
-        completionDatePkt,
-        completionTimePkt: completionStamp ? formatPktDateTime(completionStamp) : "--"
-      });
-    });
-    this.signalRecords = completedSignals;
-
-    const combinedLimits = [...(TradeMindState.pendingLimits || []), ...(TradeMindState.historyLimits || [])]
-      .filter(o => !isExcludedOneMinuteTf(o.tf));
-    const dedupMap = new Map();
-    combinedLimits.forEach(o => {
-      const status = this.classifyLimitStatus(o);
-      const creationDatePkt = this.extractPktDateIso(o.createdRaw || o.createdPkt);
-      const activationDatePkt = this.extractPktDateIso(o.activatedRaw || o.activatedPkt);
-      const completionDatePkt = this.extractPktDateIso(o.completedRaw || o.completedPkt);
-      const expiryDatePkt = this.extractPktDateIso(o.expiredRaw || o.expiresPkt);
-      const invalidationDatePkt = this.extractPktDateIso(o.invalidatedRaw || o.invalidatedPkt);
-
-      let eventDatePkt = null;
-      if (status === "TP COMPLETED" || status === "SL COMPLETED") {
-        eventDatePkt = completionDatePkt;
-      } else if (status === "ACTIVATED") {
-        eventDatePkt = activationDatePkt || completionDatePkt;
-      } else if (status === "EXPIRED") {
-        eventDatePkt = expiryDatePkt;
-      } else if (status === "INVALIDATED") {
-        eventDatePkt = invalidationDatePkt;
-      } else if (status === "PENDING") {
-        eventDatePkt = creationDatePkt;
-      }
-
-      if (!eventDatePkt) return;
-
-      const rec = {
-        id: o.id,
-        symbol: o.symbol,
-        timeframe: o.tf,
-        orderType: o.orderType,
-        entry: o.entry,
-        sl: o.sl,
-        tp: o.tp,
-        status,
-        creationDatePkt,
-        activationDatePkt,
-        completionDatePkt,
-        expiryDatePkt,
-        invalidationDatePkt,
-        eventDatePkt,
-        createdTimePkt: o.createdRaw ? formatPktDateTime(o.createdRaw) : "--",
-        activatedTimePkt: o.activatedRaw ? formatPktDateTime(o.activatedRaw) : "--",
-        completedTimePkt: o.completedRaw ? formatPktDateTime(o.completedRaw) : "--",
-        expiredTimePkt: o.expiredRaw ? formatPktDateTime(o.expiredRaw) : "--",
-        invalidatedTimePkt: o.invalidatedRaw ? formatPktDateTime(o.invalidatedRaw) : "--"
-      };
-      dedupMap.set(`${o.id}_${status}_${eventDatePkt}`, rec);
-    });
-    this.limitOrderRecords = Array.from(dedupMap.values());
-
-    if (!this.selectedSignalDate || !this.selectedLimitDate) {
-      const todayIso = getPktDatePartsFromMs(Date.now()).iso;
-      if (!this.selectedSignalDate) this.selectedSignalDate = todayIso;
-      if (!this.selectedLimitDate) this.selectedLimitDate = todayIso;
-      const [yStr, mStr] = todayIso.split("-");
-      if (!this.signalsMonth) this.signalsMonth = { year: Number(yStr), month: Number(mStr) };
-      if (!this.limitsMonth) this.limitsMonth = { year: Number(yStr), month: Number(mStr) };
+  ensureInitialized() {
+    const nowPkt = getPktDatePartsFromMs(Date.now());
+    if (!this.signalsMonth) {
+      this.signalsMonth = { year: nowPkt.year, month: nowPkt.month };
+    }
+    if (!this.signalsSelectedDate) {
+      this.signalsSelectedDate = nowPkt.iso;
+    }
+    if (!this.limitsMonth) {
+      this.limitsMonth = { year: nowPkt.year, month: nowPkt.month };
+    }
+    if (!this.limitsSelectedDate) {
+      this.limitsSelectedDate = nowPkt.iso;
     }
   },
 
   setTab(tab) {
     this.activeTab = tab;
-    document.querySelectorAll("#perfCalendarTabs .tm-cal-tab").forEach(btn => {
-      btn.classList.toggle("active", btn.dataset.caltab === tab);
+    document.querySelectorAll("#perfCalendarTabs .tm-cal-tab").forEach(b => {
+      b.classList.toggle("active", b.dataset.caltab === tab);
     });
     document.getElementById("calPanelSignals").classList.toggle("active", tab === "signals");
     document.getElementById("calPanelLimits").classList.toggle("active", tab === "limits");
@@ -5463,8 +5496,8 @@ const CalendarHistoryEngine = {
   },
 
   shiftMonth(which, delta) {
+    this.ensureInitialized();
     const target = which === "signals" ? this.signalsMonth : this.limitsMonth;
-    if (!target) return;
     let m = target.month + delta;
     let y = target.year;
     while (m < 1) { m += 12; y -= 1; }
@@ -5478,13 +5511,14 @@ const CalendarHistoryEngine = {
   },
 
   selectDate(which, isoDate) {
-    const [yStr, mStr] = isoDate.split("-");
+    this.ensureInitialized();
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(isoDate);
     if (which === "signals") {
-      this.selectedSignalDate = isoDate;
-      this.signalsMonth = { year: Number(yStr), month: Number(mStr) };
+      this.signalsSelectedDate = isoDate;
+      if (match) this.signalsMonth = { year: Number(match[1]), month: Number(match[2]) };
     } else {
-      this.selectedLimitDate = isoDate;
-      this.limitsMonth = { year: Number(yStr), month: Number(mStr) };
+      this.limitsSelectedDate = isoDate;
+      if (match) this.limitsMonth = { year: Number(match[1]), month: Number(match[2]) };
     }
     this.render();
   },
@@ -5492,42 +5526,50 @@ const CalendarHistoryEngine = {
   selectShortcut(which, shortcut) {
     const nowMs = Date.now();
     const targetMs = shortcut === "today" ? nowMs : (nowMs - 86400000);
-    const parts = getPktDatePartsFromMs(targetMs);
-    if (!parts) return;
-    this.selectDate(which, parts.iso);
+    const pkt = getPktDatePartsFromMs(targetMs);
+    this.selectDate(which, pkt.iso);
   },
 
   buildMonthCells(year, month) {
-    const firstDow = new Date(Date.UTC(year, month - 1, 1)).getUTCDay();
+    const firstDayUtc = new Date(Date.UTC(year, month - 1, 1));
+    const startWeekday = firstDayUtc.getUTCDay();
     const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
     const prevMonthDays = new Date(Date.UTC(year, month - 1, 0)).getUTCDate();
-    const cells = [];
 
-    for (let i = firstDow - 1; i >= 0; i--) {
-      let py = year, pm = month - 1;
+    const cells = [];
+    for (let i = startWeekday - 1; i >= 0; i--) {
+      const dNum = prevMonthDays - i;
+      let pm = month - 1;
+      let py = year;
       if (pm < 1) { pm = 12; py -= 1; }
-      const day = prevMonthDays - i;
       cells.push({
-        year: py, month: pm, day,
-        iso: `${py}-${String(pm).padStart(2, "0")}-${String(day).padStart(2, "0")}`,
+        year: py,
+        month: pm,
+        day: dNum,
+        iso: `${py}-${String(pm).padStart(2, "0")}-${String(dNum).padStart(2, "0")}`,
         inMonth: false
       });
     }
 
     for (let d = 1; d <= daysInMonth; d++) {
       cells.push({
-        year, month, day: d,
+        year,
+        month,
+        day: d,
         iso: `${year}-${String(month).padStart(2, "0")}-${String(d).padStart(2, "0")}`,
         inMonth: true
       });
     }
 
     let nextDay = 1;
-    while (cells.length < 42) {
-      let ny = year, nm = month + 1;
+    while (cells.length % 7 !== 0 || cells.length < 35) {
+      let nm = month + 1;
+      let ny = year;
       if (nm > 12) { nm = 1; ny += 1; }
       cells.push({
-        year: ny, month: nm, day: nextDay,
+        year: ny,
+        month: nm,
+        day: nextDay,
         iso: `${ny}-${String(nm).padStart(2, "0")}-${String(nextDay).padStart(2, "0")}`,
         inMonth: false
       });
@@ -5537,31 +5579,61 @@ const CalendarHistoryEngine = {
     return cells;
   },
 
-  formatMonthTitle(monthObj) {
-    if (!monthObj) return "--";
-    const d = new Date(Date.UTC(monthObj.year, monthObj.month - 1, 15));
-    return new Intl.DateTimeFormat("en-US", {
-      timeZone: TradeMindConfig.timezone,
-      month: "long",
-      year: "numeric"
-    }).format(d) + " (PKT)";
+  classifyOutcome(sig) {
+    const o = String(sig.outcome || "").toUpperCase();
+    const st = String(sig.status || "").toUpperCase();
+    if (o.includes("TP") || o === "WIN" || st === "TP HIT" || st === "TP_HIT" || st === "WIN") return "TP WIN";
+    if (o.includes("SL") || o === "LOSS" || st === "SL HIT" || st === "SL_HIT" || st === "LOSS") return "SL LOSS";
+    return "OTHER";
+  },
+
+  getSignalDateKey(sig) {
+    const raw = sig.completedRaw || sig.completedPkt || sig.createdRaw || sig.pktTime || null;
+    return raw ? toPktDateKey(raw) : null;
+  },
+
+  getLimitDateKey(ord) {
+    const raw = ord.completedRaw || ord.expiredRaw || ord.activatedRaw || ord.createdRaw || null;
+    return raw ? toPktDateKey(raw) : null;
+  },
+
+  classifyLimitEvent(ord) {
+    const raw = String(ord.status || "").toUpperCase().trim();
+    if (raw === "TP HIT" || raw === "TP_HIT" || raw === "TP COMPLETED" || raw === "TP_COMPLETED" || raw === "WIN") return "TP_DONE";
+    if (raw === "SL HIT" || raw === "SL_HIT" || raw === "SL COMPLETED" || raw === "SL_COMPLETED" || raw === "LOSS") return "SL_DONE";
+    if (raw === "EXPIRED") return "EXPIRED";
+    if (raw === "INVALIDATED" || raw === "CANCELLED" || raw === "CANCELED") return "INVALIDATED";
+    if (raw === "PENDING" || raw === "NEW" || raw === "PLACED" || raw === "WAITING") return "PENDING";
+    if (raw === "ACTIVATED" || raw === "TRIGGERED" || raw === "ACTIVE" || raw === "OPEN" || raw === "FILLED") return "ACTIVATED";
+    return ord.activatedRaw ? "ACTIVATED" : "PENDING";
   },
 
   renderSignalsCalendar() {
-    const todayIso = getPktDatePartsFromMs(Date.now()).iso;
-    document.getElementById("sigCalMonthLabel").textContent = this.formatMonthTitle(this.signalsMonth);
-    const cells = this.buildMonthCells(this.signalsMonth.year, this.signalsMonth.month);
+    const { year, month } = this.signalsMonth;
+    const monthLabelEl = document.getElementById("sigCalMonthLabel");
     const gridEl = document.getElementById("sigCalGrid");
+    const todayIso = getPktDatePartsFromMs(Date.now()).iso;
+
+    const sampleDate = new Date(Date.UTC(year, month - 1, 15));
+    monthLabelEl.textContent = new Intl.DateTimeFormat("en-US", {
+      timeZone: TradeMindConfig.timezone,
+      month: "long",
+      year: "numeric"
+    }).format(sampleDate) + " (PKT)";
+
+    const history = (TradeMindState.historySignals || []).filter(s => !isExcludedOneMinuteTf(s.tf));
+    const cells = this.buildMonthCells(year, month);
 
     gridEl.innerHTML = cells.map(c => {
-      const dayRecs = this.signalRecords.filter(r => r.completionDatePkt === c.iso);
-      const wins = dayRecs.filter(r => r.outcome === "TP WIN").length;
-      const losses = dayRecs.filter(r => r.outcome === "SL LOSS").length;
-      const cls = [
+      const dayItems = history.filter(s => this.getSignalDateKey(s) === c.iso);
+      const wins = dayItems.filter(s => this.classifyOutcome(s) === "TP WIN").length;
+      const losses = dayItems.filter(s => this.classifyOutcome(s) === "SL LOSS").length;
+
+      const classes = [
         "tm-cal-day",
         c.inMonth ? "" : "muted",
         c.iso === todayIso ? "today" : "",
-        c.iso === this.selectedSignalDate ? "selected" : ""
+        c.iso === this.signalsSelectedDate ? "selected" : ""
       ].filter(Boolean).join(" ");
 
       const pills = [];
@@ -5569,50 +5641,46 @@ const CalendarHistoryEngine = {
       if (losses > 0) pills.push(`<span class="tm-cal-pill loss">L:${losses}</span>`);
 
       return `
-        <button type="button" class="${cls}" onclick="CalendarHistoryEngine.selectDate('signals', '${escapeHtml(c.iso)}')">
+        <button type="button" class="${classes}" onclick="CalendarHistoryEngine.selectDate('signals', '${escapeHtml(c.iso)}')">
           <span>${c.day}</span>
           <span class="tm-cal-dots">${pills.join("")}</span>
         </button>
       `;
     }).join("");
 
-    const selectedRecs = this.signalRecords.filter(r => r.completionDatePkt === this.selectedSignalDate);
-    const winCount = selectedRecs.filter(r => r.outcome === "TP WIN").length;
-    const lossCount = selectedRecs.filter(r => r.outcome === "SL LOSS").length;
-    const completedCount = winCount + lossCount;
-    const winRatePct = completedCount > 0 ? `${Math.round((winCount / completedCount) * 100)}%` : "0%";
+    const selItems = history.filter(s => this.getSignalDateKey(s) === this.signalsSelectedDate);
+    const selWins = selItems.filter(s => this.classifyOutcome(s) === "TP WIN").length;
+    const selLosses = selItems.filter(s => this.classifyOutcome(s) === "SL LOSS").length;
+    const selDone = selWins + selLosses;
+    const selWr = selDone > 0 ? `${Math.round((selWins / selDone) * 100)}%` : "0%";
 
-    document.getElementById("sigDayWins").textContent = String(winCount);
-    document.getElementById("sigDayLosses").textContent = String(lossCount);
-    document.getElementById("sigDaySummary").textContent = `${completedCount} · ${winRatePct}`;
-    document.getElementById("sigDayDateBadge").textContent = `${this.selectedSignalDate} PKT`;
+    document.getElementById("sigDayWins").textContent = String(selWins);
+    document.getElementById("sigDayLosses").textContent = String(selLosses);
+    document.getElementById("sigDaySummary").textContent = `${selDone} · ${selWr}`;
+    document.getElementById("sigDayListTitle").textContent = `Signals on ${this.signalsSelectedDate}`;
+    document.getElementById("sigDayDateBadge").textContent = `${selItems.length} record${selItems.length === 1 ? "" : "s"} (PKT)`;
 
     const listEl = document.getElementById("sigDayListContainer");
-    if (!selectedRecs.length) {
-      listEl.innerHTML = `<div class="tm-empty">No completed signals recorded on ${escapeHtml(this.selectedSignalDate)} PKT.</div>`;
+    if (!selItems.length) {
+      listEl.innerHTML = `<div class="tm-empty">No closed signals recorded on ${escapeHtml(this.signalsSelectedDate)} (PKT).</div>`;
     } else {
-      listEl.innerHTML = selectedRecs.map(r => {
-        const isWin = r.outcome === "TP WIN";
-        const isBuy = String(r.direction || "").includes("BUY") || r.direction === "LONG";
+      listEl.innerHTML = selItems.map(s => {
+        const cls = this.classifyOutcome(s);
+        const clsBadge = cls === "TP WIN" ? "badge-active" : (cls === "SL LOSS" ? "badge-sell" : "badge-closed");
+        const completedText = s.completedRaw ? formatPktDateTime(s.completedRaw) : (s.completedPkt || "--");
         return `
-          <div class="tm-card">
+          <div class="tm-card" style="margin-bottom:8px;">
             <div class="row-between">
               <div class="row-inline">
-                <strong style="font-size:13px;">${escapeHtml(r.symbol)}</strong>
-                <span class="tm-badge ${isBuy ? "badge-buy" : "badge-sell"}">${escapeHtml(r.direction)}</span>
-                <span class="tm-badge badge-closed">${escapeHtml(r.timeframe)}</span>
+                <strong style="font-size:12.5px;">${escapeHtml(s.symbol)}</strong>
+                <span class="tm-badge ${s.direction.includes("BUY") || s.direction === "LONG" ? "badge-buy" : "badge-sell"}">${escapeHtml(s.direction)}</span>
+                <span class="tm-badge badge-closed">${escapeHtml(s.tf)}</span>
               </div>
-              <span class="tm-badge ${isWin ? "badge-active" : "badge-sell"}">${escapeHtml(r.outcome)}</span>
+              <span class="tm-badge ${clsBadge}">${escapeHtml(cls)}</span>
             </div>
-            <div class="tm-levels-grid">
-              <div><div class="tm-lvl-key">Entry</div><div class="tm-lvl-val">${escapeHtml(r.entry)}</div></div>
-              <div><div class="tm-lvl-key">SL</div><div class="tm-lvl-val" style="color:var(--bear);">${escapeHtml(r.sl)}</div></div>
-              <div><div class="tm-lvl-key">TP</div><div class="tm-lvl-val" style="color:var(--bull);">${escapeHtml(r.tp)}</div></div>
-              <div><div class="tm-lvl-key">Outcome</div><div class="tm-lvl-val" style="color:${isWin ? "var(--bull)" : "var(--bear)"};">${isWin ? "TP" : "SL"}</div></div>
-            </div>
-            <div class="tm-card-foot">
-              <span>Completed: ${escapeHtml(r.completionTimePkt)}</span>
-              <span>${escapeHtml(r.completionDatePkt)}</span>
+            <div class="tm-meta-box">
+              <div class="tm-meta-line"><span class="tm-meta-lbl">Entry / SL / TP:</span><span class="tm-meta-val">${escapeHtml(s.entry)} / ${escapeHtml(s.sl)} / ${escapeHtml(s.tp)}</span></div>
+              <div class="tm-meta-line"><span class="tm-meta-lbl">Completed (PKT):</span><span class="tm-meta-val">${escapeHtml(completedText)}</span></div>
             </div>
           </div>
         `;
@@ -5621,82 +5689,106 @@ const CalendarHistoryEngine = {
   },
 
   renderLimitsCalendar() {
-    const todayIso = getPktDatePartsFromMs(Date.now()).iso;
-    document.getElementById("limCalMonthLabel").textContent = this.formatMonthTitle(this.limitsMonth);
-    const cells = this.buildMonthCells(this.limitsMonth.year, this.limitsMonth.month);
+    const { year, month } = this.limitsMonth;
+    const monthLabelEl = document.getElementById("limCalMonthLabel");
     const gridEl = document.getElementById("limCalGrid");
+    const todayIso = getPktDatePartsFromMs(Date.now()).iso;
+
+    const sampleDate = new Date(Date.UTC(year, month - 1, 15));
+    monthLabelEl.textContent = new Intl.DateTimeFormat("en-US", {
+      timeZone: TradeMindConfig.timezone,
+      month: "long",
+      year: "numeric"
+    }).format(sampleDate) + " (PKT)";
+
+    const allLimits = [...(TradeMindState.pendingLimits || []), ...(TradeMindState.historyLimits || [])]
+      .filter(o => !isExcludedOneMinuteTf(o.tf));
+    const uniqueLimits = [];
+    const seenIds = new Set();
+    allLimits.forEach(o => {
+      if (!o || !o.id) return;
+      if (!seenIds.has(String(o.id))) {
+        seenIds.add(String(o.id));
+        uniqueLimits.push(o);
+      }
+    });
+
+    const cells = this.buildMonthCells(year, month);
 
     gridEl.innerHTML = cells.map(c => {
-      const dayRecs = this.limitOrderRecords.filter(r => r.eventDatePkt === c.iso);
-      const act = dayRecs.filter(r => r.status === "ACTIVATED").length;
-      const tp = dayRecs.filter(r => r.status === "TP COMPLETED").length;
-      const sl = dayRecs.filter(r => r.status === "SL COMPLETED").length;
-      const exp = dayRecs.filter(r => r.status === "EXPIRED").length;
-      const cls = [
+      const dayItems = uniqueLimits.filter(o => this.getLimitDateKey(o) === c.iso);
+      const actCount = dayItems.filter(o => this.classifyLimitEvent(o) === "ACTIVATED").length;
+      const tpSlCount = dayItems.filter(o => {
+        const ev = this.classifyLimitEvent(o);
+        return ev === "TP_DONE" || ev === "SL_DONE";
+      }).length;
+      const pendExpCount = dayItems.filter(o => {
+        const ev = this.classifyLimitEvent(o);
+        return ev === "PENDING" || ev === "EXPIRED" || ev === "INVALIDATED";
+      }).length;
+
+      const classes = [
         "tm-cal-day",
         c.inMonth ? "" : "muted",
         c.iso === todayIso ? "today" : "",
-        c.iso === this.selectedLimitDate ? "selected" : ""
+        c.iso === this.limitsSelectedDate ? "selected" : ""
       ].filter(Boolean).join(" ");
 
       const pills = [];
-      if (act > 0) pills.push(`<span class="tm-cal-pill act">A:${act}</span>`);
-      if (tp > 0) pills.push(`<span class="tm-cal-pill win">TP:${tp}</span>`);
-      if (sl > 0) pills.push(`<span class="tm-cal-pill loss">SL:${sl}</span>`);
-      if (exp > 0) pills.push(`<span class="tm-cal-pill pend">EX:${exp}</span>`);
+      if (actCount > 0) pills.push(`<span class="tm-cal-pill act">A:${actCount}</span>`);
+      if (tpSlCount > 0) pills.push(`<span class="tm-cal-pill win">D:${tpSlCount}</span>`);
+      if (pendExpCount > 0) pills.push(`<span class="tm-cal-pill pend">P/E:${pendExpCount}</span>`);
 
       return `
-        <button type="button" class="${cls}" onclick="CalendarHistoryEngine.selectDate('limits', '${escapeHtml(c.iso)}')">
+        <button type="button" class="${classes}" onclick="CalendarHistoryEngine.selectDate('limits', '${escapeHtml(c.iso)}')">
           <span>${c.day}</span>
           <span class="tm-cal-dots">${pills.join("")}</span>
         </button>
       `;
     }).join("");
 
-    const selectedRecs = this.limitOrderRecords.filter(r => r.eventDatePkt === this.selectedLimitDate);
-    const actCount = selectedRecs.filter(r => r.status === "ACTIVATED").length;
-    const tpCount = selectedRecs.filter(r => r.status === "TP COMPLETED").length;
-    const slCount = selectedRecs.filter(r => r.status === "SL COMPLETED").length;
-    const pendCount = selectedRecs.filter(r => r.status === "PENDING").length;
-    const expCount = selectedRecs.filter(r => r.status === "EXPIRED").length;
-    const invCount = selectedRecs.filter(r => r.status === "INVALIDATED").length;
+    const selItems = uniqueLimits.filter(o => this.getLimitDateKey(o) === this.limitsSelectedDate);
+    const selAct = selItems.filter(o => this.classifyLimitEvent(o) === "ACTIVATED").length;
+    const selTp = selItems.filter(o => this.classifyLimitEvent(o) === "TP_DONE").length;
+    const selSl = selItems.filter(o => this.classifyLimitEvent(o) === "SL_DONE").length;
+    const selPend = selItems.filter(o => this.classifyLimitEvent(o) === "PENDING").length;
+    const selExp = selItems.filter(o => this.classifyLimitEvent(o) === "EXPIRED").length;
+    const selInv = selItems.filter(o => this.classifyLimitEvent(o) === "INVALIDATED").length;
 
-    document.getElementById("limDayActivated").textContent = String(actCount);
-    document.getElementById("limDayTpSl").textContent = `${tpCount} / ${slCount}`;
-    document.getElementById("limDayOther").textContent = `${pendCount}/${expCount}/${invCount}`;
-    document.getElementById("limDayDateBadge").textContent = `${this.selectedLimitDate} PKT`;
+    document.getElementById("limDayActivated").textContent = String(selAct);
+    document.getElementById("limDayTpSl").textContent = `${selTp} / ${selSl}`;
+    document.getElementById("limDayOther").textContent = `${selPend}/${selExp}/${selInv}`;
+    document.getElementById("limDayListTitle").textContent = `Limit Orders on ${this.limitsSelectedDate}`;
+    document.getElementById("limDayDateBadge").textContent = `${selItems.length} order${selItems.length === 1 ? "" : "s"} (PKT)`;
 
     const listEl = document.getElementById("limDayListContainer");
-    if (!selectedRecs.length) {
-      listEl.innerHTML = `<div class="tm-empty">No limit order events on ${escapeHtml(this.selectedLimitDate)} PKT.</div>`;
+    if (!selItems.length) {
+      listEl.innerHTML = `<div class="tm-empty">No limit orders recorded on ${escapeHtml(this.limitsSelectedDate)} (PKT).</div>`;
     } else {
-      listEl.innerHTML = selectedRecs.map(r => {
-        const isBuy = String(r.orderType || "").includes("BUY");
-        let detailLine = `Created: ${r.createdTimePkt}`;
-        if (r.status === "ACTIVATED") detailLine = `Activated: ${r.activatedTimePkt}`;
-        else if (r.status === "TP COMPLETED" || r.status === "SL COMPLETED") detailLine = `Completed: ${r.completedTimePkt}`;
-        else if (r.status === "EXPIRED") detailLine = `Expired: ${r.expiredTimePkt}`;
-        else if (r.status === "INVALIDATED") detailLine = `Invalidated: ${r.invalidatedTimePkt}`;
-
+      listEl.innerHTML = selItems.map(o => {
+        const ev = this.classifyLimitEvent(o);
+        const createdText = o.createdRaw ? formatPktDateTime(o.createdRaw) : "--";
+        const activatedText = o.activatedRaw ? formatPktDateTime(o.activatedRaw) : "--";
+        const completedText = o.completedRaw ? formatPktDateTime(o.completedRaw) : "--";
+        const expiredText = o.expiredRaw ? formatPktDateTime(o.expiredRaw) : "--";
+        const invalidatedText = o.invalidatedRaw ? formatPktDateTime(o.invalidatedRaw) : "--";
         return `
-          <div class="tm-card">
+          <div class="tm-card" style="margin-bottom:8px;">
             <div class="row-between">
               <div class="row-inline">
-                <strong style="font-size:13px;">${escapeHtml(r.symbol)}</strong>
-                <span class="tm-badge ${isBuy ? "badge-buy" : "badge-sell"}">${escapeHtml(r.orderType)}</span>
-                <span class="tm-badge badge-closed">${escapeHtml(r.timeframe)}</span>
+                <strong style="font-size:12.5px;">${escapeHtml(o.symbol)}</strong>
+                <span class="tm-badge ${o.orderType.includes("BUY") ? "badge-buy" : "badge-sell"}">${escapeHtml(o.orderType)}</span>
+                <span class="tm-badge badge-closed">${escapeHtml(o.tf)}</span>
               </div>
-              <span class="tm-badge ${badgeClass(r.status)}">${escapeHtml(r.status)}</span>
+              <span class="tm-badge ${badgeClass(o.status)}">${escapeHtml(ev)}</span>
             </div>
-            <div class="tm-levels-grid">
-              <div><div class="tm-lvl-key">Entry</div><div class="tm-lvl-val">${escapeHtml(r.entry)}</div></div>
-              <div><div class="tm-lvl-key">SL</div><div class="tm-lvl-val" style="color:var(--bear);">${escapeHtml(r.sl)}</div></div>
-              <div><div class="tm-lvl-key">TP</div><div class="tm-lvl-val" style="color:var(--bull);">${escapeHtml(r.tp)}</div></div>
-              <div><div class="tm-lvl-key">PKT Date</div><div class="tm-lvl-val" style="font-size:10.5px;">${escapeHtml(r.eventDatePkt)}</div></div>
-            </div>
-            <div class="tm-card-foot">
-              <span>${escapeHtml(detailLine)}</span>
-              <span>${escapeHtml(r.status)}</span>
+            <div class="tm-meta-box">
+              <div class="tm-meta-line"><span class="tm-meta-lbl">Entry / SL / TP:</span><span class="tm-meta-val">${escapeHtml(o.entry)} / ${escapeHtml(o.sl)} / ${escapeHtml(o.tp)}</span></div>
+              <div class="tm-meta-line"><span class="tm-meta-lbl">Created:</span><span class="tm-meta-val">${escapeHtml(createdText)}</span></div>
+              <div class="tm-meta-line"><span class="tm-meta-lbl">Activated:</span><span class="tm-meta-val">${escapeHtml(activatedText)}</span></div>
+              <div class="tm-meta-line"><span class="tm-meta-lbl">Completed:</span><span class="tm-meta-val">${escapeHtml(completedText)}</span></div>
+              <div class="tm-meta-line"><span class="tm-meta-lbl">Expired:</span><span class="tm-meta-val">${escapeHtml(expiredText)}</span></div>
+              <div class="tm-meta-line"><span class="tm-meta-lbl">Invalidated:</span><span class="tm-meta-val">${escapeHtml(invalidatedText)}</span></div>
             </div>
           </div>
         `;
@@ -5705,7 +5797,7 @@ const CalendarHistoryEngine = {
   },
 
   render() {
-    this.syncFromState();
+    this.ensureInitialized();
     this.renderSignalsCalendar();
     this.renderLimitsCalendar();
   }
@@ -5713,41 +5805,16 @@ const CalendarHistoryEngine = {
 
 /* PERFORMANCE ENGINE */
 const PerformanceEngine = {
-  async refresh(force = false) {
-    try {
-      const [perfData, histData] = await Promise.all([
-        TradeMindApi.getSignalPerformance(),
-        TradeMindApi.getSignalHistory()
-      ]);
-      TradeMindState.performance = perfData;
-      const rawHist = Array.isArray(histData)
-        ? histData
-        : (histData.history || histData.signals || histData.items || []);
-      TradeMindState.historySignals = rawHist
-        .map(s => normalizeSignalRecord(s, "CLOSED"))
-        .filter(s => !isExcludedOneMinuteTf(s.tf));
-      TradeMindState.lastSyncPkt = getPktClock();
-      TradeMindState.backendOnline = true;
-      TradeMindState.lastBackendError = null;
-    } catch (err) {
-      TradeMindState.lastBackendError = err && err.message ? err.message : "Performance fetch failed";
-    } finally {
-      updateGlobalBanner();
-      this.render();
-      HomeEngine.render();
-    }
-  },
-
   render() {
-    const p = TradeMindState.performance;
-    const total = p && p.total !== undefined ? p.total : "--";
-    const winRate = p && p.win_rate !== undefined && p.win_rate !== null
-      ? (typeof p.win_rate === "number" ? `${p.win_rate}%` : String(p.win_rate))
+    const perf = TradeMindState.performance;
+    const total = perf && perf.total !== undefined ? perf.total : "--";
+    const winRate = perf && perf.win_rate !== undefined && perf.win_rate !== null
+      ? (typeof perf.win_rate === "number" ? `${perf.win_rate}%` : String(perf.win_rate))
       : "--";
-    const wins = p && p.wins !== undefined ? p.wins : "--";
-    const active = p && p.active !== undefined ? p.active : TradeMindState.activeSignals.length;
-    const losses = p && p.losses !== undefined ? p.losses : "--";
-    const closed = p && p.closed !== undefined ? p.closed : TradeMindState.historySignals.length;
+    const wins = perf && perf.wins !== undefined ? perf.wins : "--";
+    const active = perf && perf.active !== undefined ? perf.active : "--";
+    const losses = perf && perf.losses !== undefined ? perf.losses : "--";
+    const closed = perf && perf.closed !== undefined ? perf.closed : "--";
 
     document.getElementById("perfTotalCount").textContent = String(total);
     document.getElementById("perfWinRate").textContent = winRate;
@@ -5768,17 +5835,40 @@ const PerformanceEngine = {
     }
 
     const histEl = document.getElementById("perfHistoryContainer");
-    if (!TradeMindState.historySignals.length) {
-      histEl.innerHTML = `<div class="tm-empty">${TradeMindState.backendOnline ? "No closed signal history yet." : "Backend offline. Unable to load signal history."}</div>`;
+    const visibleHistory = (TradeMindState.historySignals || []).filter(s => !isExcludedOneMinuteTf(s.tf));
+    if (!visibleHistory.length) {
+      histEl.innerHTML = TradeMindState.backendOnline
+        ? `<div class="tm-empty">No closed signals recorded yet.</div>`
+        : `<div class="tm-empty">Backend offline. Closed signal history unavailable.</div>`;
     } else {
-      histEl.innerHTML = TradeMindState.historySignals.map(renderSignalCard).join("");
+      histEl.innerHTML = visibleHistory.map(renderSignalCard).join("");
     }
+  },
+
+  async refresh(force = false) {
+    if (!TradeMindState.backendOnline) {
+      this.render();
+      return;
+    }
+    try {
+      const [perfData, histData] = await Promise.all([
+        TradeMindApi.getSignalPerformance(),
+        TradeMindApi.getSignalHistory()
+      ]);
+      TradeMindState.performance = perfData;
+      const list = Array.isArray(histData) ? histData : (histData.history || histData.signals || []);
+      TradeMindState.historySignals = list
+        .map(s => normalizeSignalRecord(s, "CLOSED"))
+        .filter(s => !isExcludedOneMinuteTf(s.tf));
+      TradeMindState.lastSyncPkt = getPktClock();
+      updateGlobalBanner();
+    } catch (_) {}
+    this.render();
   }
 };
 
 /* PREFERENCES ENGINE */
 const PreferencesEngine = {
-  _storageKey: "trademind_prefs_v1",
   defaultMarket: "XAUUSD",
   defaultTimeframe: "15M",
   riskPercent: 1.0,
@@ -5796,41 +5886,29 @@ const PreferencesEngine = {
     limit_expired: true,
     trade_completed: true
   },
-
-  isEventEnabled(key) {
-    if (!this.eventToggles || typeof this.eventToggles !== "object") return true;
-    return this.eventToggles[key] !== false;
-  },
+  _storageKey: "trademind_prefs_v1",
 
   load() {
     try {
       const raw = localStorage.getItem(this._storageKey);
       if (!raw) return;
       const p = JSON.parse(raw);
-      if (p.apiBaseUrl && typeof p.apiBaseUrl === "string") {
-        TradeMindConfig.apiBaseUrl = p.apiBaseUrl.trim().replace(/\/+$/, "");
-      }
-      if (p.defaultMarket && TradeMindConfig.supportedMarkets.includes(p.defaultMarket)) {
-        this.defaultMarket = p.defaultMarket;
-      }
-      if (p.defaultTimeframe && TradeMindConfig.supportedTimeframes.includes(p.defaultTimeframe) && !isExcludedOneMinuteTf(p.defaultTimeframe)) {
-        this.defaultTimeframe = p.defaultTimeframe;
-      }
-      if (typeof p.riskPercent === "number" && Number.isFinite(p.riskPercent)) {
-        this.riskPercent = p.riskPercent;
-      }
-      if (typeof p.pollIntervalMs === "number" && [10000, 20000, 30000, 60000].includes(p.pollIntervalMs)) {
-        this.pollIntervalMs = p.pollIntervalMs;
-      }
-      if (typeof p.notificationsEnabled === "boolean") {
-        this.notificationsEnabled = p.notificationsEnabled;
-      }
-      if (p.eventToggles && typeof p.eventToggles === "object") {
-        EVENT_NOTIFICATION_DEFINITIONS.forEach(def => {
-          if (typeof p.eventToggles[def.key] === "boolean") {
-            this.eventToggles[def.key] = p.eventToggles[def.key];
-          }
-        });
+      if (p && typeof p === "object") {
+        if (p.apiBaseUrl) TradeMindConfig.apiBaseUrl = String(p.apiBaseUrl).replace(/\/+$/, "");
+        if (p.defaultMarket) this.defaultMarket = String(p.defaultMarket).toUpperCase();
+        if (p.defaultTimeframe && !isExcludedOneMinuteTf(p.defaultTimeframe)) {
+          this.defaultTimeframe = String(p.defaultTimeframe).toUpperCase();
+        }
+        if (typeof p.riskPercent === "number" && Number.isFinite(p.riskPercent)) this.riskPercent = p.riskPercent;
+        if (typeof p.pollIntervalMs === "number" && Number.isFinite(p.pollIntervalMs)) this.pollIntervalMs = p.pollIntervalMs;
+        if (typeof p.notificationsEnabled === "boolean") this.notificationsEnabled = p.notificationsEnabled;
+        if (p.eventToggles && typeof p.eventToggles === "object") {
+          EVENT_NOTIFICATION_DEFINITIONS.forEach(def => {
+            if (typeof p.eventToggles[def.key] === "boolean") {
+              this.eventToggles[def.key] = p.eventToggles[def.key];
+            }
+          });
+        }
       }
     } catch (_) {}
   },
@@ -5849,31 +5927,47 @@ const PreferencesEngine = {
     } catch (_) {}
   },
 
+  isEventEnabled(eventKey) {
+    if (!this.notificationsEnabled) return false;
+    return this.eventToggles[eventKey] !== false;
+  },
+
+  toggleEventNotification(eventKey) {
+    if (!eventKey) return;
+    const nextVal = !(this.eventToggles[eventKey] !== false);
+    this.eventToggles[eventKey] = nextVal;
+    this.save();
+    if (nextVal && typeof SignalNotificationTracker !== "undefined") {
+      SignalNotificationTracker.unSuppressUserPrefEvents();
+      SignalNotificationTracker.evaluateAllEvents(true);
+    }
+    this.syncUi();
+  },
+
   applyInitialDefaults() {
     TvChart.symbol = this.defaultMarket;
-    TvChart.timeframe = this.defaultTimeframe;
+    TvChart.timeframe = isExcludedOneMinuteTf(this.defaultTimeframe) ? "15M" : this.defaultTimeframe;
     if (Array.isArray(TradeMindState.markets)) {
-      TradeMindState.markets.forEach(m => { m.selected = (m.symbol === this.defaultMarket); });
+      TradeMindState.markets.forEach(m => { m.selected = (m.symbol === TvChart.symbol); });
     }
-    document.querySelectorAll("#chartSymbolStrip .tm-chip").forEach(c => c.classList.toggle("active", c.dataset.sym === this.defaultMarket));
-    document.querySelectorAll("#chartTimeframeStrip .tm-chip").forEach(c => c.classList.toggle("active", c.dataset.tf === this.defaultTimeframe));
+    document.querySelectorAll("#chartSymbolStrip .tm-chip").forEach(c => c.classList.toggle("active", c.dataset.sym === TvChart.symbol));
+    document.querySelectorAll("#chartTimeframeStrip .tm-chip").forEach(c => c.classList.toggle("active", c.dataset.tf === TvChart.timeframe));
     this.syncUi();
   },
 
   setMarket(m) {
-    if (!TradeMindConfig.supportedMarkets.includes(m)) return;
     this.defaultMarket = m;
+    TvChart.setSymbol(m);
     this.save();
     this.syncUi();
-    TvChart.setSymbol(m);
   },
 
   setTimeframe(tf) {
-    if (!TradeMindConfig.supportedTimeframes.includes(tf) || isExcludedOneMinuteTf(tf)) return;
+    if (isExcludedOneMinuteTf(tf)) return;
     this.defaultTimeframe = tf;
+    TvChart.setTimeframe(tf);
     this.save();
     this.syncUi();
-    TvChart.setTimeframe(tf);
   },
 
   setRisk(val) {
@@ -5887,32 +5981,25 @@ const PreferencesEngine = {
   saveApiUrl() {
     const input = document.getElementById("prefApiUrlInput");
     if (!input) return;
-    const clean = input.value.trim().replace(/\/+$/, "");
+    const clean = String(input.value || "").trim().replace(/\/+$/, "");
     if (!clean) return;
     TradeMindConfig.apiBaseUrl = clean;
     this.save();
+    this.syncUi();
     TradeMindApp.refreshAll(true);
   },
 
   setPollInterval(val) {
-    const ms = parseInt(val, 10);
-    if (![10000, 20000, 30000, 60000].includes(ms)) return;
+    const ms = Number(val);
+    if (!Number.isFinite(ms) || ms < 5000) return;
     this.pollIntervalMs = ms;
     this.save();
     TradeMindApp.restartPolling();
-  },
-
-  toggleEventNotification(key) {
-    const current = this.isEventEnabled(key);
-    this.eventToggles[key] = !current;
-    this.save();
     this.syncUi();
   },
 
   async toggleNotifications() {
     if (!("Notification" in window)) {
-      this.notificationsEnabled = false;
-      this.save();
       this.syncUi();
       return;
     }
@@ -5927,22 +6014,33 @@ const PreferencesEngine = {
     if (Notification.permission === "granted") {
       this.notificationsEnabled = true;
       this.save();
+      if (typeof SignalNotificationTracker !== "undefined") {
+        SignalNotificationTracker.unSuppressUserPrefEvents();
+        SignalNotificationTracker.evaluateAllEvents(true);
+      }
       this.syncUi();
       return;
     }
 
-    if (Notification.permission !== "denied") {
-      try {
-        const perm = await Notification.requestPermission();
-        this.notificationsEnabled = (perm === "granted");
-      } catch (_) {
-        this.notificationsEnabled = false;
-      }
-    } else {
+    if (Notification.permission === "denied") {
       this.notificationsEnabled = false;
+      this.save();
+      this.syncUi();
+      return;
     }
-    this.save();
-    this.syncUi();
+
+    try {
+      const perm = await Notification.requestPermission();
+      this.notificationsEnabled = (perm === "granted");
+      this.save();
+      if (this.notificationsEnabled && typeof SignalNotificationTracker !== "undefined") {
+        SignalNotificationTracker.unSuppressUserPrefEvents();
+        SignalNotificationTracker.evaluateAllEvents(true);
+      }
+      this.syncUi();
+    } catch (_) {
+      this.syncUi();
+    }
   },
 
   testNotification() {
@@ -5950,37 +6048,25 @@ const PreferencesEngine = {
       alert("Notifications are not supported in this browser.");
       return;
     }
-    const sendTest = () => {
-      try {
-        new Notification("TradeMind — TEST SIGNAL", {
-          body: "XAUUSD · BUY · 15M\nEntry: 2650.00\nSL: 2642.00\nTP: 2666.00"
-        });
-      } catch (e) {
-        alert("Could not display notification: " + (e && e.message ? e.message : "error"));
-      }
-    };
-    if (Notification.permission === "granted") {
-      sendTest();
-    } else if (Notification.permission !== "denied") {
-      Notification.requestPermission().then(perm => {
-        if (perm === "granted") {
-          this.notificationsEnabled = true;
-          this.save();
-          this.syncUi();
-          sendTest();
-        }
-      });
-    } else {
-      alert("Notification permission is blocked in browser settings.");
+    if (Notification.permission !== "granted") {
+      alert("Please enable notifications and allow permission first.");
+      return;
     }
+    try {
+      new Notification("TradeMind Test Alert", {
+        body: `Active session notifications working · ${getPktClock()}`,
+        tag: "tm-test-alert"
+      });
+    } catch (_) {}
   },
 
   resetLocalSettings() {
     try {
       localStorage.removeItem(this._storageKey);
       localStorage.removeItem(TvChart._storageKey);
-      localStorage.removeItem(DailyRiskMonitor._storageKey);
-      SignalNotificationTracker.resetBaseline();
+      if (typeof SignalNotificationTracker !== "undefined") {
+        SignalNotificationTracker.resetBaseline();
+      }
     } catch (_) {}
     TradeMindConfig.apiBaseUrl = "http://127.0.0.1:8000";
     this.defaultMarket = "XAUUSD";
