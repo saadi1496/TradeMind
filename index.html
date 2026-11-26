@@ -1798,7 +1798,7 @@
       </div>
       <div class="row-between" style="font-size:12px;padding:4px 0;">
         <span style="color:var(--text-secondary);">Backend Base URL</span>
-        <strong id="prefBaseUrlDisplay">https://recorder-past-monsters-ads.trycloudflare.com</strong>
+        <strong id="prefBaseUrlDisplay">https://bloomberg-ethical-supposed-slots.trycloudflare.com</strong>
       </div>
       <div class="row-between" style="font-size:12px;padding:4px 0;">
         <span style="color:var(--text-secondary);">Auto Trade</span>
@@ -1815,7 +1815,7 @@
 
       <label class="tm-lvl-key" for="prefApiUrlInput">Backend API URL</label>
       <div class="row-inline" style="margin-top:4px;margin-bottom:10px;">
-        <input id="prefApiUrlInput" type="text" value="https://recorder-past-monsters-ads.trycloudflare.com"
+        <input id="prefApiUrlInput" type="text" value="https://bloomberg-ethical-supposed-slots.trycloudflare.com"
                style="flex:1;min-width:160px;padding:7px 9px;border:1px solid var(--border);border-radius:8px;font-size:12px;" />
         <button class="tm-btn" onclick="PreferencesEngine.saveApiUrl()">Save URL</button>
       </div>
@@ -1882,7 +1882,7 @@
 </nav>
 
 <script>
-const BACKEND_BASE_URL = "https://recorder-past-monsters-ads.trycloudflare.com";
+const BACKEND_BASE_URL = "https://bloomberg-ethical-supposed-slots.trycloudflare.com";
 
 const TradeMindConfig = {
   apiBaseUrl: BACKEND_BASE_URL,
@@ -5701,31 +5701,32 @@ const TvChart = {
     });
 
     const releasePointer = e => {
-      this.activePointers.delete(e.pointerId);
-      if (this.activePointers.size < 2 && this.pinch.active) {
+      if (this.activePointers.has(e.pointerId)) {
+        this.activePointers.delete(e.pointerId);
+      }
+      if (this.activePointers.size < 2) {
         this.pinch.active = false;
-        this.savePreferences();
       }
-      if (this.drag.active) {
+      if (this.activePointers.size === 0 && this.drag.active) {
         this.drag.active = false;
+        this.drag.mode = null;
         this.savePreferences();
       }
-      if (e.type === "pointerleave" || e.type === "pointercancel") {
-        this.pointer.inside = false;
-      }
-      this.render();
     };
 
     canvas.addEventListener("pointerup", releasePointer);
     canvas.addEventListener("pointercancel", releasePointer);
-    canvas.addEventListener("pointerleave", releasePointer);
+    canvas.addEventListener("pointerleave", () => {
+      if (!this.drag.active) {
+        this.pointer.inside = false;
+        this.render();
+      }
+    });
 
     canvas.addEventListener("wheel", e => {
       e.preventDefault();
-      this.zoomStep(e.deltaY < 0 ? 1.15 : 0.87);
+      this.zoomStep(e.deltaY < 0 ? 1.12 : 0.89);
     }, { passive: false });
-
-    window.addEventListener("resize", () => this.render());
   }
 };
 
@@ -5752,10 +5753,8 @@ const SignalsEngine = {
   setMode(mode) {
     this.mode = mode;
     document.querySelectorAll("#signalsModeTabs .tm-tab").forEach(t => t.classList.toggle("active", t.dataset.mode === mode));
-    const datePanel = document.getElementById("signalsHistoryDatePanel");
-    if (datePanel) {
-      datePanel.style.display = mode === "HISTORY" ? "block" : "none";
-    }
+    const histPanel = document.getElementById("signalsHistoryDatePanel");
+    if (histPanel) histPanel.style.display = mode === "HISTORY" ? "block" : "none";
     this.render();
   },
 
@@ -5806,20 +5805,20 @@ const SignalsEngine = {
 
   getFilteredHistoryForSelectedDate() {
     this.ensureHistoryDateInit();
-    const selectedDate = this.historyDateIso;
+    const targetIso = this.historyDateIso;
     return (TradeMindState.historySignals || []).filter(s => {
-      if (isExcludedOneMinuteTf(s.tf)) return false;
+      if (!s || isExcludedOneMinuteTf(s.tf)) return false;
       if (this.symbolFilter !== "ALL" && s.symbol !== this.symbolFilter) return false;
       if (this.tfFilter !== "ALL" && s.tf !== this.tfFilter) return false;
-      const compDate = toPktDateKey(s.completedRaw || s.completedPkt);
-      return compDate === selectedDate;
+      const cls = CalendarHistoryEngine.classifyOutcome(s);
+      if (cls !== "TP WIN" && cls !== "SL LOSS") return false;
+      return toPktDateKey(s.completedRaw || s.completedPkt) === targetIso;
     });
   },
 
-  renderHistoryDateControlsAndCalendar() {
+  renderHistoryControlsAndCalendar() {
     this.ensureHistoryDateInit();
     const selectedDate = this.historyDateIso;
-
     const badge = document.getElementById("sigHistSelectedDateBadge");
     if (badge) badge.textContent = CalendarHistoryEngine.formatDisplayDate(selectedDate);
 
@@ -5833,10 +5832,10 @@ const SignalsEngine = {
     if (calBox) calBox.style.display = this.historyCalendarOpen ? "block" : "none";
     if (calBtn) calBtn.classList.toggle("active", this.historyCalendarOpen);
 
-    const dayRows = this.getFilteredHistoryForSelectedDate();
+    const dayList = this.getFilteredHistoryForSelectedDate();
     let wins = 0;
     let losses = 0;
-    dayRows.forEach(s => {
+    dayList.forEach(s => {
       const cls = CalendarHistoryEngine.classifyOutcome(s);
       if (cls === "TP WIN") wins += 1;
       else if (cls === "SL LOSS") losses += 1;
@@ -5859,23 +5858,27 @@ const SignalsEngine = {
     const todayIso = getPktDatePartsFromMs(Date.now()).iso;
     monthLabel.textContent = CalendarHistoryEngine.getMonthTitle(year, month);
 
-    const countsByDate = new Map();
-    (TradeMindState.historySignals || []).forEach(s => {
-      if (isExcludedOneMinuteTf(s.tf)) return;
-      if (this.symbolFilter !== "ALL" && s.symbol !== this.symbolFilter) return;
-      if (this.tfFilter !== "ALL" && s.tf !== this.tfFilter) return;
-      const dKey = toPktDateKey(s.completedRaw || s.completedPkt);
-      if (!dKey) return;
-      if (!countsByDate.has(dKey)) countsByDate.set(dKey, { w: 0, l: 0 });
-      const entry = countsByDate.get(dKey);
+    const filteredCompleted = (TradeMindState.historySignals || []).filter(s => {
+      if (!s || isExcludedOneMinuteTf(s.tf)) return false;
+      if (this.symbolFilter !== "ALL" && s.symbol !== this.symbolFilter) return false;
+      if (this.tfFilter !== "ALL" && s.tf !== this.tfFilter) return false;
       const cls = CalendarHistoryEngine.classifyOutcome(s);
-      if (cls === "TP WIN") entry.w += 1;
-      else if (cls === "SL LOSS") entry.l += 1;
+      return cls === "TP WIN" || cls === "SL LOSS";
+    });
+
+    const byDate = new Map();
+    filteredCompleted.forEach(s => {
+      const k = toPktDateKey(s.completedRaw || s.completedPkt);
+      if (!k) return;
+      if (!byDate.has(k)) byDate.set(k, { w: 0, l: 0 });
+      const entry = byDate.get(k);
+      if (CalendarHistoryEngine.classifyOutcome(s) === "TP WIN") entry.w += 1;
+      else entry.l += 1;
     });
 
     const cells = CalendarHistoryEngine.buildMonthCells(year, month);
     gridEl.innerHTML = cells.map(cell => {
-      const st = countsByDate.get(cell.iso) || { w: 0, l: 0 };
+      const st = byDate.get(cell.iso) || { w: 0, l: 0 };
       const isToday = cell.iso === todayIso;
       const isSelected = cell.iso === selectedDate;
       return `
@@ -5894,20 +5897,21 @@ const SignalsEngine = {
 
   render() {
     if (this.mode === "HISTORY") {
-      this.renderHistoryDateControlsAndCalendar();
+      this.renderHistoryControlsAndCalendar();
     }
 
-    const baseList = this.mode === "ACTIVE"
-      ? TradeMindState.activeSignals.filter(s => {
-          if (isExcludedOneMinuteTf(s.tf)) return false;
-          if (this.symbolFilter !== "ALL" && s.symbol !== this.symbolFilter) return false;
-          if (this.tfFilter !== "ALL" && s.tf !== this.tfFilter) return false;
-          return true;
-        })
-      : this.getFilteredHistoryForSelectedDate();
+    const source = this.mode === "ACTIVE"
+      ? TradeMindState.activeSignals
+      : (this.mode === "HISTORY" ? this.getFilteredHistoryForSelectedDate() : TradeMindState.historySignals);
+    const filtered = (source || []).filter(s => {
+      if (!s || isExcludedOneMinuteTf(s.tf)) return false;
+      if (this.symbolFilter !== "ALL" && s.symbol !== this.symbolFilter) return false;
+      if (this.tfFilter !== "ALL" && s.tf !== this.tfFilter) return false;
+      return true;
+    });
 
     const container = document.getElementById("signalsListContainer");
-    if (!baseList.length) {
+    if (!filtered.length) {
       if (!TradeMindState.backendOnline) {
         container.innerHTML = TradeMindState.authRequired
           ? `<div class="tm-empty">Device authentication required (401). Pair device in Settings to view signals.</div>`
@@ -5915,75 +5919,70 @@ const SignalsEngine = {
       } else if (this.mode === "HISTORY") {
         container.innerHTML = `<div class="tm-empty">No completed signals on ${escapeHtml(CalendarHistoryEngine.formatDisplayDate(this.historyDateIso))} for current filters.</div>`;
       } else {
-        container.innerHTML = `<div class="tm-empty">No active signals match the current filter.</div>`;
+        container.innerHTML = `<div class="tm-empty">No ${this.mode.toLowerCase()} signals match the current filter.</div>`;
       }
       return;
     }
 
-    container.innerHTML = baseList.map(renderSignalCard).join("");
+    container.innerHTML = filtered.map(renderSignalCard).join("");
   },
 
   openDetail(id) {
     const all = [...TradeMindState.activeSignals, ...TradeMindState.historySignals];
-    const s = all.find(x => String(x.id) === String(id));
+    const s = all.find(item => String(item.id) === String(id));
     if (!s) return;
+
     const isBuy = s.direction.includes("BUY") || s.direction === "LONG";
     const createdDisplay = s.createdRaw ? formatPktDateTime(s.createdRaw) : s.pktTime;
     const completedDisplay = s.completedRaw ? formatPktDateTime(s.completedRaw) : null;
     const isActive = isSignalActiveStatus(s);
-    const liveNum = isActive ? getLiveMarketPriceForSymbol(s.symbol) : null;
-    const liveDisplay = liveNum !== null ? formatPriceValue(liveNum, s.symbol) : "--";
     const q = evaluateSignalQuality(s);
 
-    const panel = document.getElementById("tmDetailPanel");
-    panel.innerHTML = `
+    document.getElementById("tmDetailPanel").innerHTML = `
       <div class="row-between" style="margin-bottom:10px;">
         <div class="row-inline">
-          <strong style="font-size:16px;">${escapeHtml(s.symbol)}</strong>
+          <strong style="font-size:15px;">${escapeHtml(s.symbol)} · ${escapeHtml(s.tf)}</strong>
           <span class="tm-badge ${isBuy ? "badge-buy" : "badge-sell"}">${escapeHtml(s.direction)}</span>
-          <span class="tm-badge badge-closed">${escapeHtml(s.tf)}</span>
         </div>
         <button class="tm-btn" onclick="SignalsEngine.closeDetail()">Close</button>
       </div>
-
+      <div style="font-size:12px;color:var(--text-secondary);margin-bottom:8px;">
+        Status: <strong>${escapeHtml(s.status)}</strong> · Strategy: <strong>${escapeHtml(s.strategy)}</strong>
+      </div>
+      <div class="tm-meta-box" style="margin-bottom:8px;">
+        <div class="tm-meta-line"><span class="tm-meta-lbl">Created:</span><span class="tm-meta-val">${escapeHtml(createdDisplay)}</span></div>
+        ${completedDisplay ? `<div class="tm-meta-line"><span class="tm-meta-lbl">Completed:</span><span class="tm-meta-val">${escapeHtml(completedDisplay)}</span></div>` : ""}
+      </div>
       <div class="tm-levels-grid">
         <div><div class="tm-lvl-key">Entry</div><div class="tm-lvl-val">${escapeHtml(s.entry)}</div></div>
         <div><div class="tm-lvl-key">SL</div><div class="tm-lvl-val" style="color:var(--bear);">${escapeHtml(s.sl)}</div></div>
         <div><div class="tm-lvl-key">TP</div><div class="tm-lvl-val" style="color:var(--bull);">${escapeHtml(s.tp)}</div></div>
         <div><div class="tm-lvl-key">R:R</div><div class="tm-lvl-val" style="color:var(--accent-dark);">${escapeHtml(s.rr)}</div></div>
       </div>
-
-      <div class="tm-card" style="margin-top:10px;background:var(--bg-subtle);">
-        <div class="row-between" style="font-size:12px;padding:3px 0;"><span style="color:var(--text-secondary);">Status</span><strong>${escapeHtml(s.status)}</strong></div>
-        ${isActive ? `<div class="row-between" style="font-size:12px;padding:3px 0;"><span style="color:var(--text-secondary);">Live Price</span><strong style="color:var(--accent-dark);">${escapeHtml(liveDisplay)}</strong></div>` : ""}
-        <div class="row-between" style="font-size:12px;padding:3px 0;"><span style="color:var(--text-secondary);">Strategy</span><strong>${escapeHtml(s.strategy)}${s.strategyVersion ? ` (${escapeHtml(s.strategyVersion)})` : ""}</strong></div>
-        <div class="row-between" style="font-size:12px;padding:3px 0;"><span style="color:var(--text-secondary);">Signal Type</span><strong>${escapeHtml(s.signalType)}</strong></div>
-        <div class="row-between" style="font-size:12px;padding:3px 0;"><span style="color:var(--text-secondary);">Created</span><strong>${escapeHtml(createdDisplay)}</strong></div>
-        ${completedDisplay ? `<div class="row-between" style="font-size:12px;padding:3px 0;"><span style="color:var(--text-secondary);">Completed</span><strong>${escapeHtml(completedDisplay)}</strong></div>` : ""}
-        ${s.outcome ? `<div class="row-between" style="font-size:12px;padding:3px 0;"><span style="color:var(--text-secondary);">Outcome</span><strong>${escapeHtml(s.outcome)}</strong></div>` : ""}
-        ${s.confirmationTimeframes ? `<div class="row-between" style="font-size:12px;padding:3px 0;"><span style="color:var(--text-secondary);">Confirmations</span><strong>${escapeHtml(s.confirmationTimeframes)}</strong></div>` : ""}
-      </div>
-
-      <div class="tm-card" style="margin-top:8px;background:var(--bg-subtle);">
+      <div class="tm-meta-box" style="margin-top:10px;">
         <div class="row-between">
           <span class="tm-metric-label">Signal Quality Checklist</span>
           <span class="tm-badge badge-active">${escapeHtml(q.scoreText)}</span>
         </div>
         <div class="tm-qual-list">
-          ${q.available.map(c => `<div style="color:var(--bull);">✓ <strong>${escapeHtml(c.label)}:</strong> ${escapeHtml(c.detail || "Passed")}</div>`).join("")}
-          ${q.missing.map(c => `<div style="color:var(--text-secondary);">• <strong>${escapeHtml(c.label)}:</strong> ${escapeHtml(c.status)}${c.detail ? ` (${escapeHtml(c.detail)})` : ""}</div>`).join("")}
+          ${q.available.map(item => `
+            <div><strong style="color:var(--bull);">Passed:</strong> ${escapeHtml(item.label)}${item.detail ? ` (${escapeHtml(item.detail)})` : ""}</div>
+          `).join("")}
+          ${q.missing.map(item => `
+            <div><strong style="color:${item.status === "Pending" ? "var(--warn)" : "var(--text-muted)"};">${escapeHtml(item.status)}:</strong> ${escapeHtml(item.label)}${item.detail ? ` (${escapeHtml(item.detail)})` : ""}</div>
+          `).join("")}
         </div>
       </div>
-
-      ${isActive ? `
-        <button class="tm-btn-primary" style="width:100%;margin-top:8px;" onclick="SignalsEngine.closeDetail(); TvChart.monitorSignal('${escapeHtml(s.id)}')">
-          Monitor Active Trade on Chart
+      <div class="row-inline" style="margin-top:14px;">
+        ${isActive ? `
+          <button class="tm-btn-primary" style="flex:1;" onclick="SignalsEngine.closeDetail(); TvChart.monitorSignal('${escapeHtml(s.id)}');">
+            Monitor Trade on Chart
+          </button>
+        ` : ""}
+        <button class="tm-btn" style="padding:10px 14px;" onclick="SignalsEngine.closeDetail(); TvChart.openPair('${escapeHtml(s.symbol)}');">
+          Open Chart
         </button>
-      ` : `
-        <button class="tm-btn-primary" style="width:100%;margin-top:8px;" onclick="SignalsEngine.closeDetail(); TvChart.openPair('${escapeHtml(s.symbol)}')">
-          Open ${escapeHtml(s.symbol)} on Chart
-        </button>
-      `}
+      </div>
     `;
     document.getElementById("tmDetailSheet").classList.add("open");
   },
